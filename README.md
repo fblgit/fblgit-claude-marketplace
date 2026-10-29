@@ -12,6 +12,6 @@ A marketplace of Claude Code plugins and mods.
 
 | Plugin | Version | What it is |
 | :- | :- | :- |
-| mod-authoring | 0.1.1 | skill: build, test, secure and audit Claude Code mods |
+| mod-authoring | 0.2.0 | skill: build, test, secure and audit Claude Code mods |
 
 Install one: `/plugin install mod-authoring@fblgit-claude-marketplace`
