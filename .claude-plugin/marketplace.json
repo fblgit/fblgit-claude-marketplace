@@ -1,0 +1,17 @@
+{
+  "name": "fblgit-claude-marketplace",
+  "owner": {
+    "name": "fblgit"
+  },
+  "plugins": [
+    {
+      "name": "mod-authoring",
+      "description": "A skill for building, testing, securing and auditing Claude Code mods",
+      "source": {
+        "source": "github",
+        "repo": "fblgit/mod-authoring"
+      }
+    }
+  ],
+  "description": "Claude Code plugins and mods by fblgit"
+}
