@@ -8,8 +8,8 @@
       "name": "mod-authoring",
       "description": "A skill for building, testing, securing and auditing Claude Code mods",
       "source": {
-        "source": "github",
-        "repo": "fblgit/mod-authoring"
+        "source": "url",
+        "url": "https://github.com/fblgit/mod-authoring.git"
       }
     }
   ],
