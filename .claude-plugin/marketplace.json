@@ -11,6 +11,14 @@
         "source": "url",
         "url": "https://github.com/fblgit/mod-authoring.git"
       }
+    },
+    {
+      "name": "artifacts-done-properly",
+      "description": "ADP (Artifacts Done Properly): skills, page templates and a component catalog for building reusable claude.ai Artifacts",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/fblgit/artifacts-done-properly.git"
+      }
     }
   ],
   "description": "Claude Code plugins and mods by fblgit"
