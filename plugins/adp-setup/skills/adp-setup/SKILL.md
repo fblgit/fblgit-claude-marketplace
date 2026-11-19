@@ -13,7 +13,7 @@ The user runs each command themselves; do not run an install on their behalf.
 
 ADP (Artifacts Done Properly) is a standard and a shared component catalog for claude.ai Artifacts and Sites pages that people and several
 agents keep editing. The full plugin gives Claude five skills: `adp` (the base skill, with the `adp.py` command line, templates and the catalog)
-and the road skills `adp-new`, `adp-catalog`, `adp-edit` and `adp-adopt`. It is open source (MIT):
+and the road skills `adp-new`, `adp-catalog`, `adp-edit` and `adp-adopt`. The full ADP plugin is open source (Apache-2.0); this setup skill is MIT:
 https://github.com/fblgit/artifacts-done-properly
 
 ## Steps

@@ -13,4 +13,4 @@ Then ask Claude to set up ADP; it will have you run:
     /plugin install artifacts-done-properly@fblgit-adp
     /adp setup
 
-The full plugin (scripts and catalog) is in https://github.com/fblgit/artifacts-done-properly. MIT.
+The full plugin (scripts and catalog) is in https://github.com/fblgit/artifacts-done-properly. The full ADP plugin is Apache-2.0. This setup skill is MIT.
