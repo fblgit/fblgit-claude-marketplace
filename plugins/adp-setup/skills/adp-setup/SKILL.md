@@ -1,7 +1,7 @@
 ---
 name: adp-setup
 description: "Guided install of ADP (Artifacts Done Properly), the standard and component catalog for claude.ai Artifacts. Use when the user asks to install, set up or get started with ADP."
-license: Apache-2.0
+license: MIT
 ---
 
 # ADP setup
@@ -13,7 +13,7 @@ The user runs each command themselves; do not run an install on their behalf.
 
 ADP (Artifacts Done Properly) is a standard and a shared component catalog for claude.ai Artifacts and Sites pages that people and several
 agents keep editing. The full plugin gives Claude five skills: `adp` (the base skill, with the `adp.py` command line, templates and the catalog)
-and the road skills `adp-new`, `adp-catalog`, `adp-edit` and `adp-adopt`. It is open source (Apache-2.0):
+and the road skills `adp-new`, `adp-catalog`, `adp-edit` and `adp-adopt`. It is open source (MIT):
 https://github.com/fblgit/artifacts-done-properly
 
 ## Steps

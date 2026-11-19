@@ -8,6 +8,6 @@
   },
   "homepage": "https://github.com/fblgit/artifacts-done-properly",
   "repository": "https://github.com/fblgit/fblgit-claude-marketplace",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "keywords": ["claude artifacts", "install", "setup"]
 }
