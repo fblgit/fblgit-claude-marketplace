@@ -22,6 +22,11 @@
       }
     },
     {
+      "name": "adp-setup",
+      "description": "Guided install of ADP (Artifacts Done Properly): explains it and walks you through adding the full plugin",
+      "source": "./plugins/adp-setup"
+    },
+    {
       "name": "panopticon",
       "description": "Panopticon Harness for Anthropic Claude: records sessions, checks the agent against your invariants with blind audits, and can end a session and brief its successor, through a local daemon",
       "source": {

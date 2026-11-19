@@ -1,0 +1,13 @@
+{
+  "name": "adp-setup",
+  "version": "2.2.0",
+  "description": "Guided install of ADP (Artifacts Done Properly): explains what it is and walks you through adding the full plugin from its own marketplace.",
+  "author": {
+    "name": "Xavier Murias (fblgit)",
+    "url": "https://github.com/fblgit"
+  },
+  "homepage": "https://github.com/fblgit/artifacts-done-properly",
+  "repository": "https://github.com/fblgit/fblgit-claude-marketplace",
+  "license": "Apache-2.0",
+  "keywords": ["claude artifacts", "install", "setup"]
+}
