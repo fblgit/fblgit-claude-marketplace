@@ -16,8 +16,18 @@
       "name": "artifacts-done-properly",
       "description": "ADP (Artifacts Done Properly): skills, page templates and a component catalog for building reusable claude.ai Artifacts",
       "source": {
-        "source": "url",
-        "url": "https://github.com/fblgit/artifacts-done-properly.git"
+        "source": "git-subdir",
+        "url": "https://github.com/fblgit/artifacts-done-properly.git",
+        "path": "plugins/artifacts-done-properly"
+      }
+    },
+    {
+      "name": "panopticon",
+      "description": "Panopticon Harness for Anthropic Claude: records sessions, checks the agent against your invariants with blind audits, and can end a session and brief its successor, through a local daemon",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/fblgit/panopticon.git",
+        "path": "plugin"
       }
     }
   ],
