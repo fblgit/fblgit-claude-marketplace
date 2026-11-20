@@ -8,6 +8,8 @@ metadata:
 
 # Building kits: general, with several samples
 
+This is how the catalog grows, and why ADP pages get better over time instead of each starting from nothing.
+
 Nothing reusable is written inside a page. When a page needs a widget, a layout, a chart, a pattern or a look, the answer is a **kit entry**: written once,
 in the catalog, general enough that the next page takes it unchanged. Hand-writing it into one page, or copying a kit file by retyping it, is the thing
 this rule abolishes.

@@ -8,6 +8,8 @@ metadata:
 
 # The shell and the runtime
 
+The runtime is what every ADP page shares in the browser: it keeps the page's record, seeds it on first open, shows what changed, and carries the host connection that the agent pane and the kits use.
+
 The **shell** is the thin `index.html` of an adp/2 page. The **runtime** is `adp.js`, one script loaded before the page's own. Together they are the
 part of ADP that lives in the page; they talk to the world only through the [host adapter](../adp-minimal-hosts/SKILL.md).
 

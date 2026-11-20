@@ -8,6 +8,8 @@ metadata:
 
 # The protocol: read, hold, edit, check, publish, record
 
+An ADP page keeps its own record (what changed, who changed it, decisions, open requests) while people and agents keep working on it. The protocol is how that record stays true.
+
 Every agent follows it, every time, on any page with a `manifest/current`. The only lock is the **`if_version` pin**: ArtifactData refuses a write to an
 existing document unless it carries the version you read, so a refused write means someone wrote first. The calls and documents are written out in
 [payloads](../adp-minimal-payloads/SKILL.md); `adp.py` prints them for you. The shape of the record is below.

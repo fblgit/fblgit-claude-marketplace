@@ -8,6 +8,8 @@ metadata:
 
 # Host adapters: the shell's boundary, and the common ground components reuse
 
+ADP pages and kits are meant to be reused, including on hosts other than claude.ai. The host adapter is what makes that possible.
+
 ADP runs on more than one host: the claude.ai viewer, ChatGPT Sites, a local emulator. The page, the kit and the record format are the same on all of
 them. What differs is **how a page reads and writes its records, who the viewer is, how comments anchor, and how a request reaches an agent**. That is
 the host adapter. It exists so that no component ever names a host.

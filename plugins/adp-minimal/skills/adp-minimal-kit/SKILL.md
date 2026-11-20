@@ -8,6 +8,8 @@ metadata:
 
 # The kit: structure, and how a piece wires into a page
 
+The kit is the reusable half of ADP: what one page built well, written once as an entry so every later page takes it instead of rewriting it.
+
 The **kit** is the shared set of building blocks a page takes instead of writing. It lives in the catalog under `kit/`. The id prefix of an entry is its
 kind of building block.
 

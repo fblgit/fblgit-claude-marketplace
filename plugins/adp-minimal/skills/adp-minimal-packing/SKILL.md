@@ -8,6 +8,8 @@ metadata:
 
 # Packing and unpacking: moving a page faster
 
+Pages, their records and the catalog all have to move: to a tool that publishes one file, into a fresh database, into a skill zip, or to another host.
+
 A page is many small files. Publishing, copying and fetching them one by one is slow and fails halfway. ADP packs them into a few files, and unpacks
 them byte for byte. There are four packings, for four jobs.
 

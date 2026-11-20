@@ -8,6 +8,8 @@ metadata:
 
 # The roads
 
+Every job done with ADP (building a page, reusing or adding to the catalog, editing, bringing an existing page in) follows one of these.
+
 A road is a short, complete procedure for one kind of job. There are four, and every job on a page is one of them. Each names `adp.py` commands; none
 is done by hand. `ADP` below is `python3 -I <adp skill folder>/scripts/adp.py`.
 

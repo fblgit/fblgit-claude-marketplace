@@ -8,6 +8,8 @@ metadata:
 
 # Parts and hashes
 
+Parts are what the rest of ADP stands on: kit entries, comments, recorded changes, requests and merges all point at part ids.
+
 A **part** is a piece of the page with a stable id. Hashes say what changed. Together they replace "a copy that looks about right" with a check.
 
 ## Markers

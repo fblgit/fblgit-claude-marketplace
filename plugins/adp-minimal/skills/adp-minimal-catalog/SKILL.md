@@ -8,6 +8,8 @@ metadata:
 
 # The catalog, and how to check that it is consistent
 
+The catalog is where ADP keeps reusable work. Every kit entry lives there with its header, files and samples, and every page takes from it by reference.
+
 The catalog is a published artifact whose files are kit entries, plus an index. A page takes entries from it by reference.
 
 ```

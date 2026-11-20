@@ -8,6 +8,8 @@ metadata:
 
 # Themes, and how they wire
 
+Themes are catalog entries too, so a page's look is taken and switched like any other piece instead of being written into it.
+
 A theme is the look of a page, expressed as **tokens** only. Every kit file draws with the same token names, so changing the theme restyles the
 whole page, and a viewer can switch themes at run time.
 

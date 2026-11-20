@@ -8,8 +8,8 @@ metadata:
 
 # The delta, the proposal and the inbox
 
-When two parties change the same page, ADP does not pick a winner and does not overwrite. It computes a **delta** from three states and sorts every part
-and file into a class.
+People and agents work on an ADP page from inside it and from their own sessions, so changes arrive from more than one place. ADP does not let the last publish win: it computes a **delta** from three states and sorts every part and file into a class, then merges what is
+safe and holds the rest.
 
 ## The three states
 

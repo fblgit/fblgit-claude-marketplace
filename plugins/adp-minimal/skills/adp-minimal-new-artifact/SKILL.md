@@ -8,6 +8,8 @@ metadata:
 
 # How a new artifact is created, and its shape
 
+A new ADP page starts from a template and takes its pieces from the catalog; this skill covers what `adp.py new` lays down and why.
+
 A new artifact is never a single hand-written `index.html`. It is created by `adp.py new`, which lays the page out as **adp/2** and prints the one
 publish call that goes with it.
 
