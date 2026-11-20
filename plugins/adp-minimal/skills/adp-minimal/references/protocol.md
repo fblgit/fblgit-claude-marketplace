@@ -1,6 +1,7 @@
 > Copy of [`plugins/artifacts-done-properly/skills/adp/catalog/kit/guides/artifact-dataplane.md`](https://github.com/fblgit/artifacts-done-properly/blob/main/plugins/artifacts-done-properly/skills/adp/catalog/kit/guides/artifact-dataplane.md) in the ADP repository, written by `tools/make_minimal.py` of the marketplace: edit the source, not this page.
 > This plugin ships documentation only. A command named here (`adp.py ...`) belongs to the full ADP install in the repository
-> (https://github.com/fblgit/artifacts-done-properly); `snippets.md` shows how to do the same by hand.
+> (https://github.com/fblgit/artifacts-done-properly); `snippets.md` shows how to do the same by hand. Calls to Claude's own tools (`Artifact`, `ArtifactData`) are examples
+> of what a Claude host offers: on another host, use that host's way to read and write the page.
 
 <!--
 Artifact dataplane (ADP)

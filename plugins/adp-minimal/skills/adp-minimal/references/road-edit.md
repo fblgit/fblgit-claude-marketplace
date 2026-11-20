@@ -1,14 +1,15 @@
 > Copy of [`plugins/artifacts-done-properly/skills/adp-edit/SKILL.md`](https://github.com/fblgit/artifacts-done-properly/blob/main/plugins/artifacts-done-properly/skills/adp-edit/SKILL.md) in the ADP repository, written by `tools/make_minimal.py` of the marketplace: edit the source, not this page.
 > This plugin ships documentation only. A command named here (`adp.py ...`) belongs to the full ADP install in the repository
-> (https://github.com/fblgit/artifacts-done-properly); `snippets.md` shows how to do the same by hand.
+> (https://github.com/fblgit/artifacts-done-properly); `snippets.md` shows how to do the same by hand. Calls to Claude's own tools (`Artifact`, `ArtifactData`) are examples
+> of what a Claude host offers: on another host, use that host's way to read and write the page.
 
 # Edit an ADP artifact (read, hold, publish, record)
 
-**Sites host:** read the base ADP skill's `refs/sites.md` first. Keep this protocol;
+**Sites host:** read [the Sites host page](sites.md) first. Keep this protocol;
 use its native Sites calls and separate source/record revisions instead of the
 Claude Artifact/ArtifactData calls below.
 
-Why: several agents change the page over many versions. The only lock is the `if_version` pin on a db write; a refused write means someone wrote first. Full text: `~/.adp/catalog/kit/guides/artifact-dataplane.md` (setup puts it there), read only if this road leaves a question open.
+Why: several agents change the page over many versions. The only lock is the `if_version` pin on a db write; a refused write means someone wrote first. Full text: [protocol](protocol.md), read only if this road leaves a question open.
 
 `ADP` means `python3 -I <adp skill folder>/scripts/adp.py`. DIR is the artifact laid out at its published paths and must hold EVERY published file. Batches are written to files (`--out`, default `DIR.adp/`) and printed as `writes` lists whose entries carry `file_path`. P.json maps `"collection/doc"` to the version you read, e.g. `{"manifest/current": 4, "parts/home": 2}`.
 
@@ -41,5 +42,5 @@ Copy lives in `content/<part id>`. Change it with an ArtifactData update with `i
 
 ## Other
 
-- Moving a page's records between hosts (Claude and Sites): `ADP bundle`, `ADP import-plan`, `ADP import-ack`, described in `docs/adp-export-import.md`. They print the native calls; you run them; nothing syncs by itself.
+- Moving a page's records between hosts (Claude and Sites): `ADP bundle`, `ADP import-plan`, `ADP import-ack`, described in [`docs/adp-export-import.md`](https://github.com/fblgit/artifacts-done-properly/blob/main/docs/adp-export-import.md) (full install only). They print the native calls; you run them; nothing syncs by itself.
 - Agents cannot join a room; they learn of changes from comment watches, the newer-version notice on an Artifact result, and `agents/`. `ADP log -n 20` shows what the tool did.

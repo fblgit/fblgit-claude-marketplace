@@ -35,6 +35,13 @@ COPIES = {
     f'{FULL}/skills/adp-catalog/SKILL.md': ('road-catalog.md', 'The road for the catalog'),
     f'{FULL}/skills/adp-edit/SKILL.md': ('road-edit.md', 'The road for editing an artifact others also work on'),
     f'{FULL}/skills/adp-adopt/SKILL.md': ('road-adopt.md', 'The road for adopting an existing artifact'),
+    f'{FULL}/skills/adp/refs/sites.md': ('sites.md', 'The Sites host: how a page runs outside claude.ai'),
+}
+# literal text in a copied page that names a file of the full install -> the page of this plugin that holds it
+REWRITE = {
+    '`~/.adp/catalog/kit/guides/artifact-dataplane.md` (setup puts it there)': '[protocol](protocol.md)',
+    "the base ADP skill's `refs/sites.md`": '[the Sites host page](sites.md)',
+    'described in `docs/adp-export-import.md`': f'described in [`docs/adp-export-import.md`]({BLOB}docs/adp-export-import.md) (full install only)',
 }
 LINK = re.compile(r'(\]\()([^)\s]+)(\))')
 
@@ -63,8 +70,11 @@ def page(src, title):
     if text.startswith('---\n'): text = text.split('\n---\n', 1)[1].lstrip('\n')      # a road skill: its frontmatter is not part of the page
     banner = (f'> Copy of [`{src}`]({BLOB}{src}) in the ADP repository, written by `tools/make_minimal.py` of the marketplace: edit the source, not this page.\n'
               f'> This plugin ships documentation only. A command named here (`adp.py ...`) belongs to the full ADP install in the repository\n'
-              f'> ({REPO}); `snippets.md` shows how to do the same by hand.\n\n')
-    return banner + relink(text, src)
+              f'> ({REPO}); `snippets.md` shows how to do the same by hand. Calls to Claude\'s own tools (`Artifact`, `ArtifactData`) are examples\n'
+              f'> of what a Claude host offers: on another host, use that host\'s way to read and write the page.\n\n')
+    text = relink(text, src)
+    for old, new in REWRITE.items(): text = text.replace(old, new)      # after relink: these links point at pages of this plugin
+    return banner + text
 
 
 def expected():

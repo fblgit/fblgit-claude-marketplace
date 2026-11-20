@@ -17,11 +17,11 @@ templates, the page runtime) are in https://github.com/fblgit/artifacts-done-pro
 2. To work on an artifact, follow the protocol in [protocol](references/protocol.md): read, hold, edit, check, publish, record. The exact
    calls and documents are in [payloads](references/payloads.md); the hash arithmetic you would normally run through `adp.py` is in
    [snippets](references/snippets.md) as short code you can run or adapt.
-3. For a new page, read [road-new](references/road-new.md); for an edit, [road-edit](references/road-edit.md); to bring an existing page onto
+3. For a new page, read [road-new](references/road-new.md); for an edit, [editing by hand](references/edit-by-hand.md) first, then [road-edit](references/road-edit.md); to bring an existing page onto
    ADP, [road-adopt](references/road-adopt.md); for the catalog, [catalog structure](references/catalog-structure.md) and
-   [road-catalog](references/road-catalog.md). The roads name `adp.py` commands: without the tool, do the step by hand as the snippets show.
+   [road-catalog](references/road-catalog.md). The roads name `adp.py` commands: without the tool, do the step by hand ([editing by hand](references/edit-by-hand.md), [snippets](references/snippets.md)), and do not improvise a step that has no stand-in.
 4. For how a page looks and switches, read [themes](references/themes.md) and [config](references/config.md); for the boundary with a host,
-   [host adapters](references/host-adapters.md) and [the Claude adapter](references/claude-host-adapter.md).
+   [host adapters](references/host-adapters.md), [the Claude adapter](references/claude-host-adapter.md) and, outside claude.ai, [the Sites host](references/sites.md).
 5. For worked examples, see a [kit entry](references/examples/kit-entry.md) and a [theme](references/examples/theme.md).
 
 ## Always
