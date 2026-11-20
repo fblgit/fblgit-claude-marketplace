@@ -28,7 +28,7 @@
     },
     {
       "name": "adp-minimal",
-      "description": "ADP (Artifacts Done Properly) explained, one skill per topic, with the contracts and tested vectors to rebuild its tooling; Markdown only",
+      "description": "Learn ADP (Artifacts Done Properly): keeping a shared Claude Artifact safe to edit together",
       "source": "./plugins/adp-minimal"
     },
     {

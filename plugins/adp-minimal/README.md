@@ -1,13 +1,12 @@
 # ADP minimal
 
-ADP (Artifacts Done Properly) explained, with a snippet for each thing, and specified well enough to rebuild its tooling and prove the rebuild.
-Every file is Markdown; nothing runs until you ask for it.
+A Claude Artifact that several people and agents keep editing breaks in familiar ways: someone publishes over a newer version, a comment loses
+its place when the layout changes, the same table gets rewritten on every page. ADP (Artifacts Done Properly) is a set of conventions that
+prevents this: every piece of the page has a stable id, every change is recorded, and a write is refused if someone else got there first.
 
-It explains: what ADP is and why; parts and hashes; the protocol and its payloads; how a new artifact is created and its file tree; the shell and the
-runtime; host adapters and the common ground components reuse; the four roads (new, catalog, edit, adopt); the delta, the proposal and the inbox;
-packing and unpacking; the kit (components, layouts, patterns, viz, themes, samples); the catalog and how to check its consistency; themes and tokens;
-and how to build general kit entries with several samples. Each command's contract sits in the skill that explains it, with **vectors**: inputs and
-the exact output the real tool gives, checked against the real ADP tools by this repository's tests.
+This plugin teaches ADP. Ask Claude how any part of it works and the guide for that topic loads, with short examples. It is Markdown only and
+installs nothing. For readers who want to go further, it also describes ADP's tools precisely enough to rebuild them, with tests to prove the
+rebuild matches.
 
 Install:
 
