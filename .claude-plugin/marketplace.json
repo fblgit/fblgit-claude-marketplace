@@ -28,7 +28,7 @@
     },
     {
       "name": "adp-minimal",
-      "description": "ADP (Artifacts Done Properly) as documentation: protocol, catalog structure, shell, shim, tokens, conventions, payload examples and snippets, all Markdown",
+      "description": "ADP (Artifacts Done Properly) explained, one skill per topic, with the contracts and tested vectors to rebuild its tooling; Markdown only",
       "source": "./plugins/adp-minimal"
     },
     {
