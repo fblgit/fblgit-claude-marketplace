@@ -27,6 +27,11 @@
       "source": "./plugins/adp-setup"
     },
     {
+      "name": "adp-minimal",
+      "description": "ADP (Artifacts Done Properly) as documentation: protocol, catalog structure, shell, shim, tokens, conventions, payload examples and snippets, all Markdown",
+      "source": "./plugins/adp-minimal"
+    },
+    {
       "name": "panopticon",
       "description": "Panopticon Harness for Anthropic Claude: records sessions, checks the agent against your invariants with blind audits, and can end a session and brief its successor, through a local daemon",
       "source": {

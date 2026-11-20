@@ -1,0 +1,13 @@
+{
+  "name": "adp-minimal",
+  "version": "2.2.0",
+  "description": "ADP (Artifacts Done Properly) as documentation: the protocol, catalog structure, shell, shim, tokens, conventions, payload examples and code snippets, all Markdown, enough to understand ADP and work with it by hand.",
+  "author": {
+    "name": "Xavier Murias (fblgit)",
+    "url": "https://github.com/fblgit"
+  },
+  "homepage": "https://github.com/fblgit/artifacts-done-properly",
+  "repository": "https://github.com/fblgit/artifacts-done-properly",
+  "license": "Apache-2.0",
+  "keywords": ["claude artifacts", "skills", "documentation", "protocol"]
+}
