@@ -1,6 +1,14 @@
+---
+name: adp-minimal-payloads
+description: "The ADP protocol's documents and calls written out as JSON: manifest/current, a pinned hold batch, the publish call, the record batch with manifest/current last, a decision, a data-only change. Use when the user asks what an ArtifactData batch, a changes/ entry, a decision document or the publish arguments of an ADP page look like."
+license: Apache-2.0
+metadata:
+  version: "2.2.0"
+---
+
 # Payload examples
 
-The documents and calls of the protocol ([protocol](protocol.md), section 3 and 4), written out. The field names are the layout's; the values are
+The documents and calls of the protocol ([protocol](../adp-minimal-protocol/SKILL.md): the record and the six steps), written out; `adp.py` prints these for you. The field names are the layout's; the values are
 made up. `URL` is the artifact's URL. Every write to an existing document carries `if_version`, the version you read; a refused write means someone
 wrote first, so read again.
 
@@ -22,7 +30,7 @@ An `Artifact` read of the page (the latest version is the only source). Then Art
 }
 ```
 
-Compute the page's own manifest from the source you just read ([snippets](snippets.md)). If its `page_hash` differs from `manifest/current.page_hash`,
+Compute the page's own manifest from the source you just read ([snippets](../adp-minimal-snippets/SKILL.md)). If its `page_hash` differs from `manifest/current.page_hash`,
 someone published without recording: record a `changes/` entry for the gap with `by: "unrecorded"`, then continue.
 
 ## 2. Hold

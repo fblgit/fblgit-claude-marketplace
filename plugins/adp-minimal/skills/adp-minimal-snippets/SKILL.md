@@ -1,13 +1,19 @@
+---
+name: adp-minimal-snippets
+description: "Runnable Python snippets that show the arithmetic adp.py does: parse part markers, compute part hashes and the page hash, compare with the recorded manifest, the next changes/ id, a pinned ArtifactData write. Use when the user wants to see or verify how an ADP hash or diff is computed, or asks for the code behind the rule. For explanation only: real work runs adp.py."
+license: Apache-2.0
+metadata:
+  version: "2.2.0"
+---
+
 # Snippets: the hash arithmetic by hand
 
-These are short, readable examples of what the ADP tool (`adp.py`) computes: Python 3 and its standard library only, nothing downloaded.
-They are **suggestions, not a program**: nothing here is wired together or run for you. Taken together they cover the core of working with
-ADP (read a page's parts, hash it, compare it with the recorded manifest, build the pinned writes), so Claude can put them together into
-a small script when the work needs one, adapt them to the page at hand, or use a single piece alone. Each has a mark, `snippet: <name>`, so it
-can be referred to. The full tool, which also diffs, checks and prints the ArtifactData batches, is in the project repository
-(https://github.com/fblgit/artifacts-done-properly).
+These are short, readable versions of what the ADP tool (`adp.py`) computes: Python 3 and its standard library only. They are here to **explain** the
+arithmetic (what a part hash is, what a diff compares, what a pinned write looks like), not to replace the tool: pages are checked, hashed and
+recorded with `adp.py`, and a snippet's output is never a substitute for its answer. Each has a mark, `snippet: <name>`, so it can be referred to. The
+full tool is in the project repository (https://github.com/fblgit/artifacts-done-properly).
 
-The rules they follow are in [architecture](architecture.md) section 3 and [concepts](concepts.md).
+The rules they follow are in [parts and hashes](../adp-minimal-parts/SKILL.md) and the [protocol](../adp-minimal-protocol/SKILL.md).
 
 ## snippet: markers and part hashes
 
@@ -110,7 +116,7 @@ def pinned(op, collection, doc_id, data, version=None):
     return w
 ```
 
-Batches hold at most 50 writes; put `manifest/current` last. The shapes are in [payloads](payloads.md).
+Batches hold at most 50 writes; put `manifest/current` last. The shapes are in [payloads](../adp-minimal-payloads/SKILL.md).
 
 ## Putting them together
 
@@ -120,6 +126,7 @@ The usual order, as a sketch (a recipe to follow, not code to run as is):
 2. Name each file's own `_rest` as `_rest:<path>`, then `page_hash(parts, files)`.
 3. `diff(recorded['parts'], parts)` against `manifest/current.parts` to see what changed (or whether someone published without recording).
 4. After the edit, repeat 1 to 3 to get the new hashes, and build the writes with `pinned(...)` and `next_change(...)` following
-   [payloads](payloads.md); at most 50 per batch, `manifest/current` last.
+   [payloads](../adp-minimal-payloads/SKILL.md); at most 50 per batch, `manifest/current` last.
 
-Whatever is assembled from these is unchecked by the ADP tool: say so, and give the user what to verify.
+Nothing here has been run through the ADP tool: for real work, `adp.py check`, `manifest`, `diff` and `record` give the answers, and these snippets only
+show how they arrive at them.
