@@ -56,6 +56,32 @@ class Content(unittest.TestCase):
             for href in link.findall(text):
                 self.assertTrue(os.path.exists(os.path.normpath(os.path.join(os.path.dirname(p), href))), f'{p}: {href}')
 
+    def test_a_road_names_no_file_the_plugin_does_not_ship(self):
+        """A path in code ticks is not a link, so the link test does not see it: these two were once left as bare paths."""
+        with open(os.path.join(SKILL, 'references', 'road-edit.md'), encoding='utf-8') as f: text = f.read()
+        self.assertNotIn('`refs/sites.md`', text)
+        self.assertNotIn('`~/.adp/catalog/kit/guides/artifact-dataplane.md`', text)
+        self.assertRegex(text, r'\]\(sites\.md\)')
+        self.assertTrue(os.path.isfile(os.path.join(SKILL, 'references', 'sites.md')))
+        self.assertRegex(text, r'\[`docs/adp-export-import\.md`\]\(https://github\.com/fblgit/artifacts-done-properly/blob/[0-9a-f]{40}/docs/adp-export-import\.md\)')
+
+    def test_links_into_the_adp_repository_are_pinned_to_the_recorded_commit(self):
+        with open(os.path.join(MIN, 'source.json')) as f: commit = json.load(f)['commit']
+        self.assertRegex(commit, r'^[0-9a-f]{40}$')
+        blob = re.compile(r'github\.com/fblgit/artifacts-done-properly/blob/([^/]+)/')
+        seen = 0
+        for p in files():
+            if not p.endswith('.md'): continue
+            with open(p, encoding='utf-8') as f: refs = blob.findall(f.read())
+            seen += len(refs)
+            for r in refs: self.assertEqual(r, commit, p)
+        self.assertGreater(seen, 0)
+
+    def test_the_skill_branches_on_the_host_tools(self):
+        with open(os.path.join(SKILL, 'SKILL.md'), encoding='utf-8') as f: text = f.read()
+        for needle in ('what can this session actually do', 'edit plan', 'revision guard', '`manifest/current` last', 'do not say you wrote'):
+            self.assertIn(needle.lower(), text.lower(), needle)
+
     def test_every_page_is_linked_from_the_skill(self):
         with open(os.path.join(SKILL, 'SKILL.md')) as f: text = f.read()
         with open(os.path.join(SKILL, 'references', 'concepts.md')) as f: text += f.read()

@@ -9,10 +9,10 @@ ADP's version.
 The sources are read from a checkout of https://github.com/fblgit/artifacts-done-properly: `--adp PATH`, else $ADP_REPO, else the folder
 `artifacts-done-properly` beside this repository.
 
-  python3 tools/make_minimal.py [--adp PATH]            write the copies
-  python3 tools/make_minimal.py [--adp PATH] --check    verify them
+  python3 tools/make_minimal.py [--adp PATH] [--ref REV] write the copies from the ADP commit REV (default HEAD) and record it in source.json
+  python3 tools/make_minimal.py [--adp PATH] --check      verify them against the commit recorded in source.json
 """
-import json, os, posixpath, re, sys
+import json, os, posixpath, re, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))      # this repository: where the plugin is
 ADP = os.environ.get('ADP_REPO') or os.path.join(os.path.dirname(ROOT), 'artifacts-done-properly')      # the ADP checkout: where the sources are
@@ -20,7 +20,9 @@ FULL = 'plugins/artifacts-done-properly'
 MIN = 'plugins/adp-minimal'
 REFS = f'{MIN}/skills/adp-minimal/references'
 REPO = 'https://github.com/fblgit/artifacts-done-properly'
-BLOB = f'{REPO}/blob/main/'
+SOURCE = f'{MIN}/source.json'      # the ADP commit the copies were written from; --check reads the sources at that same commit
+BLOB = None      # set in main(): the repository's blob URL at that commit
+REF = None
 
 # source in the repository -> (page in references/, what it is)
 COPIES = {
@@ -41,13 +43,22 @@ COPIES = {
 REWRITE = {
     '`~/.adp/catalog/kit/guides/artifact-dataplane.md` (setup puts it there)': '[protocol](protocol.md)',
     "the base ADP skill's `refs/sites.md`": '[the Sites host page](sites.md)',
-    'described in `docs/adp-export-import.md`': f'described in [`docs/adp-export-import.md`]({BLOB}docs/adp-export-import.md) (full install only)',
+    'described in `docs/adp-export-import.md`': 'described in [`docs/adp-export-import.md`](@BLOB@docs/adp-export-import.md) (full install only)',
 }
 LINK = re.compile(r'(\]\()([^)\s]+)(\))')
 
 
+def git(*a):
+    return subprocess.run(['git', '-C', ADP, *a], capture_output=True, text=True)
+
+
 def read(rel, base=None):
-    with open(os.path.join(base or ADP, rel), encoding='utf-8') as f: return f.read()
+    """A file of this repository (base given), or a file of the ADP checkout as it is at REF: the checkout's working tree is never read."""
+    if base:
+        with open(os.path.join(base, rel), encoding='utf-8') as f: return f.read()
+    r = git('show', f'{REF}:{rel}')
+    if r.returncode: sys.exit(f'{rel} is not in the ADP checkout at {REF}: {r.stderr.strip()}')
+    return r.stdout
 
 
 def relink(text, src):
@@ -73,7 +84,7 @@ def page(src, title):
               f'> ({REPO}); `snippets.md` shows how to do the same by hand. Calls to Claude\'s own tools (`Artifact`, `ArtifactData`) are examples\n'
               f'> of what a Claude host offers: on another host, use that host\'s way to read and write the page.\n\n')
     text = relink(text, src)
-    for old, new in REWRITE.items(): text = text.replace(old, new)      # after relink: these links point at pages of this plugin
+    for old, new in REWRITE.items(): text = text.replace(old, new.replace('@BLOB@', BLOB))      # after relink: these links point at pages of this plugin
     return banner + text
 
 
@@ -82,9 +93,20 @@ def expected():
 
 
 def main(argv):
-    global ADP
+    global ADP, REF, BLOB
     if '--adp' in argv: ADP = os.path.abspath(argv[argv.index('--adp') + 1])
     if not os.path.isdir(os.path.join(ADP, FULL)): sys.exit(f'no ADP checkout at {ADP}: pass --adp PATH or set ADP_REPO')
+    recorded = None
+    if os.path.isfile(os.path.join(ROOT, SOURCE)): recorded = json.loads(read(SOURCE, ROOT))['commit']
+    if '--ref' in argv: REF = argv[argv.index('--ref') + 1]
+    elif '--check' in argv:
+        if not recorded: sys.exit(f'{SOURCE} is missing: run python3 tools/make_minimal.py first')
+        REF = recorded
+    else: REF = 'HEAD'
+    head = git('rev-parse', '--verify', f'{REF}^{{commit}}')
+    if head.returncode: sys.exit(f'no commit {REF} in the ADP checkout at {ADP}')
+    REF = head.stdout.strip()
+    BLOB = f'{REPO}/blob/{REF}/'
     want, bad = expected(), []
     for rel, text in want.items():
         path = os.path.join(ROOT, rel)
@@ -94,13 +116,18 @@ def main(argv):
             if '--check' not in argv:
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, 'w', encoding='utf-8') as f: f.write(text)
+    source = json.dumps({'repository': REPO, 'commit': REF}, indent=1) + '\n'
+    if not os.path.isfile(os.path.join(ROOT, SOURCE)) or read(SOURCE, ROOT) != source:
+        bad.append(SOURCE)
+        if '--check' not in argv:
+            with open(os.path.join(ROOT, SOURCE), 'w', encoding='utf-8') as f: f.write(source)
     full = json.loads(read(f'{FULL}/.claude-plugin/plugin.json'))['version']
     mine = json.loads(read(f'{MIN}/.claude-plugin/plugin.json', ROOT))['version']
     if full != mine: bad.append(f'{MIN}/.claude-plugin/plugin.json: version {mine} is not ADP\'s {full}')
     if '--check' in argv:
         if bad: sys.exit('make_minimal --check failed:\n  ' + '\n  '.join(bad) + '\nrun: python3 tools/make_minimal.py')
         print('ok'); return 0
-    print(f'{len([b for b in bad if b in want])} pages written' if bad else 'up to date'); return 0
+    print(f'{len([b for b in bad if b in want])} pages written, sources at {REF[:10]}' if bad else f'up to date, sources at {REF[:10]}'); return 0
 
 
 if __name__ == '__main__': sys.exit(main(sys.argv[1:]))

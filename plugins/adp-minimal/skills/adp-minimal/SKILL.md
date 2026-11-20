@@ -11,6 +11,17 @@ metadata:
 This skill is documentation only; it has no scripts. It lets Claude explain ADP and follow it by hand. The full tools (`adp.py`, the catalog,
 templates, the page runtime) are in https://github.com/fblgit/artifacts-done-properly; when the user wants them, say so and point there.
 
+## First: what can this session actually do?
+
+Look at the tools you have before you plan any work on a page.
+
+- **Live Claude tools** (`Artifact` and `ArtifactData` are exposed and the user has let you use them): follow the live workflow in
+  [protocol](references/protocol.md) and [payloads](references/payloads.md): read, hold, publish, record.
+- **Anything else** (no such tools, another host, or no permission): do not try a call that is not there, and do not say you wrote, held or
+  published anything. Return an **edit plan** from the source the user supplied or from a worked example, with: the part ids that change; the
+  revision guard (the `if_version` of each doc you would write, or "not known: read it first"); the change record (`changes/<NNNNNN>`
+  entry); and the order, with `manifest/current` last. Mark every payload as an example, and say what you did not verify.
+
 ## How to use it
 
 1. For the idea and the vocabulary, read [concepts](references/concepts.md).
