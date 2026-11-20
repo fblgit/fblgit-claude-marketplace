@@ -1,40 +1,53 @@
 ---
 name: adp-minimal-snippets
-description: "Runnable Python snippets that show the arithmetic adp.py does: parse part markers, compute part hashes and the page hash, compare with the recorded manifest, the next changes/ id, a pinned ArtifactData write. Use when the user wants to see or verify how an ADP hash or diff is computed, or asks for the code behind the rule. For explanation only: real work runs adp.py."
+description: "Reference Python for what adp.py computes: part markers, part hashes, the page hash, the diff against the recorded manifest, the next changes/ id and a pinned ArtifactData write. Use when the user wants to see or verify how an ADP hash or diff is computed, or asks for the code behind a rule."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
 ---
 
-# Snippets: the hash arithmetic by hand
+# Snippets: reference implementations
 
-These are short, readable versions of what the ADP tool (`adp.py`) computes: Python 3 and its standard library only. They are here to **explain** the
-arithmetic (what a part hash is, what a diff compares, what a pinned write looks like), not to replace the tool: pages are checked, hashed and
-recorded with `adp.py`, and a snippet's output is never a substitute for its answer. Each has a mark, `snippet: <name>`, so it can be referred to. The
-full tool is in the project repository (https://github.com/fblgit/artifacts-done-properly).
+Short versions of what the ADP tool (`adp.py`) computes, in Python 3 with the standard library only. They are for reading; use `adp.py` for real
+checks. Each snippet starts with a `# snippet: <name>` comment so other documents can refer to it. The full tool is in the project repository
+(https://github.com/fblgit/artifacts-done-properly).
 
-The rules they follow are in [parts and hashes](../adp-minimal-parts/SKILL.md) and the [protocol](../adp-minimal-protocol/SKILL.md).
+The rules they implement are in [parts and hashes](../adp-minimal-parts/SKILL.md) and the [protocol](../adp-minimal-protocol/SKILL.md).
 
 ## snippet: markers and part hashes
 
 ```python
 # snippet: part-hashes
-import hashlib, re
+import hashlib
+import re
 
 ID = r'[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)*'
 MARK = re.compile(r'(?:<!--|/\*)\s*(/?)part:(' + ID + r')\s*(?:-->|\*/)')
-H = lambda s: hashlib.sha256(s.encode()).hexdigest()[:12]          # first 12 hex of the SHA-256 of the UTF-8 text
-norm = lambda s: re.sub(r'\s+', ' ', s).strip()                    # every whitespace run -> one space, trimmed
+
+
+def sha12(text):
+    """First 12 hex digits of SHA-256 over the UTF-8 text (adp.py calls this H)."""
+    return hashlib.sha256(text.encode()).hexdigest()[:12]
+
+
+def norm(text):
+    """Collapse every whitespace run to one space and trim."""
+    return re.sub(r'\s+', ' ', text).strip()
 
 
 def parse(text):
-    """-> (parts {id: (start, end, parent)}, problems); parts nest and must balance within one file"""
+    """Return (parts, problems).
+
+    parts maps each id to (start, end, parent_id); parent_id is '' for a top-level part.
+    Parts may nest and must balance within one file.
+    """
     stack, parts, bad = [], {}, []
     for m in MARK.finditer(text):
         closing, pid = m.group(1) == '/', m.group(2)
         line = text.count('\n', 0, m.start()) + 1
         if not closing:
-            if pid in parts or any(p == pid for p, _ in stack): bad.append(f'line {line}: part {pid} opened twice')
+            if pid in parts or any(p == pid for p, _ in stack):
+                bad.append(f'line {line}: part {pid} opened twice')
             stack.append((pid, m.end()))
         elif not stack or stack[-1][0] != pid:
             bad.append(f'line {line}: /part:{pid} closes {stack[-1][0] if stack else "nothing"}')
@@ -46,20 +59,28 @@ def parse(text):
 
 
 def own(text, parts, p):
-    """A part's own text: its region minus its child parts ('' = the page minus every top-level part)."""
+    """Return a part's own text: its region minus its child parts.
+
+    p == '' selects the page root: the whole file minus its top-level parts.
+    """
     s, e = (0, len(text)) if p == '' else parts[p][:2]
     out, i = [], s
     for cs, ce in sorted((cs, ce) for cs, ce, par in parts.values() if par == p and s <= cs < e):
-        out.append(text[i:cs]); i = ce
+        out.append(text[i:cs])
+        i = ce
     return MARK.sub('', ''.join(out) + text[i:e])
 
 
 def part_hashes(text):
-    """-> {part id: hash, '_rest': hash}; a parent's text includes its children; '_rest' is everything outside every part"""
+    """Return {part_id: hash, '_rest': hash}.
+
+    A parent's hash covers its children's text; '_rest' covers the text outside every part.
+    """
     parts, bad = parse(text)
-    if bad: raise ValueError('; '.join(bad))
-    hashes = {p: H(norm(text[s:e])) for p, (s, e, _) in parts.items()}
-    hashes['_rest'] = H(norm(own(text, parts, '')))
+    if bad:
+        raise ValueError('; '.join(bad))
+    hashes = {p: sha12(norm(text[s:e])) for p, (s, e, _) in parts.items()}
+    hashes['_rest'] = sha12(norm(own(text, parts, '')))
     return hashes
 ```
 
@@ -67,66 +88,79 @@ def part_hashes(text):
 
 ```python
 # snippet: page-hash   (needs part-hashes above)
-import os
-
 def file_hash(path):
-    with open(path, 'rb') as f: return hashlib.sha256(f.read()).hexdigest()[:12]
+    """First 12 hex digits of SHA-256 over the file's bytes."""
+    with open(path, 'rb') as f:
+        return hashlib.sha256(f.read()).hexdigest()[:12]
+
 
 def page_hash(parts, files):
-    """parts {id: hash} (the '_rest' of each file named '_rest:<path>' in a directory), files {relative path: hash}"""
-    lines = sorted(f'{p}={h}' for p, h in parts.items()) + sorted(f'file:{n}={h}' for n, h in files.items())
-    return H('\n'.join(lines))
+    """parts: {part_id: hash}; in a folder page, each file's '_rest' is keyed '_rest:<path>'.
+
+    files: {relative_path: file_hash}; empty for a single-file page.
+    """
+    lines = sorted(f'{p}={v}' for p, v in parts.items()) + sorted(f'file:{n}={v}' for n, v in files.items())
+    return sha12('\n'.join(lines))
 ```
 
-For a single file (adp/1) `files` is empty. For a folder (adp/2), hash every file except dotfiles, the root `seed.json` and `seed/`; parse the
-`.html`, `.js`, `.mjs` and `.css` files that contain markers, and name each file's own `_rest` as `_rest:<path>`. Ids must be unique across the
-folder.
+A single-file page (schema adp/1) has an empty `files` map. For a folder page (schema adp/2), hash every file except dotfiles, the root
+`seed.json` and `seed/`; parse the `.html`, `.js`, `.mjs` and `.css` files that contain markers, and key each file's `_rest` as `_rest:<path>`.
+Part ids must be unique across the folder.
 
 ## snippet: compare with the recorded manifest
 
 ```python
 # snippet: diff-manifest
 def diff(recorded, current):
-    """recorded = manifest/current's parts, current = part_hashes(...): -> (added, removed, changed)"""
-    added   = sorted(set(current) - set(recorded))
+    """Return (added, removed, changed) part ids.
+
+    recorded: the parts map of manifest/current; current: the output of part_hashes().
+    """
+    added = sorted(set(current) - set(recorded))
     removed = sorted(set(recorded) - set(current))
     changed = sorted(p for p in set(current) & set(recorded) if current[p] != recorded[p])
     return added, removed, changed
 ```
 
-When `changed`, `added` and `removed` are all empty but the page hashes differ, a file changed outside the parts: compare the `files` maps.
+If the part diff is empty but the page hash differs, a file without parts was added, removed or changed (an asset, or a file with no markers).
+Compare the `files` maps.
 
 ## snippet: the next changes/ id
 
 ```python
 # snippet: next-change
 def next_change(existing_ids):
-    """changes/ documents are append-only and zero-padded to six digits"""
+    """Return the next changes/ id: the highest numeric id + 1, zero-padded to six digits. changes/ is append-only."""
     return '%06d' % (max((int(i) for i in existing_ids if i.isdigit()), default=0) + 1)
 ```
 
 ## snippet: a pinned write
 
+A pin is the `if_version` precondition on a write; see the [protocol](../adp-minimal-protocol/SKILL.md).
+
 ```python
 # snippet: pinned-write
 def pinned(op, collection, doc_id, data, version=None):
-    """One entry of an ArtifactData batch. An existing document needs the version you read; a new one is written with op 'set' and none."""
+    """Build one ArtifactData batch write.
+
+    For an existing document, pass the version you read as `version`. For a new document, use op 'set' and omit `version`.
+    """
     w = {'op': op, 'collection': collection, 'doc_id': doc_id, 'data': data}
-    if version is not None: w['if_version'] = version
+    if version is not None:
+        w['if_version'] = version
     return w
 ```
 
-Batches hold at most 50 writes; put `manifest/current` last. The shapes are in [payloads](../adp-minimal-payloads/SKILL.md).
+A batch holds at most 50 writes. Split a larger record across batches and put `manifest/current` last: until it is written, its `page_hash`
+still names the previous page, so a record that stops partway shows up on the next read as a publish without a record. The shapes are in
+[payloads](../adp-minimal-payloads/SKILL.md).
 
 ## Putting them together
 
-The usual order, as a sketch (a recipe to follow, not code to run as is):
+Typical sequence:
 
-1. Read the page's source files; call `part_hashes(text)` for each file with markers, and `file_hash(path)` for each file.
-2. Name each file's own `_rest` as `_rest:<path>`, then `page_hash(parts, files)`.
-3. `diff(recorded['parts'], parts)` against `manifest/current.parts` to see what changed (or whether someone published without recording).
-4. After the edit, repeat 1 to 3 to get the new hashes, and build the writes with `pinned(...)` and `next_change(...)` following
-   [payloads](../adp-minimal-payloads/SKILL.md); at most 50 per batch, `manifest/current` last.
-
-Nothing here has been run through the ADP tool: for real work, `adp.py check`, `manifest`, `diff` and `record` give the answers, and these snippets only
-show how they arrive at them.
+1. Read the page's source files. Call `part_hashes(text)` for each file with markers and, for a folder page, `file_hash(path)` for every file.
+2. Key each file's `_rest` as `_rest:<path>`, then call `page_hash(parts, files)`.
+3. Call `diff(recorded['parts'], parts)` against `manifest/current.parts` to see what changed, or whether someone published without recording.
+4. After the edit, repeat steps 1 to 3 for the new hashes, then build the writes with `pinned(...)` and `next_change(...)` as shown in
+   [payloads](../adp-minimal-payloads/SKILL.md).

@@ -40,7 +40,7 @@ Each topic is its own skill, so Claude loads only the one a question needs.
 | `adp-minimal-delta` | merging concurrent edits, proposals, the inbox |
 | `adp-minimal-packing` | one-file pages, seed packs, moving records between hosts |
 | `adp-minimal-kit` | components, layouts, patterns, charts and how a page uses them |
-| `adp-minimal-themes` | colour and font tokens, dark mode, switching themes |
+| `adp-minimal-themes` | color and font tokens, dark mode, switching themes |
 | `adp-minimal-catalog` | the component catalog and how to validate it |
 | `adp-minimal-kit-authoring` | writing a reusable component instead of a one-off |
 | `adp-minimal-rebuild` | rebuilding `adp.py`, `adp.js` and the catalog tool, and testing the rebuild |

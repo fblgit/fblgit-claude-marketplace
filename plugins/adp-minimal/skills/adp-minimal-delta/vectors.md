@@ -11,6 +11,13 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
  "incoming.json": "{\"parts\": {\"same\": \"000000000001\", \"mine\": \"00000000001b\", \"theirs\": \"000000000003\", \"both\": \"00000000001d\", \"agree\": \"00000000000e\", \"p\": \"000000000018\", \"p.c\": \"000000000019\", \"fresh\": \"000000000020\"}, \"files\": {\"index.html\": \"bbbbbbbbbbbb\"}, \"parents\": {\"p.c\": \"p\"}, \"retired\": {\"old\": \"replaced by fresh\"}}"}}
 ```
 
+The ids in the `three` fixture cover every class. `same` is unchanged on every side, so it appears in no class. `mine` and the file
+`index.html` are `ours`; `theirs`, and `livenew` (present only in live), are `theirs`; `agree` is `applied`, since live and incoming reach the same
+hash; `fresh` is `new`; `old` is `retired`, deleted with a reason. `both` is `held` because each side changed it differently, and `dropped` is `held`
+because incoming deletes it without a reason. `p.c` is `held` for the same reason as `both`; its parent `p` would be `ours`, and the closure holds it.
+
+The two vectors below differ only in the order of `ours`: `adp.py` lists part ids before file paths, while `adp.js` sorts them as one list.
+
 ```json vector
 {
  "vector": "classify-every-class",
