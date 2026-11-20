@@ -248,8 +248,6 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
    "at": "<time>",
    "by": "agent-a",
    "summary": "Lead: wording",
-   "holder": "",
-   "hold_until": "",
    "file": "index.html"
   },
   "{out}/changes__000008.json": {

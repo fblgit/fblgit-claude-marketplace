@@ -1,6 +1,6 @@
 ---
 name: adp-minimal-kit
-description: "Reference for the ADP (Artifacts Done Properly) kit: the kinds of entry (components kit.*, layouts, patterns, visualizations, themes, templates, guides) and their sample bundles; how an entry's files and part markers are laid out; how to take an entry with adp.py take, link its files in dependency order, mount it with its @config signature, style it with theme tokens and persist through ADP.db. Use when the user asks what the kit contains, what kind an entry is, or how to load and mount a component, layout, pattern or visualization on a page."
+description: "Reference for the ADP (Artifacts Done Properly) kit: the folders and id prefixes of kit entries (components, visualizations, layouts, patterns, themes, templates, guides), how an entry's files, part markers and sample bundle are laid out, and how a page takes an entry with adp.py take, links its files in dependency order, mounts it with its @config signature, styles it with theme tokens and persists through ADP.db. Use when the user asks what the kit contains, what an entry is, or how to load and mount one on a page."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
@@ -8,97 +8,114 @@ metadata:
 
 # The kit: structure, and how an entry wires into a page
 
-The **kit** is the set of reusable entries that ADP (Artifacts Done Properly) pages take instead of reimplementing. It lives in the catalog under
-`kit/`. An entry's id prefix (`kit.`, `layout.`, `pattern.`, `viz.`, `theme.`, `template.`, `guide.`) gives its kind.
+The **kit** is the set of reusable entries that ADP (Artifacts Done Properly) pages take instead of reimplementing. It lives in a catalog under
+`kit/`. The examples below use the catalog that this specification ships as a fixture (`catalog-a` in
+[the catalog's vectors](../adp-minimal-catalog/vectors.md)): a component, a visualization that requires it, a theme and a guide.
 
 ```
 kit/
-  <name>.css|js          components: dom, tokens, vocab, tabs, table, tooltip, store, md, mermaid, canvas ...   (kit.*)
-  layout/                shells and frames: app-shell, doc-shell, explorer-shell, topbar, stack, carousel ...   (layout.*)
-  patterns/              recurring page patterns: inbox, settings, namespaces, assist, decisions, gate ...      (pattern.*)
-  viz/                   visualizations: bars, sparkline, timeline, tree, flow, topology, wheel, dial ...       (viz.*)
-  themes/                <id>.css (tokens only) + <id>.json per theme                                           (theme.*)
-  templates/             adp2-shell, doc, record, expiry-board, tester                                          (template.*)
-  guides/                Markdown guides: the dataplane standard, the component inventory                       (guide.*)
-  samples/               sample data, keyed in bundles: kit.json, layout.json, patterns.json, viz.json ...
+  badge.js, badge.css        kit.badge       a component: a small label coloured by a status token
+  viz/meter.js, meter.css    viz.meter       a visualization: a bar that states its value in words; requires kit.badge
+  themes/paper.css, .json    theme.paper     a theme: tokens only, and its JSON twin
+  guides/reading.md          guide.reading   a guide in Markdown
+  samples/kit.json           the sample bundle of the kit/ root entries (key "badge")
+  samples/viz.json           the sample bundle of kit/viz/ (key "meter")
 ```
 
-`adp.py kit list` prints one JSON line per entry; `--kind pattern` or `--tag timeline` filters it. Its optional CATALOG argument is the catalog URL,
-`-` for the catalog saved by `adp.py catalog` (the default), or a local `catalog.json`.
+A larger catalog uses the same layout with more folders: `layout/` (frames of a page or region), `patterns/` (recurring interactions built from
+components, often reading or writing the [record](../adp-minimal-protocol/SKILL.md#the-record)) and `templates/` (starting pages).
 
-| Kind | What it is | Example |
-|---|---|---|
-| **Component** | One small, general widget or helper with a mount function | `kit.tabs`, `kit.table`, `kit.tooltip`, `kit.dom` |
-| **Layout** | The frame of a page or region: header, rail, scroll margins | `layout.topbar`, `layout.doc-shell`, `layout.app-shell` |
-| **Pattern** | A recurring interaction built from components, often reading or writing the page's [record](../adp-minimal-protocol/SKILL.md#the-record) | `pattern.inbox`, `pattern.settings`, `pattern.decisions`, `pattern.assist` |
-| **Viz** | A chart or diagram; labels its value range and is keyboard-accessible | `viz.sparkline`, `viz.timeline`, `viz.tree`, `viz.topology` |
-| **Theme** | Tokens and fonts only; see [themes](../adp-minimal-themes/SKILL.md) | `theme.default`, `theme.glaze` |
-| **Template** | A starting page or shell | `template.adp2-shell`, `template.record` |
-| **Guide** | Reference documentation in Markdown | `guide.artifact-dataplane` |
+## Prefixes and kinds
+
+An entry's id prefix says which folder it lives in; the header's `@kind` says what the [catalog](../adp-minimal-catalog/SKILL.md#the-header)
+does with it (`component`, `theme`, `template` or `guide`). `adp.py kit list` reports the prefix as `kind`, and `--kind viz` filters on it.
+
+| Prefix | Folder | `@kind` | Example |
+|---|---|---|---|
+| `kit.` | `kit/` | `component` | `kit.badge` |
+| `viz.` | `kit/viz/` | `component` | `viz.meter` |
+| `layout.` | `kit/layout/` | `component` | |
+| `pattern.` | `kit/patterns/` | `component` | |
+| `theme.` | `kit/themes/` | `theme` | `theme.paper` |
+| `template.` | `kit/templates/` | `template` | |
+| `guide.` | `kit/guides/` | `guide` | `guide.reading` |
+| `runtime.` | the catalog root | `component` | the catalog's copy of `adp.js` |
+
+`kit list --kind` also accepts an `@kind` value. `adp.py kit list CATALOG` prints one JSON line per entry (`id`, `kind`, `name`, `summary`, `tags`);
+CATALOG is the catalog URL, `-` for the
+catalog saved by `adp.py catalog`, or a local `catalog.json`, which it reads with a warning ([catalog](../adp-minimal-catalog/SKILL.md#using-the-catalog)).
 
 ## One entry, as files
 
-An entry is a **main file** carrying its [header](../adp-minimal-catalog/SKILL.md#the-header) plus the files the header names:
+An entry is a **main file** carrying its [header](../adp-minimal-catalog/SKILL.md#the-header) plus the files the header's `@files` names:
 
 ```
-kit/viz/sparkline.js          main file: the header comment, then the code between /* part:page.script.kit.viz.sparkline */ markers
-kit/viz/sparkline.css         style, markers page.style.kit.viz.sparkline
-kit/samples/viz.json          the sample bundle (shared by every viz entry; the entry owns the key "sparkline")
+kit/viz/meter.js       main file: /* part:page.script.kit.viz.meter */, then the header comment, then the code
+kit/viz/meter.css      its style, between page.style.kit.viz.meter markers
+kit/samples/viz.json   the sample bundle of kit/viz/; the entry owns the key "meter"
 ```
 
-Kit files are parts too: their code sits between `part:page.script.kit.*` and `part:page.style.kit.*` markers, so tooling and diffs can attribute
+Kit files are parts too: their code sits between `part:page.script.<id>` and `part:page.style.<id>` markers, so tooling and diffs can attribute
 every change to a specific part.
 
 ## How an entry wires into a page
 
-1. **Take it.** `adp.py take CATALOG viz.sparkline` resolves `requires` first (here `kit.tooltip`) and prints JSON: `entries` in dependency order
-   and a `files` map of `{"artifact": <catalog url>, "path": <file>}` references. It writes nothing locally; pass `files` to the Artifact publish
-   call and the host copies those files into the page's artifact server-side. (A Sites-hosted catalog is the exception: it needs
-   `--materialize DIR`, which copies the fetched files into DIR after checking their SHA-256.) A taken file is published with the page, but the
-   page does not load it until step 2.
+1. **Take it.** `adp.py take CATALOG viz.meter --url CATALOG_URL` resolves `@requires` first and prints JSON: `entries` in dependency order
+   (`kit.badge`, then `viz.meter`), a `files` map of `{"artifact": <catalog url>, "path": <file>}` references, their `sha256`, and under `samples`
+   the `path#key` references of the entries you named. The sample bundles of the named entries are in `files`; those of entries pulled in by
+   `@requires` are not. `take` writes nothing locally: pass `files` to the Artifact publish call and the host copies those files into the page's
+   artifact server-side. A taken file is published with the page, but the page does not load it until step 2.
 2. **Link it** in `index.html` in `entries` order: each taken `.css` as `<link>`, each `.js` as `<script src>`, all scripts before `parts/app.js`.
-   Stylesheets go in this order: the entries' own, then `styles/page.css`, then the theme last. A global such as `Kit.sparkline` is defined only
+   Stylesheets go in this order: the entries' own, then `styles/page.css`, then the theme last. A global such as `Kit.meter` is defined only
    after its script has run.
-3. **Mount it** from the page's code with the signature in the header's `@config`:
+3. **Mount it** from the page's code with the signature in the header's `@config` (`Kit.meter.draw(el, opts) | value, max, label`):
 
 ```html
-<link rel="stylesheet" href="kit/tooltip.css"><link rel="stylesheet" href="kit/viz/sparkline.css">
-<script src="kit/tooltip.js"></script><script src="kit/viz/sparkline.js"></script>
-
-<div id="trend"></div>
-<script>
-  const trend = Kit.sparkline.line(document.getElementById('trend'),
-    {values: [3, 5, 4, 8, 9], labels: ['Mon','Tue','Wed','Thu','Fri'], unit: 'orders', caption: 'Orders per day'});
-  // trend.update({values: [...]}); trend.destroy();
-</script>
+<link rel="stylesheet" href="kit/badge.css">
+<link rel="stylesheet" href="kit/viz/meter.css">
+<link rel="stylesheet" href="styles/page.css">
+<link rel="stylesheet" href="kit/themes/paper.css">
+...
+<div id="loads"></div>
+<script src="content.js"></script>
+<script src="adp.js"></script>
+<script src="kit/badge.js"></script>
+<script src="kit/viz/meter.js"></script>
+<script src="parts/app.js"></script>   <!-- Kit.meter.draw(document.getElementById('loads'), {value: 5, max: 10, label: 'Kiln loads'}) -->
 ```
 
-4. **Style it with tokens.** Entries color themselves only with theme tokens (`--panel --ink --rule --accent --f-ui ...`), which the page's theme
-   sets, so switching the theme restyles every entry on the page.
+4. **Style it with tokens.** An entry colors and sizes itself only with tokens, and lists the ones it reads in `@tokens` (`viz.meter`:
+   `--panel --ink --accent --f-ui`). The page's theme sets them, so switching the theme restyles every entry on the page
+   ([themes](../adp-minimal-themes/SKILL.md)).
 5. **Persist through the runtime.** An entry that reads or writes the record uses `ADP.db`, `ADP.user`, `ADP.agent()` and the other `ADP.*` APIs,
-   never the host API (`window.claude`) directly ([host adapters](../adp-minimal-hosts/SKILL.md)). Its header's `@db` field lists the collections it
-   reads and writes, or `none`.
+   never the host API (`window.claude`) directly ([host adapters](../adp-minimal-hosts/SKILL.md)). Its header's `@db` field lists the collections
+   it reads and writes, or `none`.
 
-## Layouts and the tokens contract
+An entry's function may return a handle (`Kit.badge.render` returns `{destroy}`; `Kit.meter.draw` returns nothing). The header's first
+paragraph says what it returns; `@provides` names the functions.
 
-Layouts own geometry (`layout.topbar` writes its height to `--kit-topbar-h`; the doc shell's rail and scroll margins read it), so combine layouts
-through those properties, not by overriding each other's CSS. All entries read one token vocabulary (`kit.tokens`; `Kit.tokens.contract(part)`
-lists the names a file reads), so any entry works with any theme.
+## Layouts and tokens
+
+A layout owns geometry and publishes it as a token of its own (a top bar writing its height to a custom property that the frames below read), so
+layouts combine through those properties, not by overriding each other's CSS. Every token an entry reads is either in the
+[token contract](../adp-minimal-themes/SKILL.md#the-token-contract) or declared in its `@tokens`, so any entry works with any theme that meets the
+contract.
 
 ## Samples
 
-An entry shows itself with sample data, kept in a bundle (`kit/samples/<folder>.json`, one JSON object, one key per sample). The header names the key:
+An entry shows itself with sample data, kept in its folder's bundle (`kit/samples/<folder>.json`, `kit.json` for the `kit/` root; one JSON
+object, one key per entry). The header names the bundle in `@files`, and the key in `@samples` and `@preview`:
 
 ```
- * @files     kit/viz/sparkline.css, kit/samples/viz.json
- * @preview   {"render": "viz.sparkline", "samples": ["kit/samples/viz.json#sparkline"]}
- * @samples   sparkline
+ * @files     kit/viz/meter.css, kit/samples/viz.json
+ * @preview   {"render": "viz.meter", "samples": ["kit/samples/viz.json#meter"]}
+ * @samples   meter
 ```
 
-`adp.py take` includes the bundle in its `files` map and lists, under `samples`, only the `path#key` references the entry owns. Sample data is
-synthetic, never taken from a real project.
+Under its key, an entry keeps several samples (`viz.meter`: `half`, `full`, `zero`), covering the typical, the extreme and the empty case. Sample
+data is invented, never taken from a real project.
 
 ## Where to look next
 
 [catalog](../adp-minimal-catalog/SKILL.md) for the index and its checks, [themes](../adp-minimal-themes/SKILL.md) for tokens, and
-[kit authoring](../adp-minimal-kit-authoring/SKILL.md) for adding an entry, with a worked header and mount example.
+[kit authoring](../adp-minimal-kit-authoring/SKILL.md) for adding an entry.

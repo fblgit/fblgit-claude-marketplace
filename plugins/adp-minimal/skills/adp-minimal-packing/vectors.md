@@ -1407,7 +1407,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
    "stdout": {
     "pinned": 2,
     "vermap": "<tmp>/page-a.adp/vermap.json",
-    "next": "CAT_URL=<url> CAT_VERMAP=<tmp>/page-a.adp/vermap.json make catalog, then publish catalog.json to the same url"
+    "next": "reference each file in catalog.json at the version <tmp>/page-a.adp/vermap.json gives it, then publish catalog.json to the same url"
    },
    "files_out": {
     "{page-a}.adp/vermap.json": {

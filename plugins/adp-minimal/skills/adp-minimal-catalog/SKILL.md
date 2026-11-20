@@ -21,15 +21,17 @@ catalog/
 
 ## The index
 
-Each entry in `catalog.json`:
+Each entry in `catalog.json`; this is `kit.badge` as `build` writes it from the fixture `catalog-a` ([vectors](vectors.md)):
 
 ```json
-{ "id": "kit.tabs", "kind": "component", "group": "Board kit", "name": "Accessible tabs",
-  "status": "new", "version": "0.1.0", "requires": [], "globals": [], "provides": ["Kit.tabs.mount"],
-  "main": "kit/tabs.js",
-  "files": [ {"path": "kit/tabs.js",  "role": "script", "sha256": "7ea8a15b...", "bytes": 7550},
-             {"path": "kit/tabs.css", "role": "style",  "sha256": "a00b73f4...", "bytes": 2713} ],
-  "hash": "a090ff09e829" }
+{ "id": "kit.badge", "kind": "component", "group": "Board kit", "name": "Status badge",
+  "summary": "A small label coloured by a meaning token.", "tags": ["badge", "status", "label"],
+  "status": "new", "version": "0.1.0", "requires": [], "globals": [], "provides": ["Kit.badge.render"],
+  "main": "kit/badge.js",
+  "files": [ {"path": "kit/badge.js",         "role": "script", "sha256": "18ba1a86...", "bytes": 1024},
+             {"path": "kit/badge.css",        "role": "style",  "sha256": "e36fc8a4...", "bytes": 264},
+             {"path": "kit/samples/kit.json", "role": "sample", "sha256": "754630b8...", "bytes": 230} ],
+  "hash": "04fb713a8c9d" }
 ```
 
 `kind` is `component`, `theme`, `template` or `guide`. The **id prefix** (`kit`, `layout`, `pattern`, `viz`, `theme`, `runtime`, `template`, `guide`) is a
@@ -39,39 +41,40 @@ of the sorted `path=sha256` lines. A theme also carries `fonts`, and some entrie
 
 ## The header
 
-The index is **built from the headers**; nothing else writes it. Every entry describes itself in one comment at the top of its main file: a `/** ... */`
-block in `.js` and `.css`, a `<!-- ... -->` block in `.txt` templates and `.md` guides. The first line is the name, the first paragraph the `about` text,
-further paragraphs are notes, then the tags:
+The index is **built from the headers**; nothing else writes it. Every entry describes itself in one comment at the top of its main file, after the
+opening part marker: a `/** ... */` block in `.js` and `.css`, a `<!-- ... -->` block in `.txt` templates and `.md` guides. The first line is the
+name, the next line or paragraph the `about` text, further paragraphs are notes, then the tags. The header of `kit/badge.js` in `catalog-a`:
 
 ```
+/* part:page.script.kit.badge */
 /**
- * Data table
- * A table from rows and columns inside its own scroll frame, with numeric columns and group rows.
+ * Status badge
+ * Kit.badge.render(el, {label, tone}) draws a small label coloured by a meaning token; an empty label draws nothing.
  *
- * @id        kit.table
+ * @id        kit.badge
  * @kind      component
  * @group     Board kit
  * @status    new
  * @version   0.1.0
- * @updated   2026-10-25
- * @summary   A table in its own scroll frame with a sticky head and numeric columns.
- * @tags      table, data, numbers
+ * @updated   2026-11-20
+ * @summary   A small label coloured by a meaning token.
+ * @tags      badge, status, label
  * @requires  none
- * @files     kit/table.css, kit/samples/kit.json
- * @provides  Kit.table.render, Kit.table.fmt
- * @config    Kit.table.render(box, opts) | columns [{key, label, num}], rows, group
- * @tokens    --panel --ink --rule
+ * @files     kit/badge.css, kit/samples/kit.json
+ * @provides  Kit.badge.render
+ * @config    Kit.badge.render(el, opts) | label, tone (ok warn danger)
+ * @tokens    --ok --warn --danger --f-ui
  * @globals   none
  * @db        none
- * @preview   {"render": "kit.table", "samples": ["kit/samples/kit.json#table"]}
- * @samples   table
+ * @preview   {"render": "kit.badge", "samples": ["kit/samples/kit.json#badge"]}
+ * @samples   badge
  */
 ```
 
 | Tag | Required | Value |
 |---|---|---|
 | `@id` `@kind` `@group` `@status` `@version` `@updated` `@summary` `@tags` `@requires` `@files` `@globals` `@db` | always | `@status` is `new` or `stable`; `@version` is `major.minor.patch`; `@summary` at most 260 characters; `@requires` and `@files` are `none` or comma lists |
-| `@provides` | in a `.js` main file | `none` or dotted JS names (`Kit.table.render`) |
+| `@provides` | in a `.js` main file | `none` or dotted JS names (`Kit.badge.render`) |
 | `@tokens` | when the entry has a style file | custom properties; a trailing `?` marks an optional one (`--seam?`) |
 | `@config` | optional, repeats | `signature \| what it takes` |
 | `@preview` | optional | the renderer and sample references the catalog page previews the entry with |
@@ -108,10 +111,9 @@ What it fails on:
 - samples: a `#key` the bundle lacks, a bundle not in the entry's own `@files`, an entry listing a bundle but naming no key of it, a bundle key that no entry
   names or owns.
 
-`adp_catalog.py` does not check the theme rules ([themes](../adp-minimal-themes/SKILL.md): the same token names, JSON and CSS agreeing, fonts). In the ADP
-source repository they are covered by its test suite (`tests/test_fonts.py`).
-
-In the ADP source repository, a pre-commit hook runs `adp_catalog.py headers` on staged catalog files and the full check on any catalog change.
+`adp_catalog.py` does not check the theme rules ([themes](../adp-minimal-themes/SKILL.md): the same token names, JSON and CSS agreeing, fonts);
+check them by hand when a theme is added or changed. Run `adp_catalog.py headers` on every changed main file and the full check before any
+catalog change is proposed.
 
 ## Using the catalog
 
@@ -119,18 +121,17 @@ In the ADP source repository, a pre-commit hook runs `adp_catalog.py headers` on
 ADP="python3 -I adp.py"
 $ADP catalog CATALOG_URL      # save the url; print the Artifact read call for catalog.json, then read calls (up to 256 paths each) for missing or changed files
 $ADP catalog                  # make those reads, then run again until it prints complete: true
-$ADP suggest - --for "kanban board" --n 3
-$ADP kit list - --kind viz --tag timeline
-$ADP take - viz.timeline layout.topbar --url CATALOG_URL
+$ADP suggest - --for "progress bar" --n 3
+$ADP kit list - --kind viz --tag meter
+$ADP take - viz.meter --url CATALOG_URL
 ```
 
 **My Own Kit** is the user's local copy of their catalog, in `~/.adp/catalog/` (`$ADP_HOME/catalog/`; a Sites catalog goes to
-`~/.adp/catalogs/<host>/`). `adp.py setup` seeds it with the bundled catalog, `catalog` fetches into it only the files that are missing or changed, and
-`kit`, `suggest` and `take` read from it. `take` returns a `files` map `{path: {artifact: <catalog url>, path}}` for the publish call, the entries taken
+`~/.adp/catalogs/<host>/`). `catalog` prints the reads that copy into it only the files that are missing or changed, and `kit`, `suggest` and
+`take` read from it. `take` returns a `files` map `{path: {artifact: <catalog url>, path}}` for the publish call, the entries taken
 in dependency order, and a `sha256` map. A catalog **is not edited by publishing over it**: a published catalog changes by proposal
 ([delta and inbox](../adp-minimal-delta/SKILL.md)). A local `catalog.json` is a build, not the live catalog; `take` warns when given one, and you must not
-publish from it. Never download the whole catalog to publish a copy of it: clone the catalog artifact, or run `publish_catalog.py plan`, which stages the
-page and packs the kit into a seed and publishes nothing itself. A catalog on ChatGPT Sites ([hosts](../adp-minimal-hosts/SKILL.md)) is read over
+publish from it. Never download the whole catalog to publish a copy of it: clone the catalog artifact instead. A catalog on ChatGPT Sites ([hosts](../adp-minimal-hosts/SKILL.md)) is read over
 authenticated HTTPS and materialized with hash verification (`take ... --materialize DIR`).
 
 ## Contract: a catalog tree, `adp_catalog.py build` and the check

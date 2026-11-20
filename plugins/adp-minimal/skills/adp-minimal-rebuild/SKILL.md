@@ -38,7 +38,9 @@ The vectors are golden outputs recorded from a conforming implementation, not ha
 6. **`hold`** and **`record`**: the [pinned batches](../adp-minimal-protocol/SKILL.md), one document per file.
 7. **`config`** (show and `set`), **`requests`**, **`work`**: the same [pinned batches](../adp-minimal-protocol/SKILL.md), for switches, requests and leases.
 8. **The loop**: `export` (the nested git repository with `base`, `live`, `work`; `git merge-tree` for the three-way merge), `propose`, `ack`, `gate`.
-9. **`bundle`**, **`import-plan`**, **`import-ack`**, then each supported host adapter (`adp_claude_adapter.py` first).
+9. **`bundle`**, **`import-plan`**, **`import-ack`**, with the Claude host adapter: the four functions of the
+   [adapter interface](../adp-minimal-packing/SKILL.md#contract-moving-records-bundle-import-plan-import-ack), inside `adp.py` or a module
+   beside it. The vectors use `--host claude`.
 10. **`adp.js`**: the pure section (`H`, `norm`, markers, `_rest`, `classify`, exposed as `ADP.hash` and `ADP.classify`), then connecting a host,
     seeding and `ADP.config`; then the DOM-facing parts (spec only, see [adp-minimal-runtime](../adp-minimal-runtime/SKILL.md)).
 11. **`adp_catalog.py`**: `build` (the index from the headers) and the check (sizes, hashes, orphans, headers, samples); then `kit`, `suggest`,
@@ -253,6 +255,6 @@ It needs Python 3 and, for the `adp.js` vectors, Node 18 or later.
 ## Rules
 
 - Implement strictly against the contracts and vectors.
-- One file per tool, standard library only, no network access at runtime.
+- One file per tool (a host adapter may be a module beside `adp.py`), standard library only, no network access at runtime.
 - A vector that fails is a bug in the reimplementation, never a reason to edit the vector.
 - Report which scope-table rows the reimplementation covers; everything else is unimplemented.

@@ -14,23 +14,31 @@ Together they are the part of ADP that runs in the browser. All host I/O (record
 
 ## The shell
 
+This is the `index.html` of the [`minimal` template](../adp-minimal-new-artifact/SKILL.md#templates), abridged; the commented lines are
+added only when the page takes catalog entries:
+
 ```html
-<meta name="adp:build" content="12">
-<link rel="stylesheet" href="kit/themes/default.css">
+<meta name="adp:build" content="1">
 <link rel="stylesheet" href="styles/page.css">
-<header data-part="page.header">
-  ...
-  <details id="wc" data-part="page.changes"> What changed panel: #wcN #wcChanges #wcDecisions #wcIncoming </details>
+<!-- <link rel="stylesheet" href="kit/themes/<id>.css">   a taken theme: after page.css, so its tokens win -->
+<!-- part:page.header -->
+<header data-part="page.header" data-comment-target>
+  <h1>Title</h1>
+  <!-- part:page.changes --><details id="wc" data-part="page.changes" data-comment-target hidden>
+    <summary>What changed <span id="wcN"></span></summary><ol id="wcChanges"></ol><ul id="wcDecisions"></ul><ul id="wcIncoming"></ul>
+  </details><!-- /part:page.changes -->
 </header>
-<nav data-part="page.tabs"> ... </nav>
-<main id="views"></main>
+<!-- /part:page.header -->
+<!-- part:page.tabs --><nav data-part="page.tabs" data-comment-target></nav><!-- /part:page.tabs -->
+<main id="views"> ... each view a part ... </main>
 <script src="content.js"></script>
 <script src="adp.js"></script>
-<script src="kit/dom.js"></script>   <!-- kit scripts added with `adp.py take`, dependencies first -->
-<script src="parts/app.js"></script> <!-- the page's own code, last -->
+<!-- <script src="kit/....js"></script>   taken kit scripts, dependencies first -->
+<script src="parts/app.js"></script>   <!-- the page's own code, last -->
 ```
 
-The page contract:
+Every part sits between its markers and carries `data-part`; `data-comment-target` marks it as a place a comment can anchor. The page
+contract:
 
 - `<meta name="adp:build">` and `content.js` (which defines `window.ADP_CONTENT`) load before `adp.js`.
 - The parts `page.header`, `page.tabs` and `page.changes` exist; the self-check reports any that are missing.

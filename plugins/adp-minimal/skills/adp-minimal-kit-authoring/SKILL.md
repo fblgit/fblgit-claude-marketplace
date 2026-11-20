@@ -21,7 +21,7 @@ enough that the next page can take it unchanged. Pull entries into a page with `
 
 ## What makes an entry general
 
-- It takes **data and options**, never a project's schema: `Kit.table.render(box, {columns, rows, group})`, not a "keys table". A component
+- It takes **data and options**, never a project's schema: `Kit.meter.draw(el, {value, max, label})`, not a "kiln loads bar". A component
   hard-wired to one dataset's types is too tightly coupled: generalise it into props (`rowQuery`, `colQuery`, `linkField`) and let each page map
   its data.
 - It draws with **tokens only** and lists them in `@tokens`; it hard-codes no color, family or size.
@@ -29,7 +29,8 @@ enough that the next page can take it unchanged. Pull entries into a page with `
   Its header's `@db` says what it reads and writes.
 - It is accessible by construction: ARIA roles, keyboard support, state conveyed in text and not by color alone. Charts state their range in
   words.
-- It returns `{update(patch), destroy()}` (or the equivalent), so a page can change and remove it.
+- An entry that keeps state or listeners returns a handle, at least `{destroy()}` and `update(patch)` when it can change in place, so a page
+  can change and remove it (`Kit.badge.render` returns `{destroy}`). One that only draws, like `Kit.meter.draw`, is simply called again.
 - It names its dependencies in `@requires` and its CDN scripts in `@globals`. It uses no other globals.
 - Its text, ids and sample data carry **no project names, file paths or real data**.
 - Its header describes what the entry does and how to mount it. No TODOs, task status, local paths or changelog prose: origin goes in
@@ -39,45 +40,46 @@ enough that the next page can take it unchanged. Pull entries into a page with `
 
 Give each entry samples that cover the edge cases, varying in **size and kind**: an empty state, a typical one, a large one, a long label, a
 right-to-left or very narrow case, light and dark. Samples live in the folder's sample bundle, a JSON object with one top-level key per sample.
-An illustrative bundle for a sparkline entry:
+The bundle `kit/samples/viz.json` of the catalog fixture, where `viz.meter` owns the key `meter`:
 
 ```json
 {
-  "sparkline": {
-    "line":  {"values": [3, 5, 4, 8, 9], "labels": ["Mon","Tue","Wed","Thu","Fri"], "unit": "kg"},
-    "flat":  {"values": [4, 4, 4, 4]},
-    "empty": {"values": []},
-    "long":  {"values": [3, 5, 4, 8, 9, 7, 6, 8], "caption": "A long caption that must wrap without moving the range text"}
+  "meter": {
+    "note": "Invented figures.",
+    "half": {"value": 5, "max": 10, "label": "Kiln loads"},
+    "full": {"value": 10, "max": 10, "label": "Kiln loads"},
+    "zero": {"value": 0, "max": 3, "label": "Glaze tests"}
   }
 }
 ```
 
-The entry's `@preview` names its samples as `bundle-path#key` (for example `kit/samples/viz.json#sparkline`), and `@samples` lists the keys it
-owns. The check fails when a named key is missing from its bundle or a bundle key has no owner ([catalog](../adp-minimal-catalog/SKILL.md)).
+The entry's `@preview` is a JSON object naming its renderer and its samples as `bundle-path#key`
+(`{"render": "viz.meter", "samples": ["kit/samples/viz.json#meter"]}`), and `@samples` lists the keys it owns. The check fails when a named key is missing from its bundle or a bundle key has no owner ([catalog](../adp-minimal-catalog/SKILL.md)).
 
 ## Add the entry
 
-1. **Files** under `kit/<folder>/`: the main file (script, or style for a theme), the style beside it, and the folder's sample bundle.
+1. **Files** under `kit/<folder>/`: the main file (script, or style for a theme) and the style beside it; the folder's sample bundle is
+   `kit/samples/<folder>.json` (`kit/samples/kit.json` for the `kit/` root), listed in the entry's own `@files`.
 2. **Markers**: wrap the script in `/* part:page.script.kit.<name> */` ... `/* /part:page.script.kit.<name> */` and the style in
-   `/* part:page.style.kit.<name> */` ... `/* /part:page.style.kit.<name> */`. Follow the folder's existing files: `kit/viz/` and
-   `kit/templates/` put the folder in the id (`page.script.kit.viz.sparkline`); `kit/layout/` and `kit/patterns/` do not
-   (`page.script.kit.app-shell`).
-3. **The header** in the main file: `@id` (`viz.sparkline`), `@kind`, `@group`, `@status new`, `@version 0.1.0`, `@updated`, `@summary`, `@tags`,
-   `@requires`, `@files`, `@provides`, `@config` (one per public function), `@tokens`, `@globals`, `@db`, `@preview`, `@samples`. See
-   [catalog](../adp-minimal-catalog/SKILL.md#the-header) and the example at the end of this page.
+   `/* part:page.style.kit.<name> */` ... `/* /part:page.style.kit.<name> */`, the opening marker on the first line, before the header.
+   `<name>` follows the folder's existing files: `kit/badge.js` uses `kit.badge`, `kit/viz/meter.js` uses `kit.viz.meter`, and
+   `kit/themes/paper.css` uses `page.style.kit.theme.paper`.
+3. **The header** in the main file, with the tags of [the catalog's tag table](../adp-minimal-catalog/SKILL.md#the-header): the required ones
+   always, `@provides` in a script, `@tokens` when the entry has a style, and the optional ones it needs. See the example at the end of this
+   page.
 4. **Build and check** with `adp_catalog.py` ([catalog](../adp-minimal-catalog/SKILL.md#the-consistency-checks)):
 
 ```sh
 CAT="python3 -I adp_catalog.py"
-$CAT build      # catalog.json from the headers
-$CAT            # every check must pass: sizes, hashes, orphans, headers, samples, runtime copy
+$CAT build CATALOG_DIR     # catalog.json from the headers
+$CAT CATALOG_DIR           # every check must pass: sizes, hashes, orphans, headers, samples, runtime copy
 ```
 
-5. **Publish by proposal**, not over the live catalog. Catalog changes go through the [inbox](../adp-minimal-delta/SKILL.md):
-   `publish_catalog.py update --url URL` writes one proposal per changed kit folder, each file guarded by an `ifMatch` on its live sha, and an
-   editor applies them from the page. Try changes on a scratch artifact first, and never republish a catalog others use without the owner's
-   approval.
-6. **Use it**: from the page, `adp.py take - viz.sparkline`, link, mount ([kit](../adp-minimal-kit/SKILL.md)).
+5. **Publish by proposal**, not over the live catalog. Catalog changes go through the [loop and the inbox](../adp-minimal-delta/SKILL.md):
+   `adp.py export CATALOG_DIR --url URL` reads the live catalog, then `adp.py propose CATALOG_DIR --by NAME --summary S` writes the change as one
+   proposal whose files are each guarded by an `ifMatch` on their live sha, and an editor previews and applies it from the catalog page. Try
+   changes on a scratch artifact first, and never change a catalog others use without the owner's approval.
+6. **Use it**: from the page, `adp.py take - <id>`, link, mount ([kit](../adp-minimal-kit/SKILL.md)).
 
 ## Changing an entry later
 
@@ -86,32 +88,36 @@ Bump `@version`, set `@updated`, replace `@changed` with one sentence describing
 the old entry's description paragraph (the `about` text under its name) that it is superseded and by which id. `@status` takes only `new` or
 `stable`.
 
-## Example: a kit entry (accessible tabs)
+## Example: an entry that requires another (`viz.meter`)
 
-A catalog entry is a file with a header, plus the files it names. This is the shape of `kit.tabs`: markup contract, small API, tokens it
-draws with. It is a trimmed excerpt, not the whole file.
+The catalog fixture `catalog-a` ([vectors](../adp-minimal-catalog/vectors.md)) is the complete example: every file, header and sample of four
+entries. `viz.meter` shows an entry built on another:
 
-**Use it on a page**
-
-```html
-<link rel="stylesheet" href="kit/tabs.css">
-<script src="kit/tabs.js"></script>
-
-<div class="kit-tabs" id="record-tabs">
-  <div class="kit-tabs-list" role="tablist" aria-label="Record">
-    <button role="tab" data-tab="overview">Overview</button>
-    <button role="tab" data-tab="history">History</button>
-  </div>
-  <section data-tab-panel="overview">...</section>
-  <section data-tab-panel="history">...</section>
-</div>
-<script>
-  const tabs = Kit.tabs.mount(document.getElementById('record-tabs'), { hash: true, keys: true });
-  // tabs.select('history'); tabs.current(); tabs.destroy();
-</script>
+```js
+/* part:page.script.kit.viz.meter */
+/**
+ * Meter
+ * Kit.meter.draw(el, {value, max, label}) draws a bar that states its value in words, with a badge for the tone it falls in.
+ *
+ * @id        viz.meter
+ * @kind      component
+ * @group     Visualizations
+ * @status    new
+ * @version   0.1.0
+ * @updated   2026-11-20
+ * @summary   A bar that states its value and range in words, with a status badge.
+ * @tags      meter, bar, progress, value
+ * @requires  kit.badge
+ * @files     kit/viz/meter.css, kit/samples/viz.json
+ * @provides  Kit.meter.draw
+ * @config    Kit.meter.draw(el, opts) | value, max, label
+ * @tokens    --panel --ink --accent --f-ui
+ * @globals   none
+ * @db        none
+ * @preview   {"render": "viz.meter", "samples": ["kit/samples/viz.json#meter"]}
+ * @samples   meter
+ */
 ```
 
-**What the header promises** (`kit/tabs.js`): `@provides Kit.tabs.mount`; `@tokens --panel --sunk --ink --ink-2 --rule --shadow --accent
---f-ui --f-mono --seam?` (the page's theme must set the ones without a `?`); `@db none` (it touches no database). Tab ids are bare tokens
-(letters, digits, `. _ ~ -`). The ids `settings`, `sidebar`, `customize`, `upgrade`, `downloads` and any id starting with `comment-` are
-reserved by the host viewer.
+What the header promises: `take` brings `kit.badge` first (`@requires`); the page's theme sets the four `@tokens`; the entry touches no
+database (`@db none`); the value is stated in text (`Kiln loads: 5 of 10`), not by the bar's length or the badge's color alone.

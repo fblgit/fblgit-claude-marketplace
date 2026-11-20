@@ -22,13 +22,8 @@ host adapter implements those four concerns so that components never reference a
 
 ## Connecting a provider
 
-Install the provider before `adp.js` loads:
-
-```html
-<script src="adapters/claude.js"></script>
-<script>window.ADP_HOST = ADPClaudeHost.create();</script>
-<script src="adp.js"></script>
-```
+On claude.ai a page needs no provider: `adp.js` connects through its built-in Claude bridge. A page for another host installs a provider before
+`adp.js` loads, by setting `window.ADP_HOST` in a script placed before it:
 
 ```js
 window.ADP_HOST = {
@@ -61,7 +56,7 @@ window.ADP_HOST = {
 | `user` | `canEdit()` must resolve to the boolean `true` to enable editing UI. `id()` is a display and audit name, not a credential. `can(name)` resolves the host's decision for a named permission (the kit asks `data.write`), or `null` when the host has none. |
 | `comments` | `customAnchors(callbacks)`: callbacks `mode`, `threads`, `reveal`, `composing`; the controller provides `compose(anchor, el, {label})` and placement. Anchors are part ids. If the comments capability fails, anchoring is disabled and the page keeps working. |
 | `agent` | `{label, where?, canSend(), send({anchor\|threadId, text}), anchorFor(el)}`: hands a request to an agent. `canSend()` resolves to `available`, `queued`, `writers_only`, `no_session` or `off`. |
-| `publish` | `{files(files, opts)}`: publishes files through the host's native API and resolves to `{version, shas}`. Omitted where the host has no such API. |
+| `publish` | `{files(files, opts)}`: publishes files (`[{path, ifMatch?, contentType, content}]`) through the host's native API with the [guarded publish](#the-record-and-publish-guarantees) rule, and resolves to `{version, shas}`. Omitted where the host has no such API. |
 | `ask` | `(messages, opts) => {text}`: returns a model answer to the page directly. It is separate from `agent`, which hands work to an agent session. |
 
 ## The host-neutral surface
@@ -78,15 +73,13 @@ const ask   = await ADP.ask();              // handle or null
 ```
 
 A component written this way runs on every host that supplies those handles. Where a host lacks one, the handle is `null` and the component hides
-the related control. The kit's `inbox`, `assist`, `assist-panel`, `request-card` and `presence` follow this rule. `claude-lane`, `store.js` (the adp/1
-board store), `tester` and the catalog page still call `window.claude` directly and say so in their headers. They are known exceptions; new
-components must use `ADP.*`.
+the related control. A kit entry that must call `window.claude` directly says so in its header; new entries use `ADP.*`.
 
 ## The hosts
 
 | Host | How it connects | Notes |
 |---|---|---|
-| **Claude** (`adapters/claude.js`) | Wraps `window.claude.use('db'\|'user'\|'comments')`. `agent`, `publish` and `ask` map from `comments.sendToClaude`, `artifact.publish` and `sample`, and are `null` where the viewer did not grant the capability. | Same records, hashes and classification as the built-in bridge. Without `window.claude`, `connect()` throws and `ADP.host.status` is `failed`. |
+| **Claude** (built into `adp.js`) | Wraps `window.claude.use('db'\|'user'\|'comments')`. `agent`, `publish` and `ask` map from `comments.sendToClaude`, `artifact.publish` and `sample`, and are `null` where the viewer did not grant the capability. | The reference host: the protocol's guarantees are those of `ArtifactData` and `Artifact`. |
 | **ChatGPT Sites** (`adapters/openai-sites.js` + a Worker) | Authenticated same-origin HTTP at `/api/adp/<artifact-id>`, answered by a Worker backed by a D1 database. Polls every 2 s by default; the interval cannot be set below 1 s. | The server is the authority for every access decision. Committing source does not deploy it, and a deployment is not atomic with record writes, so each step is verified separately. The adapter supplies its own `agent` and no `publish` or `ask`. |
 | **OpenAI bridge** (`adapters/openai.js`) | An integration contract: the integrating application supplies `bridge.connect()`. | Not a native browser SDK. It does not discover tools, install a plugin or deploy a Site. |
 | **Local** (`adp.py dev`) | The dev shim stands in for `window.claude`. | For running pages and tests offline. |
@@ -123,11 +116,27 @@ identifiers: the source commit, the deployment version and the record revision.
 An exception or a timeout is not proof that nothing changed. If a host has no guarded publication, report that limitation; a locally cached version
 must not be used as a concurrency check.
 
+### The record and publish guarantees
+
+ADP's concurrency rests on these guarantees, not on holds. On Claude, `ArtifactData` and `Artifact` provide them; any other host's agent adapter
+must provide the same before it can run the [protocol](../adp-minimal-protocol/SKILL.md):
+
+| Guarantee | Requirement |
+|---|---|
+| Versions on read | Every document read returns the store's integer revision of that document, the value a later write passes as `if_version`. |
+| Conditional writes | A write to an existing document carries `if_version` and is refused when the document has changed since that revision, or when `if_version` is missing. A create (`set` with no `if_version`) is refused when the document already exists. |
+| Atomic batches | A batch is applied all or nothing: if any write in it is refused, none is applied. The result names every document written and its new revision: `{results: [{collection, doc_id, version}]}`. Separate batches are not atomic as a group. |
+| Guarded publish | Each published file can carry `ifMatch`, the SHA-256 of the file as read; the publish is refused with `conflict` when any such file has changed. The result carries the new version and each file's SHA-256: `{version, shas}`. |
+
+These apply to the agent's record and publish calls. The browser `db` handle above takes no version argument, so writes made from the page
+(seeding, switches, requests, and the inbox's Apply) are not pinned: an editor's Apply and an agent's `record` on the same page are not
+guarded against each other by the store. Until `db` carries a version, run one of them at a time on a page.
+
 ## Writing a new adapter
 
 1. Implement `connect()` to return only the capabilities the host supports; omit the rest.
-2. Implement `db` fully: initial snapshots, live subscriptions or documented polling, and conditional writes that fail with `if_version` errors when
-   the version is stale.
+2. Implement `db` fully: initial snapshots, and live subscriptions or documented polling. Implement the agent side with every
+   [record and publish guarantee](#the-record-and-publish-guarantees).
 3. Do not trust identity reported by the browser; enforce access control on the server.
 4. Run the page's flow on the new host: a fresh and an existing artifact, anonymous and editor access, a stale write rejected, concurrent writes, an
    interrupted publish, a missing capability, and reopening in a new session with the recorded intent, feedback and change history intact. Do not

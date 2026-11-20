@@ -1,6 +1,6 @@
 ---
 name: adp-minimal-packing
-description: "Reference for ADP pack formats and record transfer: the one-file page (adp.py files --host single, its loader shim, unpack), seed packs (adp-seed/2), catalog packs inside a skill zip, and record bundles moved between hosts with bundle, import-plan and import-ack. Use when the user asks how to ship a page as one file, restore files from a pack, what seed.json is, or how to move a page's records from Claude to Sites and back."
+description: "Reference for ADP pack formats and record transfer: the one-file page (adp.py files --host single, its loader shim, unpack), seed packs (adp-seed/2), catalog packs (adp-catalog-pack/1), and record bundles moved between hosts with bundle, import-plan and import-ack. Use when the user asks how to ship a page as one file, restore files from a pack, what seed.json is, or how to move a page's records from Claude to Sites and back."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
@@ -15,7 +15,7 @@ files and unpacks them byte for byte. It defines four pack formats:
 |---|---|---|---|
 | **One-file page** | a tool that can publish only one file | `adp.py files DIR --host single` | `adp.py unpack PACK DEST` |
 | **Seed packs** | the first database documents of a page | `adp.py new`, `adp.py seed` | the page, the first time an editor opens it |
-| **Catalog packs** | the catalog inside a skill zip (claude.ai accepts a skill upload of at most 200 files, with no nested zip) | the package build | `adp.py setup`, or `adp.py unpack` |
+| **Catalog packs** | a catalog's files carried as a few JSON files, where a channel limits the file count | a catalog's distribution | `adp.py unpack` |
 | **Record bundle** | a page's records moving between hosts | `adp.py bundle` | `adp.py import-plan`, `import-ack` |
 
 ## One-file page
@@ -25,9 +25,69 @@ $ADP files DIR --host single --out index.html          # --fragment for the Arti
 $ADP unpack index.html RESTORED/                       # every file back, sha256 checked; DEST must be new or empty
 ```
 
-Every file is embedded once, with its sha256, in a block of the packed `index.html`. A small loader script, the **shim** (`assets/hosts/single/shim.js`),
-serves the page's relative `<script src>` and `<link rel=stylesheet>` from those blocks, and answers `GET` and `HEAD` `fetch()` calls for packed paths. It uses only inline scripts and styles, because the claude.ai sandbox
-blocks `blob:` and `data:` stylesheets and `data:` scripts. Not supported: module scripts, relative images and CSS `url()`, and a page over 16 MB.
+Every file is embedded once, with its sha256, in a block of the packed `index.html`. A small loader script, the **shim**, serves the page's
+relative `<script src>` and `<link rel=stylesheet>` from those blocks, and answers `GET` and `HEAD` `fetch()` calls for packed paths. It uses only
+inline scripts and styles, because the claude.ai sandbox blocks `blob:` and `data:` stylesheets and `data:` scripts. Not supported: module scripts,
+relative images and CSS `url()`, and a page over 16 MB.
+
+### The packed page
+
+**Files.** Every file under DIR, walked in sorted order (folders and names sorted, entries starting with `.` skipped), with `/` separators. A
+symbolic link, or a path outside `[A-Za-z0-9._/@+-]+`, is refused. DIR must have an `index.html`.
+
+**Blocks.** One per file, `index.html` included (its original bytes, before the rewriting below), in that order, joined with nothing between
+them:
+
+```html
+<script type="application/adp-file" data-adp-file="PATH" data-type="MIME" data-enc="utf8|b64" data-sha256="64 HEX" data-bytes="N">BODY</script>
+```
+
+`data-enc` is `utf8`, and BODY the file's text, when the file is valid UTF-8 and contains no `\r`, no NUL, no `</script` and no `<!--` (case
+insensitive); otherwise it is `b64` and BODY the standard base64 of the bytes, on one line, with `=` padding. `data-sha256` and `data-bytes` are of the file's bytes. MIME is
+`text/javascript` (`.js`, `.mjs`), `text/css`, `application/json`, `text/html`, `image/svg+xml`, `text/plain` (`.txt`), else the platform's
+guess, else `application/octet-stream`.
+
+**Rewriting `index.html`.** When it has both a `<head ...>...</head>` and a `<body ...>...</body>`, their contents are used; otherwise (a
+fragment, or only one of the two) the whole file is the body and HEAD is empty. Attributes are read as `name`, `name=value`, `name="value"` or
+`name='value'`, names compared case-insensitively, quotes removed. In both HEAD and BODY:
+
+- an empty `<script ...></script>` whose `src` (without `?` or `#` part) is exactly a packed path as listed above (no `./`, no `/` prefix, no
+  other normalization), and is not `type=module`, becomes
+  `<script>ADPPACK.js("PATH")</script>`; with a `defer` attribute it is removed from its place and appended after the body;
+- a `<link ...>` whose `rel` is exactly `stylesheet` (case-insensitive) and whose `href`, matched the same way, names a packed file becomes `<script>ADPPACK.css("PATH")</script>`;
+- everything else is kept as is. `PATH` is written as a JSON string.
+
+The head's `<title>` (or `<title>Page</title>` when it has none) and every `<meta charset>` are taken out of the head. The page is then:
+
+```
+<!doctype html>\n<html ATTRS><head><meta charset="utf-8">TITLE BLOCKS SHIM HEAD</head><body ATTRS>BODY DEFERRED</body></html>\n
+```
+
+with nothing between the pieces. ATTRS is the original tag's attribute text exactly as written, leading whitespace included (`<html lang="en">`
+stays `<html lang="en">`), and empty when the tag is absent. SHIM is `<script>`, the code block below as written (its lines joined with `\n`,
+the indented line keeping its space), then `</script>`. `--fragment` writes only `TITLE BLOCKS SHIM HEAD BODY DEFERRED`, for a tool that adds the document skeleton
+itself. A page over 16 × 1024 × 1024 bytes is refused. `bytes` in the output is the page's length in UTF-8.
+
+**The shim.** It indexes the blocks by path, and installs `window.ADPPACK` (`css(path)` and `js(path)` insert a `<style>` or `<script>` with
+the file's text before the calling script; `js` appends `//# sourceURL=PATH`) and a `fetch` that answers `GET` and `HEAD` for a packed path
+relative to the page with status 200 and the block's `data-type`, passing every other call to the original:
+
+```js
+(function(){var B={};document.querySelectorAll('script[data-adp-file]').forEach(function(s){B[s.getAttribute('data-adp-file')]=s});
+function raw(p){var s=B[p];if(!s)throw new Error('adp-pack: no file '+p);if(s.dataset.enc==='utf8')return new TextEncoder().encode(s.textContent);var b=atob(s.textContent),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+function text(p){var s=B[p];return s.dataset.enc==='utf8'?s.textContent:new TextDecoder().decode(raw(p))}
+function put(tag,p,t){var e=document.createElement(tag);e.textContent=t;var c=document.currentScript;c.parentNode.insertBefore(e,c)}
+window.ADPPACK={files:B,css:function(p){put('style',p,text(p))},js:function(p){put('script',p,text(p)+'\n//# sourceURL='+p)}};
+var f=window.fetch,base=new URL('.',document.baseURI).href;
+window.fetch=function(u,o){var a=String(u&&u.url||u),m=((o&&o.method)||(u&&u.method)||'GET').toUpperCase();
+ try{a=new URL(a,document.baseURI).href}catch(e){}
+ var p=a.indexOf(base)===0?a.slice(base.length).split(/[?#]/)[0]:null;
+ if(p&&B[p]&&(m==='GET'||m==='HEAD'))return Promise.resolve(new Response(m==='HEAD'?null:raw(p),{status:200,headers:{'content-type':B[p].dataset.type}}));
+ return f.apply(this,arguments)}})()
+```
+
+**Unpacking** reads every block, decodes it, and refuses the whole pack (nothing written) when a hash or length differs or a path is unsafe
+(absolute, `..`, or outside the character set above).
 
 ## Seed packs
 
@@ -45,10 +105,11 @@ first open too. The seed files are published with the page and never appear in t
 
 ## Catalog packs
 
-The catalog is hundreds of files, more than the 200 a skill upload accepts. The build packs it as `adp/catalog-pack-NN.json` (`{"schema":
-"adp-catalog-pack/1", "files": {path: text}}`, UTF-8 text only; a new pack starts when the next file would take its text past 900 × 1024 characters), and `adp.py setup` unpacks them into `~/.adp/catalog`, never overwriting a file already there. A
-published catalog ships the same way: its seed carries the kit folders as inbox proposals ([delta and inbox](../adp-minimal-delta/SKILL.md)), applied one at a time
-when an editor opens the page.
+A catalog is hundreds of files. Where a channel limits how many files it carries, the catalog travels as `catalog-pack-NN.json` files:
+`{"schema": "adp-catalog-pack/1", "files": {path: text}}`, UTF-8 text only, a new pack starting when the next file would take the current one
+past 921,600 characters of text. `adp.py unpack PACK DEST` writes one pack's files into an empty DEST; a path that is absolute or contains `..`
+is skipped. A published catalog ships its kit the same way as a page ships its records: its seed carries the kit folders as inbox proposals
+([delta and inbox](../adp-minimal-delta/SKILL.md)), applied one at a time when an editor opens the page.
 
 ## Moving records between hosts: bundle, plan, acknowledge
 
@@ -89,8 +150,8 @@ anything is written. Re-seeding unchanged documents leaves the seed files as the
 | `unpack PACK DEST` | writes every file of a packed page (or a `catalog-pack-NN.json`) back, byte for byte, sha256 checked; DEST must be new or empty | `{dest, files, bytes}` | 0; 1, with the reason on stderr and nothing written, when DEST is not empty or a hash does not match |
 | `seed DIR --by NAME [--version V] [--data FILE\|DIR ...] [--summary S] [--role R] [--batches] [--dry-run]` | writes `DIR/seed.json` and `DIR/seed/pack-NNN.json` (`adp-seed/2`): `parts/<id>` for every part except `_rest`, `content/<id>` for non-empty copy, `changes/000001`, `agents/<NAME>`, then `manifest/current` last | `{seed, written, docs, collections, packs, bytes, skipped_empty, next}`; `--dry-run`: `{collections, docs, batches, skipped_empty, bytes}` and nothing written; `--batches`: the same documents as ArtifactData batches | 0 |
 
-The packed page's byte layout is not specified. Conformance is the round trip: unpacking returns every file byte for byte, which the vector checks
-and a [rebuild](../adp-minimal-rebuild/SKILL.md) must preserve.
+The packed page's layout is [specified above](#the-packed-page), so its `bytes` is fixed for a folder whose files all have a listed extension (the
+MIME of any other file is the platform's guess). The vectors check the size and the round trip: unpacking returns every file byte for byte.
 
 Its fixtures and vectors are in [vectors.md](vectors.md), under "Contract: `files`, `files --host single`, `unpack`, `seed`".
 
@@ -123,6 +184,7 @@ Its fixtures and vectors are in [vectors.md](vectors.md), under "Contract: movin
 A publish takes at most 255 files. Over `--batch N` files (default 250), `files` prints `batches` instead of `files` (the page stays `file_path`; every
 batch is also written to `DIR.adp/publish-K.json`) and a `note`; the agent publishes the page with the first batch and every other batch to the same url, noting
 each version id the tool returns. `pins publish-K.json=VERSION_ID ... [--out vermap.json]` turns those into `{path: version id}` (default
-`DIR.adp/vermap.json`), the map a catalog uses to reference each file at the version that holds it.
+`DIR.adp/vermap.json`), the map a catalog's distribution uses to reference each file at the version that holds it. No tool in this specification
+reads it.
 
 Its fixtures and vectors are in [vectors.md](vectors.md), under "Contract: publishing in batches (`files --batch`, `pins`)".

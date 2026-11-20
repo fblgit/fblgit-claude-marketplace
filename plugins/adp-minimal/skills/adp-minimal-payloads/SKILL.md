@@ -81,7 +81,7 @@ On a conflict, merge onto the newer version and publish again; never force.
 
 ## Step 6: Record
 
-One batch, every existing document pinned, `manifest/current` last: the changed `parts/<id>` with their holders cleared, one new
+One batch, every existing document pinned, `manifest/current` last: the changed `parts/<id>`, with your own holds cleared, one new
 `changes/<seq>` entry, the answered `threads/`, and your `agents/` entry with its holds cleared.
 
 ```json
@@ -106,14 +106,16 @@ One batch, every existing document pinned, `manifest/current` last: the changed 
 ] }
 ```
 
-- `holder: ""` and `hold_until: ""` mean the part is not held.
+- `holder: ""` and `hold_until: ""` mean the part is not held. They appear only on parts you held; a parent that changed only because a child
+  changed is updated without them, so another agent's hold on it stays.
 - `changes/` entries are append-only, with ids zero-padded to six digits.
 - An added part is a `set` on `parts/<id>` and appears in `changes` with `from: ""`. A removed part is a `delete` and appears with `to: ""`.
 - `manifest/current` is replaced whole with a pinned `set`, never `update`d: an `update` carrying only the changed parts would replace the
   page's whole `parts` map with them.
 
 A batch holds at most 50 writes. `adp.py record` splits a larger record into several batches and keeps `manifest/current` in the last one.
-The batches are not atomic as a group: if one is refused, `manifest/current` has not moved, so re-read and record the remainder.
+Each batch is applied all or nothing ([the host's guarantee](../adp-minimal-hosts/SKILL.md#the-record-and-publish-guarantees)), but the batches
+are not atomic as a group: if one is refused, none of its writes landed and `manifest/current` has not moved, so re-read and record the remainder.
 
 ## Other payloads
 

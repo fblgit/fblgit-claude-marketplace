@@ -12,7 +12,9 @@ An ADP page keeps its own record (what changed, who changed it, decisions, open 
 
 It applies to every page that has a `manifest/current`. Concurrency is optimistic: every write to an existing document carries the `version` you
 read as `if_version` (the **pin**), and ArtifactData refuses the write if the document has changed since, a compare-and-set. The pin is the only
-enforced lock; a refused write means another writer got there first. The calls and documents are written out in
+enforced lock; a refused write means another writer got there first. The pin, atomic batches and the guarded publish are requirements of the host
+adapter contract ([record and publish guarantees](../adp-minimal-hosts/SKILL.md#the-record-and-publish-guarantees)), so the protocol holds on any
+host that meets them. The calls and documents are written out in
 [payloads](../adp-minimal-payloads/SKILL.md); `adp.py` generates them.
 
 ## The record
@@ -56,7 +58,7 @@ read  ->  hold  ->  edit  ->  check  ->  publish  ->  record
 4. **Check.** `adp.py check DIR`, `adp.py manifest DIR`, `adp.py diff` against the recorded manifest.
 5. **Publish** to the same URL, with a `label` of at most 60 characters and only the changed files (`adp.py files DIR --since MANIFEST.json`;
    a `null` removes a file). On a conflict, merge onto the newer version; never force.
-6. **Record.** One batch of at most 50 writes, every existing document pinned, `manifest/current` last: the changed `parts/<id>` (holder cleared),
+6. **Record.** One batch of at most 50 writes, every existing document pinned, `manifest/current` last: the changed `parts/<id>` (your holds cleared),
    the next `changes/<seq>`, the answered `threads/`, your `agents/` entry. `adp.py record OLD.json DIR --seq N --by NAME --summary "..."`, then
    `adp.py ack DIR --result FILE` to fold the result back into the local state.
 
@@ -83,11 +85,17 @@ When you report back, state every step you could not confirm, including whether 
 
 Neither command writes to ArtifactData: each writes one JSON file per document into `--out` (default `DIR.adp/`) and prints the batch that writes them. An entry is
 `{op, collection, doc_id, file_path, if_version?}`: `if_version` appears when `--pins` holds a version for `"<collection>/<doc>"`.
+Every command that prints a batch adds `needs_pin`, listing `"<collection>/<doc>"`, for each `update` or `delete`, and each write to a document
+known to exist, that `--pins` gives no version for. Do not send that batch
+as is: read each listed document, add the version of every one that exists to `--pins`, and run the command again. The store refuses an
+unpinned write to an existing document; only a document that does not exist yet is written without a pin.
 
 | Command | Does | Prints | Exit |
 |---|---|---|---|
-| `hold DIR ID ... --by NAME [--hours H] [--pins P.json] [--config C.json] [--unlock PREFIX ...] [--out DIR]` | `parts/<id>` `update` with `holder` and `hold_until` (now + H hours, H at most 2, default 2); `agents/<NAME>` with `holds` and `last_seen` (`update` when pinned, `set` when not) | `{hold_until, batches: [[entries]], docs_dir}`, plus `needs_pin: ["parts/<id>", ...]` only when a held part has no pin | 0; 2 with `{error: "locked", by, at, reason}` when `--config` has `edit.locked`, or `{error: "locked parts", parts}` for an id under a `parts.locked` prefix not named by `--unlock` |
-| `record OLD.json DIR --seq N --by NAME --summary S [--version V] [--threads T,..] [--pins P.json] [--config C.json] [--unlock ...] [--holds H.json] [--out DIR]` | compares OLD (`manifest/current` as read) with the manifest of DIR: each changed or added `parts/<id>` (`hash`, `version`, `at`, `by`, `summary`, `holder: ""`, `hold_until: ""`, `file`), `changes/<N zero-padded to 6>` (`version`, `at`, `by`, `summary`, `parts [{id, from, to}]`, `threads`), one `threads/<id>` `update` per `--threads` id (`status: "done"`, `holder: ""`, `done_in`), `agents/<NAME>` (`last_seen`, `holds: []`), then `manifest/current` **last** (`schema`, `version`, `page_hash`, `parts`, `elements`, `files`, `part_file`, `content`, `at`, `by`) | `{batches: [[entries]], docs_dir}`; at most 50 entries per batch | 0; 2 when locked, as `hold` |
+| `hold DIR ID ... --by NAME [--hours H] [--pins P.json] [--config C.json] [--unlock PREFIX ...] [--out DIR]` | `parts/<id>` `update` with `holder` and `hold_until` (now + H hours, H at most 2, default 2); `agents/<NAME>` with `holds` and `last_seen` (`update` when pinned, `set` when not) | `{hold_until, batches: [[entries]], docs_dir}`, plus `needs_pin` as above | 0; 2 with `{error: "locked", by, at, reason}` when `--config` has `edit.locked`, or `{error: "locked parts", parts}` for an id under a `parts.locked` prefix not named by `--unlock` |
+| `record OLD.json DIR --seq N --by NAME --summary S [--version V] [--threads T,..] [--pins P.json] [--config C.json] [--unlock ...] [--holds H.json] [--out DIR]` | compares OLD (`manifest/current` as read) with the manifest of DIR: each changed or added `parts/<id>` (`hash`, `version`, `at`, `by`, `summary`, `file`, and `holder: ""`, `hold_until: ""` on an added part and on
+each part this agent held: the ids `--holds` shows held by NAME, or without `--holds` the changed parts with no changed descendant; a parent that
+changed only through a child keeps its holder), `changes/<N zero-padded to 6>` (`version`, `at`, `by`, `summary`, `parts [{id, from, to}]`, `threads`), one `threads/<id>` `update` per `--threads` id (`status: "done"`, `holder: ""`, `done_in`), `agents/<NAME>` (`last_seen`, `holds: []`), then `manifest/current` **last** (`schema`, `version`, `page_hash`, `parts`, `elements`, `files`, `part_file`, `content`, `at`, `by`) | `{batches: [[entries]], docs_dir}`; at most 50 entries per batch; plus `needs_pin` as above | 0; 2 when locked, as `hold` |
 
 `version` is stored verbatim as a string. A removed part is a `parts/<id>` `delete` and a `from` with `to: ""`; an added one a `set` with `from: ""`.
 

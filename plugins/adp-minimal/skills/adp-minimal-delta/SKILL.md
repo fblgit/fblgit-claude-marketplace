@@ -1,6 +1,6 @@
 ---
 name: adp-minimal-delta
-description: "Explains the ADP delta and inbox: the base, live and incoming manifests; classification into new, ours, theirs, applied, retired and held, and the closure over parents and requires; the loop (export, classify, propose, ack) and the gate hook; local state in DIR.adp/; the incoming/<pid> proposal; applying and declining in Kit.inbox. Use when the user asks how ADP merges concurrent work, what held or theirs means, what a proposal is, or why propose or the gate refused."
+description: "Explains the ADP delta and inbox: the base, live and incoming manifests; classification into new, ours, theirs, applied, retired and held, and the closure over parents and requires; the loop (export, classify, propose, ack) and the gate hook; local state in DIR.adp/; the incoming/<pid> proposal; applying and declining in the page's inbox. Use when the user asks how ADP merges concurrent work, what held or theirs means, what a proposal is, or why propose or the gate refused."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
@@ -152,17 +152,23 @@ or Apply hit a publish conflict), `applied` (the inbox published it), `declined`
 
 ## The inbox
 
-The inbox is the page side of the loop: `Kit.inbox.mount(root, opts)`, the catalog entry `pattern.inbox`. It lists the open proposals and classifies
-each new one with `ADP.classify`. For each held item, a user with edit rights picks Keep live or Take the proposal; Apply stays disabled until every
-held item is picked. Apply publishes the proposal's files through the `artifact` handle (default `ADP.publish()`) with an `ifMatch` per file, then
+The inbox is the page side of the loop: a component the page takes from its catalog. This section is what any inbox must do. It lists the open
+proposals and classifies each new one with `ADP.classify`. For each held item, a user with edit rights picks Keep live or Take the proposal; Apply
+stays disabled until every held item is picked. Apply publishes the proposal's files through `ADP.publish()` with an `ifMatch` per file, then
 writes `manifest/current`, `parts/<id>`, `content/<id>` and `changes/<seq>` with the resulting version, and sets the proposal `applied`. Decline
 asks for a reason and records it.
+
+A proposal carries code: its files are published as they are. Treat a proposal as untrusted until an editor has read it: grant no viewer
+write access to `incoming/` in the page's access rules, and have an editor preview every file of a proposal, held or not, before Apply. An agent
+never applies a proposal it did not write without that preview.
 
 After a publish conflict, a hold found on open, or a Decline, the inbox notifies the watching agent session through the `agent` handle, only when
 `canSend()` returns `available`. A successful Apply sends nothing.
 
-The published catalog ships its own kit files the same way: they are seeded as one proposal per kit folder, and the catalog page mounts the inbox
-with `autoApply: true`, which applies every proposal that classifies as `merged`. See [catalog](../adp-minimal-catalog/SKILL.md).
+A published catalog ships its own kit files the same way: they are seeded as one proposal per kit folder, and the catalog page runs its inbox in
+an auto-apply mode that applies every proposal that classifies as `merged`. Auto-apply skips the preview, so it is only for that case: the
+catalog's own seed is the only writer of its `incoming/`. Never enable it on a page where anyone else can write `incoming/`. See
+[catalog](../adp-minimal-catalog/SKILL.md).
 
 ## Reading the result
 
