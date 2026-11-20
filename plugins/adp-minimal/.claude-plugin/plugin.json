@@ -2,7 +2,7 @@
   "name": "adp-minimal",
   "displayName": "ADP Minimal",
   "version": "2.2.0",
-  "description": "Learn ADP (Artifacts Done Properly), a way to keep a Claude Artifact safe to edit when several people and agents work on it. Ask how any part works and the right guide loads, with examples.",
+  "description": "Skills that explain ADP (Artifacts Done Properly) to Claude, and specify its tools well enough to rebuild them. Documentation only: the tools, component catalog and templates are in artifacts-done-properly.",
   "author": {
     "name": "Xavier Murias (fblgit)",
     "url": "https://github.com/fblgit"
@@ -12,8 +12,8 @@
   "license": "Apache-2.0",
   "keywords": [
     "claude artifacts",
-    "collaboration",
+    "adp",
     "documentation",
-    "learning"
+    "skills"
   ]
 }

@@ -1,48 +1,49 @@
-# ADP minimal
+# ADP Minimal
 
-A Claude Artifact that several people and agents keep editing breaks in familiar ways: someone publishes over a newer version, a comment loses
-its place when the layout changes, the same table gets rewritten on every page. ADP (Artifacts Done Properly) is a set of conventions that
-prevents this: every piece of the page has a stable id, every change is recorded, and a write is refused if someone else got there first.
+Skills that explain [ADP (Artifacts Done Properly)](https://github.com/fblgit/artifacts-done-properly) to Claude.
 
-This plugin teaches ADP. Ask Claude how any part of it works and the guide for that topic loads, with short examples. It is Markdown only and
-installs nothing. For readers who want to go further, it also describes ADP's tools precisely enough to rebuild them, with tests to prove the
-rebuild matches.
+ADP is a standard for claude.ai Artifacts that more than one person or agent edits over time. Each part of a page gets an id and a content hash,
+each change is recorded, and a write made against an old version is refused.
 
-Install:
+This plugin is the documentation only. It has no tools, no component catalog and no page templates; those come with the full plugin,
+`artifacts-done-properly`. Use this one when you want Claude to explain ADP or plan work in it, or to rebuild ADP's tools from a written spec.
 
-    /plugin install adp-minimal --marketplace fblgit/fblgit-claude-marketplace
+## Install
 
-Then ask Claude how any part of ADP works. Each topic is its own skill, so only the one the question needs loads:
+    /plugin marketplace add fblgit/fblgit-claude-marketplace
+    /plugin install adp-minimal@fblgit-claude-marketplace
 
-| Skill | Explains |
+For the full plugin instead:
+
+    /plugin install artifacts-done-properly@fblgit-claude-marketplace
+
+## Skills
+
+Each topic is its own skill, so Claude loads only the one a question needs.
+
+| Skill | Covers |
 |---|---|
-| `adp-minimal` | what ADP is, its pieces, the rule (never by hand), and which skill covers what |
-| `adp-minimal-parts` | part markers, ids, hashes, diffs, anchors |
-| `adp-minimal-snippets` | the hash and diff arithmetic as runnable Python |
-| `adp-minimal-protocol` | read, hold, edit, check, publish, record; the record's documents |
-| `adp-minimal-payloads` | those documents and calls as JSON |
-| `adp-minimal-new-artifact` | how a new artifact is created, its file tree and tiers |
-| `adp-minimal-runtime` | the shell, `adp.js`, seeding, switches |
-| `adp-minimal-hosts` | host adapters and the common ground components reuse |
-| `adp-minimal-roads` | the four roads: new, catalog, edit, adopt |
-| `adp-minimal-delta` | base, live, incoming; classification; proposals and the inbox |
-| `adp-minimal-packing` | one-file pages, seed and catalog packs, record bundles |
-| `adp-minimal-kit` | components, layouts, patterns, viz, samples, and how they wire |
-| `adp-minimal-themes` | tokens, theme files, wiring and switching a theme |
-| `adp-minimal-catalog` | catalog.json, headers, consistency checks, taking entries |
-| `adp-minimal-kit-authoring` | building a general entry with several samples |
-| `adp-minimal-rebuild` | rebuilding `adp.py`, `adp.js` and the catalog tool from the contracts, and the runner that proves the rebuild |
+| `adp-minimal` | what ADP is, and which skill covers what |
+| `adp-minimal-parts` | part markers, ids, hashes, diffs, comment anchors |
+| `adp-minimal-snippets` | the hash and diff rules as runnable Python |
+| `adp-minimal-protocol` | how an edit is made: read, hold, edit, check, publish, record |
+| `adp-minimal-payloads` | the records and tool calls as JSON |
+| `adp-minimal-new-artifact` | creating a page: its files and templates |
+| `adp-minimal-runtime` | `adp.js`, the script every page loads |
+| `adp-minimal-hosts` | running ADP pages on hosts other than Claude |
+| `adp-minimal-roads` | the procedure for each kind of job: new page, catalog, edit, adopt |
+| `adp-minimal-delta` | merging concurrent edits, proposals, the inbox |
+| `adp-minimal-packing` | one-file pages, seed packs, moving records between hosts |
+| `adp-minimal-kit` | components, layouts, patterns, charts and how a page uses them |
+| `adp-minimal-themes` | colour and font tokens, dark mode, switching themes |
+| `adp-minimal-catalog` | the component catalog and how to check it |
+| `adp-minimal-kit-authoring` | writing a reusable component instead of a one-off |
+| `adp-minimal-rebuild` | rebuilding `adp.py`, `adp.js` and the catalog tool, and testing the rebuild |
 
-## What this is not
+## Rebuilding the tools
 
-It does not ship ADP's tooling, its catalog or its templates, and it does not build or edit pages by hand: ADP's rule is that a page is made and
-changed through ADP, never by hand. The tooling can be rebuilt from `adp-minimal-rebuild`, and is ADP's only once every vector passes; the catalog
-and the templates are not specified here. To do the work with the real tools, install the full plugin (one Python 3 command on the standard library; no dependencies, no remote
-connections, nothing fetched at run time):
-
-    /plugin marketplace add fblgit/artifacts-done-properly
-    /plugin install artifacts-done-properly@fblgit-adp
-
-Source and full catalog: https://github.com/fblgit/artifacts-done-properly
+Each command is specified in the skill that explains it, with test cases (`vectors.md`) whose expected output comes from running the real tools.
+`adp-minimal-rebuild` has the build order and a runner that checks a rebuilt tool against all of them. In this repository, `tools/vectors.py` and
+`tests/test_minimal.py` run the same test cases against an ADP checkout.
 
 Licence: Apache-2.0.

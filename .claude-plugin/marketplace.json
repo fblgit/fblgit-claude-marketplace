@@ -28,7 +28,7 @@
     },
     {
       "name": "adp-minimal",
-      "description": "Learn ADP (Artifacts Done Properly): keeping a shared Claude Artifact safe to edit together",
+      "description": "Skills that explain ADP to Claude; documentation only, the tools are in artifacts-done-properly",
       "source": "./plugins/adp-minimal"
     },
     {
