@@ -1,6 +1,6 @@
 ---
 name: adp-minimal-new-artifact
-description: "Explains how a new ADP artifact is created and why: adp.py new, the adp/2 file tree (index.html shell, adp.js, content.js, parts/, styles/, seed.json, seed/), why not a single file, tiers and templates (starter, assistant, default), copy as data, check, publish, first-open seeding, what the artifact service serves. Use when the user asks how to start a new ADP page, what its files are for, or which tier to pick."
+description: "Explains how a new ADP artifact is created and why: adp.py new, the adp/2 file tree (index.html shell, adp.js, content.js, parts/, styles/, seed.json, seed/), why not a single file, templates (the minimal template this plugin ships, how templates stack, tiers), copy as data, check, publish, first-open seeding, what the artifact service serves. Use when the user asks how to start a new ADP page, what its files are for, or which template to start from."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
@@ -9,8 +9,7 @@ metadata:
 # Creating a new artifact
 
 Run `adp.py new` rather than hand-writing a single `index.html`. It lays the page out as **adp/2** from a template, takes its kit entries from the
-catalog, and prints the publish call for it. `adp.py` and the templates ship with the full plugin, `artifacts-done-properly`
-([install](../adp-minimal/SKILL.md)).
+catalog, and prints the publish call for it. `adp.py` is built from this specification ([rebuild](../adp-minimal-rebuild/SKILL.md)).
 
 ## Why not one file
 
@@ -28,33 +27,32 @@ them inside one document:
 ```
 DIR/
   index.html          the thin shell: header, "What changed" panel, tabs, an empty <main id="views">, script tags
-  adp.js              the runtime, a byte-for-byte copy of the catalog's
+  adp.js              the runtime, copied byte for byte
   content.js          window.ADP_CONTENT = {<part id>: {part, title, html}}: the baseline copy of every part
   parts/app.js        the page's code, one file per part family
-  styles/page.css     the page's styles (the assistant tier adds styles/assist.css and styles/canvas.css)
+  styles/page.css     the page's styles
   seed.json           index of the initial database documents
   seed/pack-001.json  the packed document bodies (excluded from the manifest)
 ```
 
-Kit files (`kit/...`) are **not** copied into DIR. A template's `take` list names catalog entries; `new` adds them to the publish call as
-by-reference entries, and the artifact service copies them server-side. They belong to the catalog, so they are excluded from the manifest.
+Kit files (`kit/...`) are **not** copied into DIR. A template's `take` list names catalog entries. When a catalog is available, `new` adds them to
+the publish call as by-reference entries and the artifact service copies them server-side; otherwise `new` prints the `take` step to run before
+publishing. Kit files belong to the catalog, so they are excluded from the manifest.
 
-## Tiers and templates
+## Templates
 
-| Tier | Command | Contents |
-|---|---|---|
-| minimal | `adp.py new --tier minimal DIR` (same as `adp.py new starter DIR`) | blank page, welcome view, settings view, `theme.default`, the "What changed" panel |
-| assistant | `adp.py new assistant DIR` | the starter plus the Work-with-Claude pane, requests, presence, the canvas, all catalog themes and a theme switcher |
-| default | `adp.py new --tier default DIR` | the assistant plus 3D and the common kits |
+A template is a folder `templates/<name>/` beside `adp.py`: a `template.json` (`name`, `summary`, `use_when`, `design`, `capabilities`, `take`, and
+optionally `base`, `drop` and `installed`) and the page's files. A template with a `base` starts from that template's files and overrides files of
+the same name. A template file whose name has another extension before `.txt` is written without the `.txt` (`index.html.txt` becomes
+`index.html`). `{{title}}`, `{{slug}}` and `{{catalog}}` are substituted in every file except `adp.js`, which is copied byte for byte.
 
-There is no `--tier assistant`; the assistant tier is selected by template name. Templates stack: `default` is based on `assistant`, which is based
-on `starter`, and each layer overrides files of the same name. A template file whose name has another extension before `.txt` is written without
-the `.txt` (`index.html.txt` becomes `index.html`). `{{title}}`, `{{slug}}` and `{{catalog}}` are substituted in every file except `adp.js`, which is
-copied byte for byte.
+This specification ships one template, **`minimal`**, as the fixture `template-minimal` in [vectors.md](vectors.md): the shell, its copy as data,
+and a status list of what the runtime found on the host (connection, viewer, capabilities, integrity, seeding). It takes nothing from the catalog,
+so a page built from it works with `adp.js` alone. Install it as `templates/minimal/` and start with `adp.py new minimal DIR`.
 
-Use the assistant tier when users and Claude edit the page together. `--theme NAME` (default `theme.default`) and `--layout ID` add a theme and
-layouts from the catalog; `--catalog` falls back to the catalog saved by `adp.py catalog`. `--data FILE|DIR` seeds the page's own records;
-`--content FILE` builds starter views from a content file (starter only).
+`--tier minimal` and `--tier default` select the `starter` and `default` templates where a catalog installs them; `--tier full` is refused.
+`--theme NAME` (default `theme.default`) and `--layout ID` add a theme and layouts from the catalog; `--catalog` falls back to the catalog saved by
+`adp.py catalog`. `--data FILE|DIR` seeds the page's own records; `--content FILE` builds views from a content file (`starter` template only).
 
 ## The shape of a part
 
@@ -75,8 +73,8 @@ closing `;`.
 ## Create, check, publish, seed
 
 ```sh
-ADP="python3 -I <adp skill folder>/scripts/adp.py"
-$ADP new assistant DIR --title "Release board" --by NAME --theme default --catalog CATALOG
+ADP="python3 -I adp.py"
+$ADP new minimal DIR --title "Release board" --by NAME
 # adapt the look and copy: styles/page.css, parts/*.js, content.js (keep the token names, the markers and the selectors adp.js relies on)
 $ADP check DIR                 # markers balance, ids valid and unique, every part has data-part
 # publish with the object `new` printed (file_path, root, files, capabilities), plus a label and, the first time, an icon
@@ -118,10 +116,9 @@ await board.update({title: 'Sprint 12'});
 
 ## Contract: `new`
 
-`new` copies a template folder into DIR, fills in its title and slug, writes the seed, and prints one publish object. The templates ship with the
-full plugin alongside the catalog; this plugin does not include them. The vectors define what a reimplementation of `new` must do with the
-starter template: the output, the file tree the publish names, a tree that passes `check`, and the refusal of a non-empty DIR. They were generated
-against the ADP 2.2.0 starter template; part counts and sizes in the `check` and `seed` output depend on it, so run them against that template.
+`new` copies a template folder into DIR, fills in its title and slug, writes the seed, and prints one publish object. The vectors run it on the
+`minimal` template (fixture `template-minimal`, installed as the only template): the output, the file tree the publish names, a tree that passes
+`check`, the seed it writes, and the refusal of a non-empty DIR. Part counts and sizes in the `check` and `seed` output depend on that template.
 
 | Command | Prints | Exit |
 |---|---|---|

@@ -9,7 +9,7 @@ metadata:
 # The roads
 
 A road is ADP's name for a fixed procedure that covers one kind of job. There are four. Every step in each is an `adp.py` command. `ADP` below is
-`python3 -I <adp skill folder>/scripts/adp.py`.
+`python3 -I adp.py`, a build of the tool that passes the vectors ([rebuild](../adp-minimal-rebuild/SKILL.md)).
 
 | The user wants | Road |
 |---|---|
@@ -26,8 +26,8 @@ On Sites the same roads apply, using native Sites source and record calls instea
 Starting on adp/2 gives the page parts, a record and slots for catalog entries from the start. Details: [artifact layout](../adp-minimal-new-artifact/SKILL.md).
 
 ```sh
-$ADP templates                                          # starter, assistant, default
-$ADP new assistant DIR --title "Release board" --by NAME --theme default --catalog CATALOG
+$ADP templates                                          # the installed templates: minimal, and any a catalog adds
+$ADP new minimal DIR --title "Release board" --by NAME
 $ADP check DIR
 # publish the object `new` printed; the first editor to open the page seeds its database
 ```
@@ -86,7 +86,7 @@ changing how the page looks or behaves**.
   main section in markers, add `data-part` and `data-comment-target`, `ADP check`, publish with a label and a `capabilities` that keeps what the page
   already declares plus `{path: "", read: "view", write: "admin"}` (and one rule per collection the page writes). Seed with
   `ADP seed DIR --by NAME --data FILE|DIR`. Step A is enough for part ids and comment anchors.
-- **Step B, multi-file (optional).** Start a reference project with `ADP new starter REF`, move the page's copy and views into `index.html`, `content.js`,
+- **Step B, multi-file (optional).** Start a reference project with `ADP new minimal REF`, move the page's copy and views into `index.html`, `content.js`,
   `styles/*`, `parts/*`, and prove parity: render old and new in a headless browser and compare each element's computed style and box in every view
   and state, at the widths and themes in use. `adp.py` does not automate this comparison. Do not publish Step B until it passes.
 - Never rename a published part id. Restyling is a separate change under the edit road.

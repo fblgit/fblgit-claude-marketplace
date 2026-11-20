@@ -7,10 +7,11 @@ reader rebuilds against is the code that checks the vectors here.
   python3 tools/vectors.py [--adp PATH] [--only NAME ...]            run every vector; exit 1 when one fails
   python3 tools/vectors.py [--adp PATH] --update [--only NAME ...]   write what the real tools return into the vectors' expected fields
 
+The tools run from a scratch copy of the ADP skill folder whose templates/ is replaced by this plugin's template-<name> fixtures.
 --update only fills fields a vector already names (exit, stdout, stdout_text, stderr_text, files_out); a vector's inputs are never changed. The ADP checkout is
 --adp PATH, else $ADP_REPO, else the folder artifacts-done-properly beside this repository.
 """
-import argparse, json, os, re, sys
+import argparse, atexit, json, os, re, shutil, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS = os.path.join(ROOT, 'plugins', 'adp-minimal', 'skills')
@@ -26,8 +27,27 @@ def load_runner():
     return ns
 
 
+def stage(skill):
+    """A scratch copy of the ADP skill folder whose templates/ holds only this plugin's template-<name> fixtures, so `new` and `templates` are
+    recorded against the templates the plugin ships, never the checkout's own."""
+    dst = os.path.join(tempfile.mkdtemp(prefix='adp-stage-'), 'adp')
+    atexit.register(shutil.rmtree, os.path.dirname(dst), True)
+    shutil.copytree(skill, dst, ignore=shutil.ignore_patterns('templates', '__pycache__'))
+    ns = load_runner()
+    fixtures, _ = ns['blocks'](SKILLS)
+    for name in fixtures:
+        if not name.startswith('template-'): continue
+        for rel, content in ns['tree'](fixtures, name).items():
+            p = os.path.join(dst, 'templates', name[len('template-'):], rel)
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            with open(p, 'w', encoding='utf-8', newline='') as f: f.write(content)
+    return dst
+
+
 def tools_of(adp):
     s = os.path.join(adp, 'plugins', 'artifacts-done-properly', 'skills', 'adp')
+    if not os.path.isdir(s): sys.exit(f'no ADP skill folder at {s}')
+    s = stage(s)
     t = {'adp.py': os.path.join(s, 'scripts', 'adp.py'), 'adp_catalog.py': os.path.join(s, 'scripts', 'adp_catalog.py'),
          'adp.js': os.path.join(s, 'assets', 'adp.js')}
     for k, p in t.items():

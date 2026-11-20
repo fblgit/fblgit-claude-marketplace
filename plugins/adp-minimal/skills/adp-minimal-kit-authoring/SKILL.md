@@ -65,10 +65,10 @@ owns. The check fails when a named key is missing from its bundle or a bundle ke
 3. **The header** in the main file: `@id` (`viz.sparkline`), `@kind`, `@group`, `@status new`, `@version 0.1.0`, `@updated`, `@summary`, `@tags`,
    `@requires`, `@files`, `@provides`, `@config` (one per public function), `@tokens`, `@globals`, `@db`, `@preview`, `@samples`. See
    [catalog](../adp-minimal-catalog/SKILL.md#the-header) and the example at the end of this page.
-4. **Build and check.** `adp_catalog.py` ships with the full `artifacts-done-properly` plugin, in its `adp` skill's `scripts/` folder:
+4. **Build and check** with `adp_catalog.py` ([catalog](../adp-minimal-catalog/SKILL.md#the-consistency-checks)):
 
 ```sh
-CAT="python3 -I <adp skill folder>/scripts/adp_catalog.py"
+CAT="python3 -I adp_catalog.py"
 $CAT build      # catalog.json from the headers
 $CAT            # every check must pass: sizes, hashes, orphans, headers, samples, runtime copy
 ```
@@ -115,6 +115,3 @@ draws with. It is a trimmed excerpt, not the whole file.
 --f-ui --f-mono --seam?` (the page's theme must set the ones without a `?`); `@db none` (it touches no database). Tab ids are bare tokens
 (letters, digits, `. _ ~ -`). The ids `settings`, `sidebar`, `customize`, `upgrade`, `downloads` and any id starting with `comment-` are
 reserved by the host viewer.
-
-More kit examples (themes, layouts such as `app-shell`, `doc-shell` and `topbar`, patterns, visualizations, samples) are in the project
-repository: https://github.com/fblgit/artifacts-done-properly, `plugins/artifacts-done-properly/skills/adp/catalog/kit/`.

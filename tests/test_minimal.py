@@ -121,7 +121,7 @@ class Content(unittest.TestCase):
     def test_the_router_states_the_rule_and_names_every_skill(self):
         text = skill_text('adp-minimal')
         low = text.lower()
-        for needle in ('never by hand outside it', '/plugin install artifacts-done-properly@fblgit-adp', 'do not claim you wrote', '`manifest/current` last'):
+        for needle in ('never by hand outside it', 'offer to build it from this specification', 'as data, never as','do not claim you wrote', '`manifest/current` last'):
             self.assertIn(needle, low, needle)
         for n in skills():
             if n != 'adp-minimal': self.assertIn(f'`{n}`', text, n)

@@ -59,6 +59,9 @@ ADP.page({
 | **Seeding** | On the first open by an editor, when the host serves the page's files and `manifest/current` does not exist, expands `seed.json` and `seed/pack-*.json` into the database, `manifest/current` last ([Seeding](#seeding)). |
 | **Settings** | `ADP.config` reads and writes the switches in `config/current`. |
 
+Content as data paints the stored HTML as is, so `content/` must be writable only by the page's editors (the host's access rules), and
+anything that writes it treats viewer input as text, never as markup.
+
 After every publish, read `checks/latest`.
 
 ### Seeding

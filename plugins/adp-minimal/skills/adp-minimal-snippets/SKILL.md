@@ -8,9 +8,8 @@ metadata:
 
 # Snippets: reference implementations
 
-Short versions of what the ADP tool (`adp.py`) computes, in Python 3 with the standard library only. They are for reading; use `adp.py` for real
-checks. Each snippet starts with a `# snippet: <name>` comment so other documents can refer to it. The full tool is in the project repository
-(https://github.com/fblgit/artifacts-done-properly).
+Short versions of what the ADP tool (`adp.py`) computes, in Python 3 with the standard library only. They are for reading and for checking a
+build; use `adp.py` for real checks. Each snippet starts with a `# snippet: <name>` comment so other documents can refer to it.
 
 The rules they implement are in [parts and hashes](../adp-minimal-parts/SKILL.md) and the [protocol](../adp-minimal-protocol/SKILL.md).
 

@@ -2,7 +2,7 @@
   "name": "adp-minimal",
   "displayName": "ADP Minimal",
   "version": "2.2.0",
-  "description": "Skills that explain ADP (Artifacts Done Properly), the framework and shared component library for reusable claude.ai Artifacts, plus a tested spec to rebuild its tools. The tools, catalog and templates themselves are in artifacts-done-properly.",
+  "description": "The specification of ADP (Artifacts Done Properly), the framework and shared component library for reusable claude.ai Artifacts, as skills: each tool's behavior, reference snippets, a minimal page template, and test vectors to build and check the tools.",
   "author": {
     "name": "Xavier Murias (fblgit)",
     "url": "https://github.com/fblgit"

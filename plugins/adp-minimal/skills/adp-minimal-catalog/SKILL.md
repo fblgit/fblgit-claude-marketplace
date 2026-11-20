@@ -90,7 +90,7 @@ No other tag is allowed. The **main file** is the template or guide file, otherw
 The catalog tool is `scripts/adp_catalog.py`, beside `adp.py`, standard library only:
 
 ```sh
-CAT="python3 -I <adp skill folder>/scripts/adp_catalog.py"
+CAT="python3 -I adp_catalog.py"
 $CAT                 # every catalog check: sizes, hashes, orphans, headers, index freshness, runtime copy
 $CAT build           # write catalog.json from the headers (the check fails while it is out of date)
 $CAT headers [FILES] # validate headers only; --report counts conformance per kind and per rule, exits 0
@@ -116,7 +116,7 @@ In the ADP source repository, a pre-commit hook runs `adp_catalog.py headers` on
 ## Using the catalog
 
 ```sh
-ADP="python3 -I <adp skill folder>/scripts/adp.py"
+ADP="python3 -I adp.py"
 $ADP catalog CATALOG_URL      # save the url; print the Artifact read call for catalog.json, then read calls (up to 256 paths each) for missing or changed files
 $ADP catalog                  # make those reads, then run again until it prints complete: true
 $ADP suggest - --for "kanban board" --n 3
