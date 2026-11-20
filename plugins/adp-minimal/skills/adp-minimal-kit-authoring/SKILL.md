@@ -36,20 +36,21 @@ this rule abolishes.
 ## Several samples
 
 One sample proves one shape; several prove the entry is general. Give each entry samples that differ in **size and kind**: an empty state, a typical
-one, a large one, a long label, a right-to-left or very narrow case, light and dark. Samples live in the folder's bundle, one key each:
+one, a large one, a long label, a right-to-left or very narrow case, light and dark. Samples live in the folder's bundle, one key each. An excerpt of `kit/samples/viz.json`:
 
 ```json
-// kit/samples/viz.json  (excerpt)
 {
   "sparkline": {
     "note": "Invented figures.",
     "line":  {"values": [3, 5, 4, 8, 9], "labels": ["Mon","Tue","Wed","Thu","Fri"], "unit": "kg"},
     "flat":  {"values": [4, 4, 4, 4]},
     "empty": {"values": []},
-    "long":  {"values": [/* 200 points */], "caption": "A long caption that must wrap without moving the range text"}
+    "long":  {"values": [3, 5, 4, 8, 9, 7, 6, 8], "caption": "A long caption that must wrap without moving the range text"}
   }
 }
 ```
+
+In the real bundle, `long.values` holds a few hundred points.
 
 The header names the key it owns; every bundle key must be owned by some entry, and every `#key` named must exist ([catalog](../adp-minimal-catalog/SKILL.md)).
 

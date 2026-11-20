@@ -21,7 +21,7 @@ An `Artifact` read of the page (the latest version is the only source). Then Art
 
 ```json
 {
-  "schema": "adp/2", "version": 7, "page_hash": "a1b2c3d4e5f6",
+  "schema": "adp/2", "version": "7", "page_hash": "a1b2c3d4e5f6",
   "parts": {"triage.keys-table": "0f1e2d3c4b5a", "triage.header": "5a4b3c2d1e0f", "_rest:index.html": "9c8d7e6f5a4b"},
   "elements": {"triage.keys-table": 14},
   "files": {"index.html": "77aa88bb99cc", "parts/app.js": "11dd22ee33ff"},
@@ -67,22 +67,26 @@ One batch (at most 50 writes; split a larger one and put `manifest/current` last
 ```json
 { "action": "batch", "url": "URL", "writes": [
   { "op": "update", "collection": "parts", "doc_id": "triage.keys-table", "if_version": 4,
-    "data": { "hash": "1234567890ab", "version": 8, "at": "2026-11-19T10:30:00Z", "by": "agent-a",
-              "summary": "sortable columns", "holder": "", "hold_until": "" } },
+    "data": { "hash": "1234567890ab", "version": "8", "at": "2026-11-19T10:30:00Z", "by": "agent-a",
+              "summary": "Keys table: add sort", "holder": "", "hold_until": "", "file": "parts/app.js" } },
   { "op": "set", "collection": "changes", "doc_id": "000008",
-    "data": { "version": 8, "at": "2026-11-19T10:30:00Z", "by": "agent-a", "summary": "Keys table: add sort",
+    "data": { "version": "8", "at": "2026-11-19T10:30:00Z", "by": "agent-a", "summary": "Keys table: add sort",
               "parts": [ { "id": "triage.keys-table", "from": "0f1e2d3c4b5a", "to": "1234567890ab" } ], "threads": ["t-42"] } },
   { "op": "update", "collection": "threads", "doc_id": "t-42", "if_version": 2,
-    "data": { "status": "done", "holder": "", "done_in": 8 } },
+    "data": { "status": "done", "holder": "", "done_in": "8" } },
   { "op": "update", "collection": "agents", "doc_id": "agent-a", "if_version": 6,
     "data": { "holds": [], "last_seen": "2026-11-19T10:31:00Z" } },
-  { "op": "update", "collection": "manifest", "doc_id": "current", "if_version": 7,
-    "data": { "version": 8, "page_hash": "ffeeddccbbaa", "at": "2026-11-19T10:30:00Z", "by": "agent-a",
-              "parts": { "triage.keys-table": "1234567890ab" } } }
+  { "op": "set", "collection": "manifest", "doc_id": "current", "if_version": 7,
+    "data": { "schema": "adp/2", "version": "8", "page_hash": "ffeeddccbbaa",
+              "parts": { "triage.keys-table": "1234567890ab", "triage.header": "5a4b3c2d1e0f", "_rest:index.html": "9c8d7e6f5a4b" },
+              "elements": { "triage.keys-table": 14 }, "files": { "index.html": "77aa88bb99cc", "parts/app.js": "44ee55ff66aa" },
+              "part_file": { "triage.keys-table": "parts/app.js" }, "content": {}, "at": "2026-11-19T10:30:00Z", "by": "agent-a" } }
 ] }
 ```
 
-`changes/` entries are append-only and zero-padded to six digits. A part added or removed has `from` or `to` equal to `""`.
+`changes/` entries are append-only and zero-padded to six digits. A part added or removed has `from` or `to` equal to `""`. `version` is written as
+a string. `manifest/current` is replaced whole (`set`, pinned), never `update`d: an `update` carrying only the changed parts would replace the
+page's whole `parts` map with them. `adp.py record` writes this batch; its exact output is pinned in the protocol skill's `vectors.md`.
 
 ## 5. A decision
 
@@ -100,7 +104,7 @@ A page's own record (for example `adrs/<id>`) follows the same protocol by docum
 pinned, and list it under `data` in that publish's `changes/<seq>`:
 
 ```json
-{ "version": 9, "at": "2026-11-19T11:00:00Z", "by": "agent-a", "summary": "ADR 12 accepted", "parts": [],
+{ "version": "9", "at": "2026-11-19T11:00:00Z", "by": "agent-a", "summary": "ADR 12 accepted", "parts": [],
   "data": [ { "doc": "adrs/12", "from": 2, "to": 3 } ] }
 ```
 
