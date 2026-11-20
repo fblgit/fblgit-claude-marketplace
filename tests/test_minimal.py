@@ -91,6 +91,15 @@ class Content(unittest.TestCase):
                 with open(p, encoding='utf-8') as f: text = f.read()
                 self.assertIsNone(bad.search(text), f'{p}: {bad.search(text)}')
 
+    def test_no_line_reads_as_a_package_manager_config_write(self):
+        """The marketplace's review scan refuses any line that looks like `npm/yarn/pnpm/bun config set KEY` (LAUNCHER_REGISTRY_REDIRECT), even in
+        prose about ADP's own `adp.py config` subcommand: name that subcommand without the words `config set` side by side."""
+        bad = re.compile(r'\bconfig\s+set\b', re.I)
+        for p in files():
+            if p.endswith('.md'):
+                with open(p, encoding='utf-8') as f:
+                    for i, line in enumerate(f, 1): self.assertIsNone(bad.search(line), f'{p}:{i}: {line.strip()[:120]}')
+
     def test_skills_carry_no_reference_folders(self):
         """Each topic is its own skill, loaded by its description: no references/ for the model to choose from."""
         for n in skills():

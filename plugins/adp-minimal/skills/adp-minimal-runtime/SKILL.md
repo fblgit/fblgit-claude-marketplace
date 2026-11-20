@@ -68,7 +68,7 @@ again. Setting a document twice is harmless. A viewer who cannot edit never seed
 ### Settings (switches)
 
 A switch is one `group.name` value (`edit.locked`, `look.theme`, `panel.changes`), stored in `config/current` only when it differs from the default.
-Groups: `edit`, `parts`, `comments`, `panel`, `playground`, `look`, `links`, `log`. `adp.py config` shows them; `adp.py config set KEY VALUE` changes one.
+Groups: `edit`, `parts`, `comments`, `panel`, `playground`, `look`, `links`, `log`. `adp.py config` shows them; its `set` subcommand (a switch name, then the value) changes one.
 If `edit.locked` is true, stop and tell the user who locked it.
 
 ```js
@@ -121,7 +121,7 @@ Booted on a test host (the runner's `boot` and `config-set`), the runtime must:
 | an editor opens a page whose store has no `manifest/current`, and the host serves files (`seedFiles`) | reads `seed.json`, fetches **every** pack before writing anything, writes each doc (six at a time), `manifest/current` alone and last, then `status/seed` (`{state: "done", from, version, by, opened_by, docs, packs, at}`), also `ADP.seeded` |
 | a viewer opens it, or `manifest/current` exists, or the host does not serve files | writes nothing |
 | a pack is missing | writes nothing (the tour shows why); the next editor's open tries again |
-| `ADP.config.set(KEY, VALUE)` by an editor | checks the value against the switch's type, then `set config/current` (`schema: "adp-config/1", at, by, values, changed {KEY: {by, at}}`) and `set changes/d-<ms>` (`summary: "Set KEY = VALUE"`), unless `log.data-changes` is false; a value equal to the default is removed from `values` |
+| `ADP.config.set(SWITCH, VALUE)` by an editor | checks the value against the switch's type, then `set config/current` (`schema: "adp-config/1", at, by, values, changed {SWITCH: {by, at}}`) and `set changes/d-<ms>` (`summary: "Set SWITCH = VALUE"`), unless `log.data-changes` is false; a value equal to the default is removed from `values` |
 | a wrong value, an unknown switch, or a viewer | rejects with a message, writes nothing |
 
 Content as data, the What changed panel, anchors, integrity and the self-check draw into the DOM: they are described above, not proven by vectors.

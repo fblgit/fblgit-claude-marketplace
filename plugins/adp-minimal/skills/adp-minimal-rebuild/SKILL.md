@@ -22,7 +22,7 @@ ADP repository, so a vector can only say what the tool does.
 |---|---|---|
 | hashing, `check`, `manifest`, `diff`, `diff-pages` | [adp-minimal-parts](../adp-minimal-parts/SKILL.md) | yes |
 | `classify` (and `ADP.classify`); the loop: `export`, `propose`, `ack`, `gate` | [adp-minimal-delta](../adp-minimal-delta/SKILL.md) | yes |
-| `hold`, `record`, `config`, `config set`, `requests`, `work` | [adp-minimal-protocol](../adp-minimal-protocol/SKILL.md) | yes |
+| `hold`, `record`, `config` (show, and its `set` subcommand), `requests`, `work` | [adp-minimal-protocol](../adp-minimal-protocol/SKILL.md) | yes |
 | `files`, `--since`, `--batch` and `pins`, `files --host single`, `unpack`, `seed`; `bundle`, `import-plan`, `import-ack` (with the Claude adapter) | [adp-minimal-packing](../adp-minimal-packing/SKILL.md) | yes |
 | `templates`, `new` (with the starter template of the full plugin) | [adp-minimal-new-artifact](../adp-minimal-new-artifact/SKILL.md) | yes |
 | `adp.js`: `ADP.hash`, connecting an `adp-host/1` provider, seeding, `ADP.config` | [adp-minimal-runtime](../adp-minimal-runtime/SKILL.md) | yes |
@@ -40,7 +40,7 @@ Say which rows a rebuild covers. A row marked *described* is not rebuilt-and-tes
 4. **`files`** (publish arguments), **`files --host single`** and **`unpack`** (the one-file pack, round trip byte for byte).
 5. **`seed`**: `seed.json` and `seed/pack-NNN.json`, `manifest/current` last.
 6. **`hold`** and **`record`**: the pinned batches, one document per file.
-7. **`config`**, **`config set`**, **`requests`**, **`work`**: the same pinned batches, for switches, requests and leases.
+7. **`config`** (show and `set`), **`requests`**, **`work`**: the same pinned batches, for switches, requests and leases.
 8. **The loop**: `export` (the nested git repository with `base`, `live`, `work`; `git merge-tree` for the three-way merge), `propose`, `ack`, `gate`.
 9. **`bundle`**, **`import-plan`**, **`import-ack`**, then the adapter of each host served (`adp_claude_adapter.py` first).
 10. **`adp.js`**: the pure section (`H`, `norm`, markers, `_rest`, `classify`, exposed as `ADP.hash` and `ADP.classify`), then connecting a host,
@@ -78,8 +78,8 @@ provider with an in-memory document store, `fetch` serving the page folder DIR, 
 argument is `viewer`); STATE.json is `{docs: {"collection/id": data}, provider?: "invalid", seedFiles?: false}`:
 
 - `["adp.js", "boot", DIR, STATE]` prints `{host, seeded, writes: ["set collection/id", ...] in call order, docs: [the paths in the store]}`;
-- `["adp.js", "config-set", DIR, STATE, KEY, VALUE_JSON]` boots, calls `ADP.config.set(KEY, VALUE)` and prints `{host, seeded, result: "ok" or
-  "error: <message>", value: ADP.config.get(KEY), writes, config: config/current, changes: the changes/d-<ms> docs}`.
+- `["adp.js", "config-set", DIR, STATE, SWITCH, VALUE_JSON]` boots, calls `ADP.config.set(SWITCH, VALUE)` and prints `{host, seeded, result: "ok" or
+  "error: <message>", value: ADP.config.get(SWITCH), writes, config: config/current, changes: the changes/d-<ms> docs}`.
 
 **Isolation.** Each vector runs in a fresh scratch folder (also the working directory) with `ADP_HOME` set to `<scratch>/home`, so the tool's
 registry, log and catalog never touch the user's `~/.adp`. A rebuilt `adp.py` reads `ADP_HOME` the same way (default `~/.adp`).
