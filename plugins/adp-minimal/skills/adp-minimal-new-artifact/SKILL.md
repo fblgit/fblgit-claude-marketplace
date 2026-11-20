@@ -50,9 +50,26 @@ This specification ships one template, **`minimal`**, as the fixture `template-m
 and a status list of what the runtime found on the host (connection, viewer, capabilities, integrity, seeding). It takes nothing from the catalog,
 so a page built from it works with `adp.js` alone. Install it as `templates/minimal/` and start with `adp.py new minimal DIR`.
 
-`--tier minimal` and `--tier default` select the `starter` and `default` templates where a catalog installs them; `--tier full` is refused.
-`--theme NAME` (default `theme.default`) and `--layout ID` add a theme and layouts from the catalog; `--catalog` falls back to the catalog saved by
-`adp.py catalog`. `--data FILE|DIR` seeds the page's own records; `--content FILE` builds views from a content file (`starter` template only).
+`{{catalog}}` is the `--catalog` value when it is a catalog URL, else the URL saved by `adp.py catalog`, else the text
+`none saved yet: python3 adp.py catalog <url> saves the owner's catalog url`.
+
+The options of `new`:
+
+- `--title T` (default `Untitled artifact`) and `--slug S` (default: the title in lowercase kebab); a slug that is not lowercase kebab exits 1.
+- `--by NAME` (default `adp`) names the author of the seed, as in `seed`.
+- `--data FILE|DIR` adds the page's own records to the seed, as `seed --data` does ([packing](../adp-minimal-packing/SKILL.md)).
+- `--catalog URL|-|catalog.json` names the catalog the page takes entries from; omitted or `-`, the catalog saved by `adp.py catalog`.
+- `--theme NAME` (repeatable) takes a theme: a short name (`paper`) or an id (`theme.paper`). When the catalog's index is on disk and has no
+  such theme, it exits 1 with `--theme NAME: the catalog has no such theme. It has: ` and the short names, and writes nothing. Without
+  `--theme`, the page takes `theme.default` when the index has it.
+- `--layout ID` (repeatable) takes a catalog entry by id.
+
+The page's take list is the template's `take`, then the themes, then the `--layout` ids, without repeats; it is printed as `take`. With a catalog,
+`new` runs `take` on that list, merges its `files` into `publish.files`, and links the themes and `--layout` entries in `index.html` as
+[themes](../adp-minimal-themes/SKILL.md#applying-a-theme) describes. A `take` failure exits 2 with its error. Without a catalog, `next` says to
+take the list later.
+
+`--tier full` exits 1 with `tier full is not available yet`; this specification defines no other tier.
 
 ## The shape of a part
 
@@ -123,6 +140,6 @@ await board.update({title: 'Sprint 12'});
 | Command | Prints | Exit |
 |---|---|---|
 | `templates` | one block per template: name, what it is, `use when:` | 0 |
-| `new (TEMPLATE \| --tier minimal\|default) DIR [--title T] [--slug S] [--by NAME] [--content FILE] [--data FILE\|DIR] [--theme NAME] [--layout ID] [--catalog URL\|-\|catalog.json]` | `{template, dir, title, slug, publish {file_path, root, files, capabilities}, take, design, next, ...}` | 0; 1 when DIR exists and is not empty; 2 `{error: "take failed", ...}` when a catalog is given that cannot be taken from |
+| `new TEMPLATE DIR [--title T] [--slug S] [--by NAME] [--data FILE\|DIR] [--theme NAME] [--layout ID] [--catalog URL\|-\|catalog.json]` | `{template, dir, title, slug, publish {file_path, root, files, capabilities}, take, design, next}`, plus `catalog` and `entries` when a catalog was taken from | 0; 1 when DIR exists and is not empty, on a bad slug or an unknown theme; 2 `{error: "take failed", ...}` when a catalog is given that cannot be taken from |
 
 Its fixtures and vectors are in [vectors.md](vectors.md), under "Contract: `new`".

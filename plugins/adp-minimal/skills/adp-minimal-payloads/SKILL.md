@@ -108,7 +108,8 @@ One batch, every existing document pinned, `manifest/current` last: the changed 
 
 - `holder: ""` and `hold_until: ""` mean the part is not held. They appear only on parts you held; a parent that changed only because a child
   changed is updated without them, so another agent's hold on it stays.
-- `changes/` entries are append-only, with ids zero-padded to six digits.
+- `changes/` entries are append-only. A change that comes with a publish has the six-digit sequence id `record` writes; a data-only change has
+  none to take, and uses `d-` followed by the time in milliseconds since the epoch (below).
 - An added part is a `set` on `parts/<id>` and appears in `changes` with `from: ""`. A removed part is a `delete` and appears with `to: ""`.
 - `manifest/current` is replaced whole with a pinned `set`, never `update`d: an `update` carrying only the changed parts would replace the
   page's whole `parts` map with them.
@@ -132,13 +133,17 @@ records how it was implemented, in your words, never presented as the owner's.
 
 ### A data-only change
 
-Application data documents (for example `adrs/<id>`) follow the same hold and record cycle, per document. Hold one as `"adrs/<id>"` in
-`agents/<you>.holds`, write it pinned, and list it under `data` in that publish's `changes/<seq>`. With no part changed, `parts` is empty:
+A change to records only, with no publish, is a `changes/d-<ms>` entry with an empty `version` and no part, listing each document it wrote
+under `data`. Setting a switch with `adp.py config` writes one in the same batch as the pinned `config/current` update ([vectors](../adp-minimal-protocol/vectors.md),
+`config-set-pinned`):
 
 ```json
-{ "version": "9", "at": "2026-11-19T11:00:00Z", "by": "agent-a", "summary": "ADR 12 accepted", "parts": [],
-  "data": [ { "doc": "adrs/12", "from": 2, "to": 3 } ] }
+{ "op": "set", "collection": "changes", "doc_id": "d-1763550000000",
+  "data": { "version": "", "at": "2026-11-19T11:00:00Z", "by": "agent-a", "summary": "Set edit.locked = true",
+            "parts": [], "threads": [], "data": [ { "doc": "config/current" } ] } }
 ```
 
-`from` and `to` are the document's store versions before and after the write. A document created by the change has `from: 0`; one deleted
-by it has `to: -1`.
+Application data documents (for example `adrs/<id>`) follow the same pattern, and no command writes it for you: write each document pinned
+with `if_version`, and in the same batch a `changes/d-<ms>` entry whose `data` lists `{doc: "adrs/<id>"}` for each. A `data` item may add
+`from` and `to`, the document's store versions before and after the write (`from: 0` for a created document, `to: -1` for a deleted one).
+The holds of [the protocol](../adp-minimal-protocol/SKILL.md) are on parts; there is no hold on a data document, so its pin is the only guard.

@@ -89,6 +89,17 @@ parts first:
 Unmarked elements are allowed but produce coarse diffs; mark them before publishing. The `deepest` and `elements` fields are recorded in the
 `changes/` summary.
 
+The fields, from the two manifests' `parts`, `parents`, `elements` and `files` (`parents` of both, the new one winning for an id in both):
+
+- `added` and `removed`: the ids only in the new or only in the old manifest, sorted.
+- `changed`: the ids in both whose hash differs, sorted by depth (the number of `.` in the id) descending, then by id. An ancestor of a changed
+  part has a different hash too, so it is listed after it.
+- `deepest`: each changed id that is not the parent of an added, removed or changed id, plus every added and removed id; sorted, without
+  repeats.
+- `elements`: for each changed id present in both `elements` maps with a different count, the new count minus the old, signed (`"+1"`, `"-2"`).
+- `files`: each file of the new manifest whose hash differs, as `[old hash, new hash]`, the old hash `""` for a new file. A removed file is
+  not listed.
+
 ## Anchors
 
 A comment anchors to a part id (or `<part id>:<key>` for one record inside a part, where the key is the element's `data-part-key`). The page asks
@@ -109,7 +120,7 @@ unique across the DIR, and each parsed file's text outside its parts is the pseu
 |---|---|---|
 | `check PAGE\|DIR` | a summary line (`N parts in M files, ok; X chars (P%) outside every part, hashed as _rest`), then warnings indented two spaces (`warning: ... part roots without data-comment-target: ...`); on a problem `N parts` and one problem per line | 0, or 1 on any problem: a marker opened twice, a mismatched close marker, an unclosed marker, a part with no `data-part="<id>"` in the page (ids starting `page.style` or `page.script` exempt), a `data-part` with no markers |
 | `manifest PAGE\|DIR` | JSON: `schema` (`adp/1` for a file, `adp/2` for a DIR), `page_hash`, `parts {id: hash}` (with the `_rest` entries), `files {path: hash}`, `parents {id: parent or ""}`, `elements {id: opening tags in its own text}`, and for a DIR `part_file {id: path}` | 0 |
-| `diff OLD.json NEW.json` | JSON: `page_hash [old, new]`, `added`, `removed`, `changed` (every changed id, ancestors included), `deepest` (changed ids with no changed descendant), `elements {id: "+n" / "-n"}`, `files {path: [old, new]}` | 0 |
+| `diff OLD.json NEW.json` | JSON: `page_hash [old, new]`, `added`, `removed`, `changed`, `deepest`, `elements`, `files`, as defined below | 0 |
 | `diff-pages OLD NEW` | the same as `diff` for two pages or two DIRs, plus `detail {deepest id: ["-old line", "+new line", ...]}` | 0 |
 
 Its fixtures and vectors are in [vectors.md](vectors.md), under "Contract: `check`, `manifest`, `diff`, `diff-pages`".

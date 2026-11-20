@@ -156,28 +156,77 @@ catalog-a/
 | Command | Does | Prints | Exit |
 |---|---|---|---|
 | `adp_catalog.py build CATALOG_DIR` | reads every header under `kit/`, writes `catalog.json` (`kit-catalog/2`: `schema`, `url`, `ver`, `built`, `entries`); each entry's `files` are its main file then its `@files`, each `{path, role, sha256, bytes}`, and `hash` the first 12 hex of the SHA-256 of the sorted `path=sha256` lines | `wrote <path>: N entries, M files` (or `unchanged ...`) | 0; 1 on a problem (below) |
-| `adp_catalog.py CATALOG_DIR` | the check: the index equals what build would write, every file's size and sha256 match, no orphans, every header valid | `OK: N entries, M entry files, F files in tree, 0 orphans, all sizes, sha256 and hashes match, H valid headers`; or `FAIL: N problem(s)` followed by one indented line per problem, such as `kit.badge: sha256 kit/badge.js: file <hex> != entry <hex>`, `kit.badge: hash <hash> != computed <hash>` or `orphan: kit/old.js is not referenced by any entry or page file` | 0; 1 on any problem |
+| `adp_catalog.py CATALOG_DIR` | the check: the index equals what build would write, every file's size and sha256 match, no orphans, every header valid | `OK: N entries, M entry files, F files in tree, 0 orphans, all sizes, sha256 and hashes match, H valid headers` on stdout; or `FAIL: N problem(s)` on stdout followed by one line per problem, indented two spaces, in the order below | 0; 1 on any problem |
 
-`build` exits 1, prints each problem on stderr and writes nothing when:
+The check's problem lines, in this order:
 
-- a kit file is not named by any entry;
-- a `@requires` names no entry;
-- a header rule is broken;
-- a sample key has no owner.
+1. For each entry, for each of its files in index order: `ID: missing file PATH`, `ID: size PATH: file N != bytes N`,
+   `ID: sha256 PATH: file HEX != entry HEX`; then `ID: hash H != computed H` (the hash recomputed from the sha256 values the entry records), or
+   `ID: entry has no hash`.
+2. `orphan: PATH is not referenced by any entry or page file`, for each such file in sorted path order.
+3. `N entries: their main files do not fit one Artifact read (256 paths at most)`; then, for each entry with no file to carry a header,
+   `ID: no script, style, template or doc file to carry its header`.
+4. `header PATH: [RULE] MESSAGE` for each broken header rule.
+5. `tree: ...` for each problem `build` would report from the tree (below); when there is none, `samples: ...` for each sample problem.
+6. `catalog.json: ...` for each place the index on disk differs from the built one: a top-level field other than `built` and `entries` as
+   `FIELD: on disk V, built V`; `ID: a header in the tree, no entry in catalog.json` and the reverse
+   `ID: an entry in catalog.json without a header in the tree`; then per entry, its fields in sorted order: for `files`,
+   `ID.files: PATH is built, not on disk`, `ID.files: PATH is on disk, not built`, `ID.files[PATH]: K, K differ` (the differing keys,
+   sorted) and `ID.files: in a different order`; for any other field, `ID.FIELD: on disk, not part of the built index`,
+   `ID.FIELD: missing on disk; built V` or `ID.FIELD: on disk V, built V`. When nothing else differs but the entries' order,
+   `entries: in a different order`. A missing or unreadable index is the one line `catalog.json: missing or not JSON`. Values are printed as
+   JSON with sorted keys, cut to 87 characters plus `...` when longer than 90
+   (`catalog.json: kit.badge.hash: on disk "04fb713a8c9d", built "e95bca96c3bb"`).
+
+`build` writes nothing and exits 1 when it finds a problem. It prints `N problem(s); catalog.json is not written:` on stderr, followed by one line
+per problem, indented two spaces. It looks for tree problems first:
+
+- `ID: @requires names no entry: ID, ID`;
+- `PATH: no entry names it (add it to @files in the header of its entry)`, for a kit file no entry lists;
+- `ID: @files names P, which is not in the tree` (and the other `@files` misuses: outside the folder, the main file itself, named twice,
+  another entry's main file);
+- `PATH: its header has @id I, which is the @id of PATH`.
+
+Only when there is none does it report header problems as `ID: PATH: [RULE] MESSAGE` (`kit.badge: kit/badge.js: [missing-tag] @summary is
+required`), then sample problems as `BUNDLE: the key K is named by no entry's @preview` and `BUNDLE: the key K is owned by no entry's @samples`.
 
 Its fixtures and vectors are in [vectors.md](vectors.md), under "Contract: a catalog tree, `adp_catalog.py build` and the check".
 
 ## Contract: reading a catalog (`kit`, `suggest`, `take`)
 
-These read a `catalog.json`: the fetched live one (by its url, or `-` for the saved one), or a local build, which they accept with a warning on
-stderr (`a local index is a build, not the live catalog ...`).
+These read a `catalog.json`: the fetched live one (by its url, or `-` for the saved one), or a local build, which they accept with this line on
+stderr, before any other:
+
+```
+warning: a local index is a build, not the live catalog: a file it lists may be missing there
+```
+
+Fields that live only in the main file's header (`about`, `status`, `version`, `config`, `db`) are read from the header on disk; `@db` is printed
+as `{reads, writes, note}`, with empty lists and an empty note for `none`.
 
 | Command | Prints | Exit |
 |---|---|---|
-| `kit list CATALOG [--kind K] [--tag T]` | one JSON line per entry: `{id, kind, name, summary, tags}` (`kind` here is the id prefix, not the entry's `kind` field) | 0 |
-| `kit show ID CATALOG` | `{id, name, summary, about, tags, files, requires, provides, status, version, config: [[signature, options]], db}` | 0; 1 for an unknown id |
-| `kit describe ID CATALOG` | how to wire it: `{id, needs, optional, provides, requires, files (code only), sample, sample_key, db}` | 0 |
-| `suggest CATALOG --for "words" [--n 3] [--kind K]` | `[{id, kind, why, requires, takes}]` ranked by overlap with tags, name, summary, id, provides, about; no model call | 0 |
+| `kit list CATALOG [--kind K] [--tag T]` | one JSON line per entry, in index order: `{id, kind, name, summary, tags}` (`kind` here is the id prefix, not the entry's `kind` field). `--kind` matches the prefix or the entry's `kind`; `--tag` matches one tag exactly | 0 |
+| `kit show ID CATALOG` | `{id, name, summary, about, tags, files, requires, provides}`, then `status`, `version`, `config: [[signature, options]]` and `db` when the header sets them | 0; 1 with `no entry ID in the catalog` on stderr for an unknown id |
+| `kit describe ID CATALOG` | how to wire it: `{id, needs (its @globals), optional, provides, requires, files (every file but samples), sample (the bundle path), sample_key, db}` | 0; 1 as `show` |
+| `suggest CATALOG --for "words" [--n 3] [--kind K]` | `[{id, kind, why, requires, takes}]` scored as below; no model call | 0 |
+
+**How `suggest` scores.** The words are the runs of `[a-z0-9]` in the lowercased `--for` text; each word longer than three letters that ends in
+`s` adds itself without the `s`; the stop words `a an and or the of to in on for with between by is it as at my that this from` are removed.
+For each entry (only those whose id prefix is `--kind`, when given), with the same word split applied to each field:
+
+| Field | Counts | Weight |
+|---|---|---|
+| tags | each tag that contains a wanted word | 3 |
+| name/summary | the name and summary joined by a space: each wanted word found | 1 |
+| id | each wanted word found | 1 |
+| provides | the names joined by spaces: each wanted word found | 2 |
+| about | each wanted word found | 1 |
+
+An entry scoring 0 is left out. The rest are grouped by id prefix; the groups are printed in prefix order, each sorted by score descending then
+id, and cut to `--n` entries. `why` lists the hits, separated by `; `: `tags: ` and the matching tags in tag order, then for each other field
+with a hit, in the table's order, its name, `: ` and the matched words sorted, comma-separated (`tags: bar, progress; name/summary: bar; about: bar`).
+`takes` is the number of the entry's files that are not samples.
 | `take CATALOG ID ... --url URL` | `{catalog {url, index, live, ver, built, warning?}, entries (with every @requires, in load order), files {path: {artifact, path}}, sha256, samples}`: references, never copies | 0; 1 for an unknown id, or a local index without `--url` |
 
 `take` resolves `@requires` first: taking `viz.meter` takes `kit.badge` too, and its `files` are the publish `files` entries a page adds.
