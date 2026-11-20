@@ -81,8 +81,9 @@ argument is `viewer`); STATE.json is `{docs: {"collection/id": data}, provider?:
 - `["adp.js", "config-set", DIR, STATE, SWITCH, VALUE_JSON]` boots, calls `ADP.config.set(SWITCH, VALUE)` and prints `{host, seeded, result: "ok" or
   "error: <message>", value: ADP.config.get(SWITCH), writes, config: config/current, changes: the changes/d-<ms> docs}`.
 
-**Isolation.** Each vector runs in a fresh scratch folder (also the working directory) with `ADP_HOME` set to `<scratch>/home`, so the tool's
-registry, log and catalog never touch the user's `~/.adp`. A rebuilt `adp.py` reads `ADP_HOME` the same way (default `~/.adp`).
+**Isolation.** Each vector runs in a fresh scratch folder (also the working directory) with an environment built for it, not inherited: `ADP_HOME`
+set to `<scratch>/home` (so the tool's registry, log and catalog never touch the user's `~/.adp`), a `PATH` of the folders that hold `node` and
+`git` plus the system default, and a UTF-8 locale. No other variable of the user's reaches the tool. A rebuilt `adp.py` reads `ADP_HOME` the same way (default `~/.adp`).
 
 **Normalization** (applied to everything compared): the scratch root is replaced by `<tmp>`, and every UTC timestamp (`2026-11-20T12:13:27Z`) by
 `<time>`; a proposal id (`p-<epoch ms>-<4 random>`) by `<pid>` its change id (`d-<epoch ms>`) by `d-<ms>`; a random
@@ -97,6 +98,7 @@ import glob, json, os, re, shutil, subprocess, sys, tempfile
 FENCE = '`' * 3      # three backticks, built so this block does not end itself
 BLOCK = re.compile(FENCE + r'json (fixture|vector)\n(.*?)' + FENCE, re.S)
 TIME = re.compile(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z')
+BIN = os.pathsep.join(dict.fromkeys([os.path.dirname(w) for w in map(shutil.which, ('node', 'git')) if w] + os.defpath.split(os.pathsep)))   # node, git
 PID = re.compile(r'(?<![A-Za-z0-9])p-\d{13}-[a-z2-9]{4}\b')     # a proposal id: p-<epoch ms>-<4 random>
 DID = re.compile(r'(?<![A-Za-z0-9])d-\d{13}\b')                  # its changes/ entry: d-<epoch ms>
 UUID = re.compile(r'(?<![0-9a-f-])(?!00000000-)[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b')   # a random lease token
@@ -207,7 +209,7 @@ def one(vec, fixtures, tools, root):
             name = step['run'][0]
             if name == 'adp.js': cmd = ['node', '-e', NODE, tools['adp.js'], *args]
             else: cmd = [sys.executable, '-I', tools[name], *args]
-            env = dict(os.environ, ADP_HOME=os.path.join(root, 'home'))      # the registry, the log, the catalog: never the user's ~/.adp
+            env = {'ADP_HOME': os.path.join(root, 'home'), 'PATH': BIN, 'LANG': 'en_US.UTF-8'}      # built, not inherited: no variable of the user's reaches the tool
             r = subprocess.run(cmd, capture_output=True, text=True, cwd=root, env=env, timeout=60)
             got = {'exit': r.returncode}
             out = norm(r.stdout)

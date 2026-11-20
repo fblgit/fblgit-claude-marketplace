@@ -100,6 +100,14 @@ class Content(unittest.TestCase):
                 with open(p, encoding='utf-8') as f:
                     for i, line in enumerate(f, 1): self.assertIsNone(bad.search(line), f'{p}:{i}: {line.strip()[:120]}')
 
+    def test_nothing_reads_the_users_environment(self):
+        """The review scan holds a plugin that reads the installer's environment (MCP_FORWARDS_CREDENTIAL_ENV) when another surface can send data
+        out. The runner builds its subprocess environment instead of inheriting it; no file in the plugin reads the environment."""
+        bad = re.compile(r'\bos\.environ\b|\bgetenv\b|\bprocess\.env\b')
+        for p in files():
+            with open(p, encoding='utf-8') as f:
+                for i, line in enumerate(f, 1): self.assertIsNone(bad.search(line), f'{p}:{i}: {line.strip()[:120]}')
+
     def test_skills_carry_no_reference_folders(self):
         """Each topic is its own skill, loaded by its description: no references/ for the model to choose from."""
         for n in skills():
