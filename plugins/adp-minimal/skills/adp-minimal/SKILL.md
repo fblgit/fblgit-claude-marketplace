@@ -1,6 +1,6 @@
 ---
 name: adp-minimal
-description: "What ADP (Artifacts Done Properly) is and why: the standard for shared Claude Artifacts and Sites pages that several people and agents keep editing, its four pieces (parts, the record, the protocol, the kit), what it preserves, its vocabulary, and the rule that pages are built and changed through ADP, never by hand. Use when the user asks what ADP is, why it exists, how its pieces fit, or wants work done on a page and the ADP tools may not be installed."
+description: "What ADP (Artifacts Done Properly) is and why: the framework and shared component library for reusable claude.ai Artifacts, its pieces (the kit and catalog, templates, parts, the record, the protocol, hosts), what it preserves, its vocabulary, and the rule that pages are built and changed through ADP, never by hand. Use when the user asks what ADP is, why it exists, how its pieces fit, or wants work done on a page and the ADP tools may not be installed."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
@@ -8,33 +8,39 @@ metadata:
 
 # What ADP is
 
-ADP (Artifacts Done Properly) is a standard for a Claude Artifact, or a Sites page, that more than one person or agent keeps working on. It is a set of
-conventions plus one small runtime; it is not a service and not a UI framework. A page stays plain HTML, CSS and JavaScript.
+ADP (Artifacts Done Properly) is a framework and shared library for reusable claude.ai Artifacts. It installs as a Claude skill. A page stays plain
+HTML, CSS and JavaScript; ADP is conventions, one small runtime (`adp.js`) and one command (`adp.py`), not a service or a UI framework.
 
 This plugin explains ADP; each topic is its own skill (below). ADP itself (`adp.py`, the catalog, the templates, the runtime) is the full plugin:
 
     /plugin marketplace add fblgit/artifacts-done-properly
     /plugin install artifacts-done-properly@fblgit-adp
 
-## The problem
+## What it is for
 
-A shared page is edited over many versions by sessions that cannot see each other. Without a standard:
+Good work done in an Artifact usually stays in that Artifact. ADP keeps it:
 
-- a session works from a stale copy and its publish overwrites someone else's change;
-- a comment says "I'll fix it" and nobody does;
-- a comment anchored to a CSS path loses its place the day the layout changes;
-- the same table, tabs or chart is retyped, slightly differently, on every page.
+- the reusable pieces of a page go into a **catalog** as kits (components, layouts, patterns, charts, themes), each with its interface, its
+  dependencies and examples, and the next page **takes them by reference** instead of rewriting them;
+- a page starts from a **template** and is built, edited and published through `adp.py`, so its structure, its record and its catalog references
+  stay consistent;
+- the page keeps its own **record**: what changed, who changed it, the decisions, the open requests;
+- people and agents **work on the page from inside it**: a request is a record on the page, and an agent claims it, works it and reports back;
+- concurrent work is **merged, not overwritten**: a write made against an old version is refused, and two sessions' changes are classified and
+  merged or held.
 
-## The answer, in four pieces
+## The pieces
 
 | Piece | What it is |
 |---|---|
-| **Parts** | Every piece of the page has a stable id and a content hash. Comments anchor to part ids, not to CSS paths. |
-| **The record** | One database layout (manifest, parts, content, changes, decisions, agents ...) says what the page is and what changed. |
+| **The kit and the catalog** | Shared, versioned building blocks, each with a header (interface, dependencies, tokens, samples), indexed in `catalog.json`. A page takes them; nobody retypes them. |
+| **Templates** | The starting pages (`starter`, `assistant`, `default`): the shell, the runtime, the record layout, the agent pane. |
+| **Parts** | Every piece of a page has a stable id and a content hash. Comments anchor to part ids; a change shows on the part it touched. |
+| **The record** | One database layout (manifest, parts, content, changes, decisions, requests, agents ...) says what the page is and what changed. |
 | **The protocol** | Read, hold, edit, check, publish, record. The only lock is the `if_version` pin on a write. |
-| **The kit** | Shared, versioned building blocks (components, layouts, patterns, visualisations, themes) with a header, in a catalog. A page takes them; nobody retypes them. |
+| **Hosts** | One adapter contract (`adp-host/1`), so the same page runs on Claude and on other hosts. |
 
-In one picture: a part, its recorded hash, and the write that is refused when someone got there first.
+Underneath, in one picture: a part, its recorded hash, and the write that is refused when someone got there first.
 
 ```html
 <!-- part:triage.keys-table --> <section data-part="triage.keys-table">...</section> <!-- /part:triage.keys-table -->

@@ -2,11 +2,13 @@
 
 Skills that explain [ADP (Artifacts Done Properly)](https://github.com/fblgit/artifacts-done-properly) to Claude.
 
-ADP is a standard for claude.ai Artifacts that more than one person or agent edits over time. Each part of a page gets an id and a content hash,
-each change is recorded, and a write made against an old version is refused.
+ADP is a framework and shared library for reusable claude.ai Artifacts. Reusable pieces of a page go into a catalog as kits, each with its
+interface, its dependencies and examples, and the next page takes them by reference instead of rewriting them. Pages are built from templates,
+carry their own record of changes, and can be worked on by agents from inside the page. Underneath, each piece of a page is a part with a stable
+id, so comments and changes stay attached to it.
 
-This plugin is the documentation only. It has no tools, no component catalog and no page templates; those come with the full plugin,
-`artifacts-done-properly`. Use this one when you want Claude to explain ADP or plan work in it, or to rebuild ADP's tools from a written spec.
+This plugin has the skills that explain all of that, and a written spec of ADP's tools with test cases, enough to rebuild them. It does not include
+the tools, the catalog or the templates; those come with the full plugin, `artifacts-done-properly`.
 
 ## Install
 
