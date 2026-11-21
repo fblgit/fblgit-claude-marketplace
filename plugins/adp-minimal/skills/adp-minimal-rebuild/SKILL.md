@@ -374,11 +374,12 @@ The build is laid out as the tools expect it: `scripts/adp.py`, `scripts/adp_cat
 
 ## Build and check
 
-Save the three blocks (`vector-runner`, `assemble`, then this one) in that order as `build.py`, and run `python3 build.py SKILLS_DIR BUILD_DIR`:
+Save the three blocks (`vector-runner`, `assemble`, then this one) one after the other, in that order, as `build.py`, and run
+`python3 build.py SKILLS_DIR BUILD_DIR`:
 
 ```python
 # snippet: run-the-vectors   (needs vector-runner and assemble above)
-skills, build = sys.argv[1:3]
+skills, build = map(os.path.abspath, sys.argv[1:3])      # the vectors run each tool from a scratch folder of their own
 report, problems = assemble(skills, build, final=True)
 print(json.dumps(report), *problems, sep='\n')
 results = run(skills, {tool: os.path.join(build, rel) for tool, rel in TOOLS.items()})
