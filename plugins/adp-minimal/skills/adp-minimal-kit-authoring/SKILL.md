@@ -315,7 +315,7 @@ def check_headers(root, files=None):
 
 ## Changing an entry later
 
-Bump `@version`, set `@updated`, replace `@changed` with one sentence describing the newest change, run `build` again, then the check. A changed file changes its
+Bump `@version`, fill `@updated`, replace `@changed` with one sentence describing the newest change, run `build` again, then the check. A changed file changes its
 `sha256` and the entry `hash`, which is how a page knows its copy is no longer the catalog's. Never change an id: add a new entry, and say in
 the old entry's description paragraph (the `about` text under its name) that it is superseded and by which id. `@status` takes only `new` or
 `stable`.

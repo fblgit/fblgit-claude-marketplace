@@ -124,7 +124,7 @@ the theme `--theme` linked. Changing `look.theme` clears viewers' own theme pick
 uses, the contract's `--text-size`, `--leading` and `--edge-w`, and three page tokens of its own (`--space`, `--radius`, `--measure`), and
 its rules read only tokens, so a theme linked after it changes the page's color, type, spacing, corners and width.
 
-**Changing it later**: on a page with the theme picker, set `look.theme`. On any other page, take the new theme (`adp.py take CATALOG theme.<id>`),
+**Changing it later**: on a page with the theme picker, change `look.theme`. On any other page, take the new theme (`adp.py take CATALOG theme.<id>`),
 replace both the theme `<link>` and the font `<link>` in `index.html`, publish, and record the change with `adp.py record` as in
 [the six steps](../adp-minimal-protocol/SKILL.md#the-six-steps).
 

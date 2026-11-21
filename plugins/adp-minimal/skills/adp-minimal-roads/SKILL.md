@@ -70,7 +70,7 @@ $ADP ack DIR --result RESULT.json
 # reply on each answered thread, naming V and the part ids
 ```
 
-- After `adp.py export`: if `held` is above 0, stop and show both versions to the owner ([reading the result](../adp-minimal-delta/SKILL.md#reading-the-result)).
+- After `adp.py export DIR`: if `held` is above 0, stop and show both versions to the owner ([reading the result](../adp-minimal-delta/SKILL.md#reading-the-result)).
   If the page hash differs from `manifest/current.page_hash`, record that gap first. Record any new decision from the owner in `decisions/<slug>`
   before editing.
 - `P.json` maps each doc you write to the version you read, e.g. `{"manifest/current": 4, "parts/home": 2}`. Once the hold's batch commits, a held

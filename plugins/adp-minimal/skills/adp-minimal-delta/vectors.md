@@ -134,7 +134,7 @@ because incoming deletes it without a reason. `p.c` is `held` for the same reaso
 }
 ```
 
-## Contract: the loop (`adp.py export`, `propose`, `ack`, `gate`)
+## Contract: the loop (export, propose, ack, gate)
 
 ```json fixture
 {
@@ -532,7 +532,7 @@ because incoming deletes it without a reason. `p.c` is `held` for the same reaso
    ],
    "exit": 1,
    "stderr_text": [
-    "<pid>: status unknown in the last export; ack it once applied or declined"
+    "<pid>: status unknown in the last export read; ack it once applied or declined"
    ]
   }
  ]
@@ -2416,7 +2416,7 @@ A state that predates the status table still acks from the proposal's record und
    ],
    "exit": 1,
    "stderr_text": [
-    "<pid>: status unknown in the last export; ack it once applied or declined"
+    "<pid>: status unknown in the last export read; ack it once applied or declined"
    ]
   },
   {

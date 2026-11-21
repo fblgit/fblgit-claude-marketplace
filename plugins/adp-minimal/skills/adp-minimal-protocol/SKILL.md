@@ -49,7 +49,7 @@ read  ->  hold  ->  edit  ->  check  ->  publish  ->  record
    you read. Its `page_hash` is the SHA-256 (first 12 hex digits) of the sorted `<part id>=<hash>` and `file:<path>=<hash>` lines. If it differs
    from `manifest/current.page_hash`, someone published without recording: record that gap first (`by: "unrecorded"`).
    `adp.py export DIR --url URL` does this and builds the three-way state ([delta and inbox](../adp-minimal-delta/SKILL.md)).
-2. **Hold.** One batch, every entry pinned: set `holder` and `hold_until` (at most two hours ahead) on the parts you will touch, and your
+2. **Hold.** One batch, every entry pinned: write `holder` and `hold_until` (at most two hours ahead) on the parts you will touch, and your
    `agents/<you>.holds`. A hold is a claim written to the record. If the batch is refused, another agent wrote first: read again. Do not edit a
    part another agent holds until its `hold_until` has passed; `hold_until` is the hold's expiry, a staleness hint, and the pin remains the only
    enforced lock. `adp.py hold DIR ID... --by NAME`.

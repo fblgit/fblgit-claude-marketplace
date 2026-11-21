@@ -125,7 +125,7 @@ def classify_cmd(a):
 ## The loop
 
 ```
-live -> local (adp.py export)  ->  classify  ->  local -> live (adp.py propose)  ->  ack  ->  gate
+adp.py export: live to local  ->  classify  ->  adp.py propose: local to live  ->  ack  ->  gate
 ```
 
 The loop keeps its state beside the folder, in `DIR.adp/`: `state.json`, `listing.json` and `docs.json` (the reads), `incoming/files/` (the live
@@ -238,7 +238,7 @@ def merge3(repo):
     return (lines[0] if lines else ''), [] if r.returncode == 0 else [x for x in lines if x.startswith('CONFLICT')] or [r.stderr.strip() or 'merge failed']
 ```
 
-### `adp.py export`
+### `adp.py export DIR`
 
 `adp.py export DIR --url URL [--files-listing F] [--docs D] [--version V]` reads live in three passes. With no listing saved (default
 `DIR.adp/listing.json`) it prints `{reads, then}`: one `Artifact` list call and where to save its result. With the listing but no records (default
@@ -417,7 +417,7 @@ def loop_export(a):
 
 ### `propose`
 
-`adp.py propose DIR --by NAME --summary S [--retire ID --reason R ...]` classifies work against the base and live of the last export
+`adp.py propose DIR --by NAME --summary S [--retire ID --reason R ...]` classifies work against the base and live of the last export run
 and merges it with live. Before any export it prints `{error: "no export yet", next}` and exits 2. Each deleted part or file needs its own
 `--retire ID --reason R` pair, matched in order. A `state.json` without `live_manifest` takes the live manifest from `incoming/live-manifest.json`.
 
@@ -507,7 +507,7 @@ of `{collection, doc_id or id, version}`) updates each record's version, and a p
 the files' SHA-256 and the live version. Input that is not JSON exits 1. As a PostToolUse hook (stdin holds `tool_input`, or `--hook`) it reads
 the call's `tool_response` (content blocks or text) and finds DIR by the call's url; an unmanaged url prints `{ack: null, note}`. Before any
 export it exits 2 as `propose` does. `ack DIR --proposal PID` takes the proposal's status from the last export (the state's table, else the exported record under `incoming/db/incoming/`): `applied` moves base to this
-folder's proposal and its copy, and `declined` leaves base as it is; either way the proposal is closed. Any other status exits 1 with `<pid>: status <status> in the last export; ack it once applied or declined` on stderr.
+folder's proposal and its copy, and `declined` leaves base as it is; either way the proposal is closed. Any other status exits 1 with `<pid>: status <status> in the last export read; ack it once applied or declined` on stderr.
 It prints `{ack: [what it took], live: {version, at}, incoming: {held, unacked, pending_replies}}`.
 
 ```python
@@ -518,7 +518,7 @@ It prints `{ack: [what it took], live: {version, at}, incoming: {held, unacked, 
 # order: 470
 # needs: [delta.state]
 # tests: [loop-ours-is-proposed-and-acknowledged, loop-retire-chunk-and-ack, loop-empty-applied-version-and-older-state]
-# sha: 73d766b46cf6
+# sha: 9ee2e68e3b62
 # ---
 FLAGS.add('--hook')
 
@@ -552,7 +552,7 @@ def loop_ack(a):
     if pid:
         rec = Path(adp_dir(d), 'incoming', 'db', 'incoming', pid + '.json')       # a state without the export's status table: the record as exported
         status, version = st.get('status', {}).get(pid) or ([(r := read_json(rec)).get('status'), (r.get('applied') or {}).get('version', '')] if rec.is_file() else [None, ''])
-        if status not in ('applied', 'declined'): sys.exit(f'{pid}: status {status or "unknown"} in the last export; ack it once applied or declined')
+        if status not in ('applied', 'declined'): sys.exit(f'{pid}: status {status or "unknown"} in the last export read; ack it once applied or declined')
         inc = st['incoming']; prop = inc['proposed'].get(pid)
         if status == 'applied' and prop:                  # this folder's own proposal: its work is the new base
             git(loop_repo(d), 'branch', '-f', 'base', prop['work'])
@@ -657,7 +657,7 @@ catalog's own seed is the only writer of its `incoming/`. Never enable it on a p
 
 ## Reading the result
 
-- `theirs`: when nothing is held, `adp.py export` has already copied it into `DIR`. No action.
+- `theirs`: when nothing is held, `adp.py export DIR` has already copied it into `DIR`. No action.
 - `ours`: run `propose`.
 - `held`: stop. Both sides changed it, and a person decides: an editor picks a side in the inbox, or the owner chooses after you show both versions,
   or the part's holder (the session named in its `holder` field; see [protocol](../adp-minimal-protocol/SKILL.md)) settles it. Never resolve a hold
