@@ -1,0 +1,5 @@
+# Lint = pyflakes errors only (unused names, undefined names). The scripts are written in a dense one-line style, so style rules are off.
+target-version = "py39"
+
+[lint]
+select = ["F"]

@@ -1,0 +1,23 @@
+version: 2
+updates:
+  # Workflow actions are pinned by commit SHA with a version comment (see ci.yml and codeql.yml); Dependabot bumps both together.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "CI"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The hook revisions in .pre-commit-config.yaml (gitleaks, ruff). ci.yml runs the same versions (gitleaks through its action, ruff pinned in
+  # the `lint` job): when a hook bump merges, bring the matching version in ci.yml along with it.
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "CI"
+
+  # No pip or npm ecosystem on purpose: the plugins use only the Python standard library and have no package.json, requirements file or lockfile.

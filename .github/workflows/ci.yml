@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # gitleaks-action lists the PR's commits on pull_request events
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The gitleaks config lives here, not in a .toml file at the repo root. It extends the default rules; the payload examples
+          # name a part `triage.keys-table` beside its 12-character content hash, which the generic key rule takes for a secret.
+          # Keep it equal to the hook in .pre-commit-config.yaml.
+          GITLEAKS_CONFIG_TOML: |
+            [extend]
+            useDefault = true
+
+            [allowlist]
+            description = "a part id that contains the word keys, beside its content hash, in the payload examples"
+            regexTarget = "line"
+            regexes = [
+              '''triage[.]keys-table''',
+            ]
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.17.5 && ruff check .
+
+  # The unit tests assemble the tools of artifact-data-protocol from its skills, run every vector against the build, and repeat the build
+  # from a copy of the plugin alone. They need node and git, which come with the runner image; the steps below fail early when one is missing.
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: node --version && git --version
+      - run: python3 -m unittest discover -s tests -v
+
+  # Each plugin as the directory reads it, and the repo root as its marketplace. --profile directory fails on what the directory refuses,
+  # --strict on its warnings too. Claude Code runs through npx, unpinned on purpose: the check follows the current CLI.
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate every plugin folder
+        run: |
+          for p in plugins/*/; do
+            echo "::group::$p"
+            npx --yes @anthropic-ai/claude-code plugin validate "$p" --profile directory --strict
+            echo "::endgroup::"
+          done
+      - name: Validate the repository (marketplace)
+        run: npx --yes @anthropic-ai/claude-code plugin validate . --strict
