@@ -2,7 +2,7 @@
   "name": "adp-minimal",
   "displayName": "ADP Minimal",
   "version": "2.2.0",
-  "description": "Build reusable claude.ai Artifacts with ADP: shared catalog components, part-level edits, and a record of every change.",
+  "description": "Build reusable claude.ai Artifacts with ADP (Artifacts Done Properly & Artifact Data Protocol): shared catalog components, part-level edits, and a record of every change.",
   "author": {
     "name": "Xavier Murias (fblgit)",
     "url": "https://github.com/fblgit"

@@ -28,7 +28,7 @@
     },
     {
       "name": "adp-minimal",
-      "description": "Build reusable claude.ai Artifacts with ADP: shared catalog components, part-level edits, and a record of every change.",
+      "description": "Build reusable claude.ai Artifacts with ADP (Artifacts Done Properly & Artifact Data Protocol): shared catalog components, part-level edits, and a record of every change.",
       "source": "./plugins/adp-minimal"
     },
     {
