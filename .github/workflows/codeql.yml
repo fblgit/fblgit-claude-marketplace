@@ -1,0 +1,53 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 5 * * 1"     # weekly, so new queries reach code that did not change
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # upload the results to code scanning
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      # The tools of artifact-data-protocol are written inside its skills, as fragments in Markdown, where CodeQL does not look. Assemble
+      # them into _assembled/ first, with the plugin's own assembler, so adp.py, adp_catalog.py and adp.js are analysed as the files they become.
+      - name: Assemble the tools from the skills
+        run: |
+          python3 - <<'EOF'
+          import re
+          skills = 'plugins/artifact-data-protocol/skills'
+          text = open(skills + '/adp-rebuild/SKILL.md', encoding='utf-8').read()
+          ns = {}
+          for name in ('vector-runner', 'assemble'):
+              exec(re.findall(r'```python\n(# snippet: ' + name + r'\b.*?)\n```\n', text, re.S)[0], ns)
+          report, problems = ns['assemble'](skills, '_assembled', True)
+          print(report, *problems, sep='\n')
+          raise SystemExit(1 if problems else 0)
+          EOF
+      - uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        with:
+          category: /language:${{ matrix.language }}
