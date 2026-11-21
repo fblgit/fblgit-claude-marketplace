@@ -17,7 +17,7 @@ The code blocks with a header are the fragments of `adp.py` this skill owns; the
 
 | State | Meaning |
 |---|---|
-| **base** | the last state both sides agreed on: set to live by the first export and by every export that merges cleanly, and to the proposal's work by `ack --proposal` once the page applied it |
+| **base** | the last state both sides agreed on: made equal to live by the first export and by every export that merges cleanly, and to the proposal's work by `ack --proposal` once the page applied it |
 | **live** | the record and the published page, as the last export read them |
 | **incoming** | the side being merged: the agent's local folder (**work**, below), or a proposal when the inbox classifies it |
 
@@ -125,7 +125,7 @@ def classify_cmd(a):
 ## The loop
 
 ```
-export (live -> local)  ->  classify  ->  propose (local -> live)  ->  ack  ->  gate
+live -> local (adp.py export)  ->  classify  ->  local -> live (adp.py propose)  ->  ack  ->  gate
 ```
 
 The loop keeps its state beside the folder, in `DIR.adp/`: `state.json`, `listing.json` and `docs.json` (the reads), `incoming/files/` (the live
