@@ -28,7 +28,7 @@
     },
     {
       "name": "adp-minimal",
-      "description": "ADP as skills: each explains one topic to Claude and carries the code of the tools, with test vectors to assemble and check them",
+      "description": "Teaches Claude to build and maintain reusable claude.ai Artifacts with ADP; the skills also carry the source of ADP's tools",
       "source": "./plugins/adp-minimal"
     },
     {
