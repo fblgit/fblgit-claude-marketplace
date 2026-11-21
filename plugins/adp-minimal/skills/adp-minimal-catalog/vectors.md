@@ -1,6 +1,6 @@
 # Vectors: adp-minimal-catalog
 
-The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in [adp-minimal-rebuild](../adp-minimal-rebuild/SKILL.md) reads them; they are checked against the real ADP tools.
+The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in [adp-minimal-rebuild](../adp-minimal-rebuild/SKILL.md) reads them; they are run against the tools assembled from the fragments.
 
 ## Contract: a catalog tree, `adp_catalog.py build` and the check
 
@@ -379,6 +379,1131 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
   "2 problem(s); catalog.json is not written:",
   "  viz.meter: @requires names no entry: kit.badge",
   "  kit/samples/kit.json: no entry names it (add it to @files in the header of its entry)"
+ ]
+}
+```
+
+```json fixture
+{
+ "fixture": "catalog-bad-rules",
+ "base": "catalog-a",
+ "files": {
+  "kit/badge.js": "/* part:page.script.kit.badge */\n/**\n * Status badge\n * Kit.badge.render(el, {label, tone}) draws a small label coloured by a meaning token; an empty label draws nothing.\n *\n * @id        kit.badge\n * @kind      widget\n * @group     Board kit\n * @status    wip\n * @version   1.0\n * @updated   yesterday\n * @summary   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n * @tags      Badge, badge, badge\n * @requires  none\n * @files     kit/badge.css, kit/samples/kit.json\n * @provides  1bad\n * @config    oops\n * @tokens    ink\n * @globals   jquery\n * @db        read x\n * @preview   not json\n * @bogus     one\n * @source    one | two\n * @changed   a\n * @changed   b\n * @status    new\n * @samples   badge, badge\n */\n(function (root) {\n  const Kit = root.Kit = root.Kit || {};\n  Kit.badge = {render(el, o) { el.className = 'kit-badge ' + (o.tone || 'ok'); el.textContent = o.label || ''; return {destroy() { el.textContent = ''; }}; }};\n})(window);\n/* /part:page.script.kit.badge */\n",
+  "kit/viz/meter.js": "/* part:page.script.kit.viz.meter */\n/**\n * @id        viz.meter\n * @kind      component\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   A bar that states its value and range in words, with a status badge.\n * @tags      meter, bar, progress, value\n * @requires  kit.badge\n * @files     kit/viz/meter.css, kit/samples/viz.json\n * @provides  Kit.meter.draw\n * @config    Kit.meter.draw(el, opts) | value, max, label\n * @tokens    --panel --ink --accent --f-ui\n * @globals   none\n * @preview   {\"render\": \"viz.meter\", \"samples\": [\"kit/samples/viz.json#meter\"]}\n * @samples   meter\n */\n(function (root) {\n  const Kit = root.Kit;\n  Kit.meter = {draw(el, o) { const p = Math.round(100 * o.value / o.max); el.innerHTML = '<div class=\"kit-meter\"><i style=\"width:' + p + '%\"></i></div><span></span>'; el.lastChild.textContent = o.label + ': ' + o.value + ' of ' + o.max; Kit.badge.render(el.appendChild(document.createElement('b')), {label: p + '%', tone: p < 50 ? 'danger' : p < 80 ? 'warn' : 'ok'}); }};\n})(window);\n/* /part:page.script.kit.viz.meter */\n"
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "catalog-bad-files",
+ "base": "catalog-a",
+ "files": {
+  "kit/viz/meter.js": "/* part:page.script.kit.viz.meter */\n/**\n * Meter\n * Kit.meter.draw(el, {value, max, label}) draws a bar that states its value in words, with a badge for the tone it falls in.\n *\n * @id        viz.meter\n * @kind      component\n * @group     Visualizations\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   A bar that states its value and range in words, with a status badge.\n * @tags      meter, bar, progress, value\n * @requires  kit.badge\n * @files     kit/viz/meter.js, kit/viz/meter.css, kit/viz/meter.css, ../x.js, kit/nothing.css, kit/badge.js, kit/samples/viz.json\n * @provides  Kit.meter.draw\n * @config    Kit.meter.draw(el, opts) | value, max, label\n * @tokens    --panel --ink --accent --f-ui\n * @globals   none\n * @db        none\n * @preview   {\"render\": \"viz.meter\", \"samples\": [\"kit/samples/viz.json#meter\"]}\n * @samples   meter\n */\n(function (root) {\n  const Kit = root.Kit;\n  Kit.meter = {draw(el, o) { const p = Math.round(100 * o.value / o.max); el.innerHTML = '<div class=\"kit-meter\"><i style=\"width:' + p + '%\"></i></div><span></span>'; el.lastChild.textContent = o.label + ': ' + o.value + ' of ' + o.max; Kit.badge.render(el.appendChild(document.createElement('b')), {label: p + '%', tone: p < 50 ? 'danger' : p < 80 ? 'warn' : 'ok'}); }};\n})(window);\n/* /part:page.script.kit.viz.meter */\n"
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "catalog-bad-samples",
+ "base": "catalog-a",
+ "files": {
+  "kit/badge.js": "/* part:page.script.kit.badge */\n/**\n * Status badge\n * Kit.badge.render(el, {label, tone}) draws a small label coloured by a meaning token; an empty label draws nothing.\n *\n * @id        kit.badge\n * @kind      component\n * @group     Board kit\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   A small label coloured by a meaning token.\n * @tags      badge, status, label\n * @requires  none\n * @files     kit/badge.css, kit/samples/kit.json\n * @provides  Kit.badge.render\n * @config    Kit.badge.render(el, opts) | label, tone (ok warn danger)\n * @tokens    --ok --warn --danger --f-ui\n * @globals   none\n * @db        none\n * @preview   {\"render\": \"kit.badge\", \"samples\": [\"kit/samples/kit.json#missing\", \"kit/samples/viz.json#meter\", \"kit/other.json#x\"]}\n * @samples   badge, ghost\n */\n(function (root) {\n  const Kit = root.Kit = root.Kit || {};\n  Kit.badge = {render(el, o) { el.className = 'kit-badge ' + (o.tone || 'ok'); el.textContent = o.label || ''; return {destroy() { el.textContent = ''; }}; }};\n})(window);\n/* /part:page.script.kit.badge */\n",
+  "kit/samples/viz.json": "{\n \"meter\": {\n  \"half\": {}\n },\n \"spare\": {\n  \"x\": 1\n }\n}\n"
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "catalog-stale-index",
+ "base": "catalog-built",
+ "files": {
+  "catalog.json": "{\n \"schema\": \"kit-catalog/2\",\n \"url\": \"https://claude.ai/artifact/00000000-0000-4000-8000-000000000002\",\n \"ver\": \"\",\n \"built\": \"2026-11-20T00:00:00Z\",\n \"entries\": [\n  {\n   \"id\": \"kit.ghost\",\n   \"kind\": \"guide\",\n   \"group\": \"Guides\",\n   \"name\": \"Reading this catalog\",\n   \"summary\": \"What each folder of this catalog holds and how a page takes an entry.\",\n   \"tags\": [\n    \"guide\",\n    \"catalog\",\n    \"folders\"\n   ],\n   \"status\": \"stable\",\n   \"version\": \"0.1.0\",\n   \"requires\": [],\n   \"globals\": [],\n   \"provides\": [],\n   \"main\": \"kit/guides/reading.md\",\n   \"files\": [\n    {\n     \"path\": \"kit/guides/reading.md\",\n     \"role\": \"doc\",\n     \"sha256\": \"233f053024286515d3f6b87f9d3ace3f33871beadbe420ede60a78e8cbb78ac4\",\n     \"bytes\": 588\n    }\n   ],\n   \"hash\": \"37bcfff649f0\"\n  },\n  {\n   \"id\": \"kit.badge\",\n   \"kind\": \"component\",\n   \"name\": \"Status badge\",\n   \"summary\": \"A small label coloured by a meaning token.\",\n   \"tags\": [\n    \"badge\",\n    \"status\",\n    \"label\"\n   ],\n   \"status\": \"new\",\n   \"version\": \"0.1.0\",\n   \"requires\": [],\n   \"globals\": [],\n   \"provides\": [\n    \"Kit.badge.render\"\n   ],\n   \"main\": \"kit/badge.js\",\n   \"files\": [\n    {\n     \"path\": \"kit/samples/kit.json\",\n     \"role\": \"sample\",\n     \"sha256\": \"754630b80636553bc207c5aa66fd12263e9e2c344e55372c7ad61ad827c32ce8\",\n     \"bytes\": 230\n    },\n    {\n     \"path\": \"kit/badge.css\",\n     \"role\": \"style\",\n     \"sha256\": \"e36fc8a443380c6dea1dfad9be19b7c67d72c6e735d471c546115c182d00478c\",\n     \"bytes\": 264\n    },\n    {\n     \"path\": \"kit/badge.js\",\n     \"role\": \"script\",\n     \"sha256\": \"18ba1a867d82bc9e28b399fdc6a9fc306f6b79252d5d88f7d9035e681fa040ab\",\n     \"bytes\": 1024\n    }\n   ],\n   \"hash\": \"04fb713a8c9d\",\n   \"extra\": 1\n  },\n  {\n   \"id\": \"theme.paper\",\n   \"kind\": \"theme\",\n   \"group\": \"Themes\",\n   \"name\": \"Paper\",\n   \"summary\": \"Warm paper by day, ink-blue by night, one green accent.\",\n   \"tags\": [\n    \"palette\",\n    \"tokens\",\n    \"dark mode\",\n    \"paper\"\n   ],\n   \"status\": \"new\",\n   \"version\": \"0.1.0\",\n   \"requires\": [],\n   \"globals\": [],\n   \"provides\": [],\n   \"fonts\": \"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\",\n   \"main\": \"kit/themes/paper.css\",\n   \"files\": [\n    {\n     \"path\": \"kit/themes/paper.css\",\n     \"role\": \"style\",\n     \"sha256\": \"d69784ce8672c5ac5019d6d99eecd8aa488f2ed1c396c50035b0ac3808f7ca80\",\n     \"bytes\": 1146\n    },\n    {\n     \"path\": \"kit/themes/paper.json\",\n     \"role\": \"data\",\n     \"sha256\": \"1ce5d350bb6973a1bc6c4e3488171b0e55d848493c432ff741af55e3b2089306\",\n     \"bytes\": 643\n    }\n   ]\n  },\n  {\n   \"id\": \"viz.meter\",\n   \"kind\": \"component\",\n   \"group\": \"Visualizations\",\n   \"name\": \"Meter\",\n   \"summary\": \"A bar that states its value and range in words, with a status badge.\",\n   \"tags\": [\n    \"meter\",\n    \"bar\",\n    \"progress\",\n    \"value\"\n   ],\n   \"status\": \"new\",\n   \"version\": \"0.2.0\",\n   \"requires\": [\n    \"kit.badge\"\n   ],\n   \"globals\": [],\n   \"provides\": [\n    \"Kit.meter.draw\"\n   ],\n   \"main\": \"kit/viz/meter.js\",\n   \"files\": [\n    {\n     \"path\": \"kit/viz/meter.js\",\n     \"role\": \"script\",\n     \"sha256\": \"efcf7c5c57ca8affb49a053292d5a29e7c1dbdbf402fa99909a03ed8d13fd37f\",\n     \"bytes\": 1262\n    },\n    {\n     \"path\": \"kit/viz/meter.css\",\n     \"role\": \"style\",\n     \"sha256\": \"3cbbbd327ce9f7de9c0284e73cddb355107a1b5fb31369301aadf318613e1c33\",\n     \"bytes\": 1\n    },\n    {\n     \"path\": \"kit/samples/viz.json\",\n     \"role\": \"sample\",\n     \"sha256\": \"c8af2a4b0d09926a10a953d1a2ffb00ff111b694ff6b0d9f43f62be1b7e4ddcc\",\n     \"bytes\": 263\n    }\n   ],\n   \"hash\": \"c53c2c95d630\"\n  }\n ]\n}\n",
+  "kit/stray.js": "/* no entry */\n",
+  "kit/themes/paper.json": null
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "catalog-header-drift",
+ "base": "catalog-built",
+ "files": {
+  "kit/badge.js": "/* part:page.script.kit.badge */\n/**\n * Status badge\n * Kit.badge.render(el, {label, tone}) draws a small label coloured by a meaning token; an empty label draws nothing.\n *\n * @id        nope.badge\n * @kind      component\n * @group     Board kit\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   A small label coloured by a meaning token.\n * @tags      badge, status, label\n * @requires  none\n * @files     kit/badge.css, kit/samples/kit.json\n * @provides  Kit.badge.render\n * @config    Kit.badge.render(el, opts) | label, tone (ok warn danger)\n * @tokens    --ok --warn --danger --f-ui\n * @globals   none\n * @db        none\n * @preview   {\"render\": \"kit.badge\", \"samples\": [\"kit/samples/kit.json#badge\"]}\n * @samples   badge\n */\n(function (root) {\n  const Kit = root.Kit = root.Kit || {};\n  Kit.badge = {render(el, o) { el.className = 'kit-badge ' + (o.tone || 'ok'); el.textContent = o.label || ''; return {destroy() { el.textContent = ''; }}; }};\n})(window);\n/* /part:page.script.kit.badge */\n",
+  "kit/guides/reading.md": "Reading this catalog, with no header.\n",
+  "kit/themes/paper.css": null
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-header-rules",
+ "run": [
+  "adp_catalog.py",
+  "build",
+  "{catalog-bad-rules}"
+ ],
+ "exit": 1,
+ "stderr_text": [
+  "23 problem(s); catalog.json is not written:",
+  "  kit.badge: kit/badge.js: [unknown-tag] @bogus is not a header tag",
+  "  kit.badge: kit/badge.js: [duplicate-tag] @status appears twice",
+  "  kit.badge: kit/badge.js: [status] @status wip: one of new, stable",
+  "  kit.badge: kit/badge.js: [version] @version 1.0: major.minor.patch",
+  "  kit.badge: kit/badge.js: [updated] @updated yesterday: YYYY-MM-DD",
+  "  kit.badge: kit/badge.js: [kind] @kind widget: one of component, guide, template, theme",
+  "  kit.badge: kit/badge.js: [summary] @summary is 300 characters, at most 260",
+  "  kit.badge: kit/badge.js: [db] @db: sections `reads a; b` / `writes c` / `note text`, keywords in lowercase; not: read x",
+  "  kit.badge: kit/badge.js: [preview] @preview is not one line of JSON",
+  "  kit.badge: kit/badge.js: [samples] @samples: a comma list of bundle keys (letters, digits, . _ -), no repeats",
+  "  kit.badge: kit/badge.js: [changed] @changed appears once: the newest change",
+  "  kit.badge: kit/badge.js: [tags] @tags: a comma list, lowercase, no repeats",
+  "  kit.badge: kit/badge.js: [provides] @provides: dotted names, comma separated; not: 1bad",
+  "  kit.badge: kit/badge.js: [globals] @globals: none or dompurify, htm-preact, marked; not: jquery",
+  "  kit.badge: kit/badge.js: [tokens] @tokens: custom properties like --ink (--ink? when optional); not: ink",
+  "  kit.badge: kit/badge.js: [config] @config oops: \"signature | what it takes\"",
+  "  kit.badge: kit/badge.js: [source] @source one | two: \"board | file | what\"",
+  "  viz.meter: kit/viz/meter.js: [title] the first line of the comment is the entry name",
+  "  viz.meter: kit/viz/meter.js: [about] a paragraph after the name says what the entry is",
+  "  viz.meter: kit/viz/meter.js: [missing-tag] @group is required",
+  "  viz.meter: kit/viz/meter.js: [missing-tag] @db is required",
+  "  kit.badge: @samples names badge, which is a key of no sample bundle in its @files",
+  "  kit.badge: @samples names badge, which is a key of no sample bundle in its @files"
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "catalog-refuses-bad-files",
+ "run": [
+  "adp_catalog.py",
+  "build",
+  "{catalog-bad-files}"
+ ],
+ "exit": 1,
+ "stderr_text": [
+  "5 problem(s); catalog.json is not written:",
+  "  viz.meter: @files names kit/viz/meter.js, the main file itself; name the other files only",
+  "  viz.meter: @files names kit/viz/meter.css twice",
+  "  viz.meter: @files names ../x.js, which is not a path inside the catalog folder",
+  "  viz.meter: @files names kit/nothing.css, which is not in the tree",
+  "  viz.meter: @files names kit/badge.js, which carries the header of kit.badge; name that entry in @requires"
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "catalog-refuses-bad-samples",
+ "run": [
+  "adp_catalog.py",
+  "build",
+  "{catalog-bad-samples}"
+ ],
+ "exit": 1,
+ "stderr_text": [
+  "7 problem(s); catalog.json is not written:",
+  "  kit.badge: @preview names kit/samples/kit.json#missing, but kit/samples/kit.json has no key missing",
+  "  kit.badge: @preview names kit/samples/viz.json#meter, but kit/samples/viz.json is not a sample file in its @files",
+  "  kit.badge: @preview names kit/other.json#x, but kit/other.json is not a sample file in its @files",
+  "  kit/samples/kit.json: the key badge is named by no entry's @preview",
+  "  kit/samples/viz.json: the key spare is named by no entry's @preview",
+  "  kit.badge: @samples names ghost, which is a key of no sample bundle in its @files",
+  "  kit/samples/viz.json: the key spare is owned by no entry's @samples"
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "catalog-check-catches-a-stale-index",
+ "run": [
+  "adp_catalog.py",
+  "{catalog-stale-index}"
+ ],
+ "exit": 1,
+ "stdout_text": [
+  "FAIL: 16 problem(s)",
+  "  theme.paper: missing file kit/themes/paper.json",
+  "  theme.paper: entry has no hash",
+  "  viz.meter: size kit/viz/meter.css: file 201 != bytes 1",
+  "  orphan: kit/stray.js is not referenced by any entry or page file",
+  "  header kit/guides/reading.md: [id-mismatch] @id guide.reading but catalog.json lists this file under kit.ghost",
+  "  tree: theme.paper: @files names kit/themes/paper.json, which is not in the tree",
+  "  tree: kit/stray.js: no entry names it (add it to @files in the header of its entry)",
+  "  catalog.json: guide.reading: a header in the tree, no entry in catalog.json",
+  "  catalog.json: kit.ghost: an entry in catalog.json without a header in the tree",
+  "  catalog.json: kit.badge.extra: on disk, not part of the built index",
+  "  catalog.json: kit.badge.files: in a different order",
+  "  catalog.json: kit.badge.group: missing on disk; built \"Board kit\"",
+  "  catalog.json: theme.paper.files: kit/themes/paper.json is on disk, not built",
+  "  catalog.json: theme.paper.hash: missing on disk; built \"347ce181b54c\"",
+  "  catalog.json: viz.meter.files[kit/viz/meter.css]: bytes differ",
+  "  catalog.json: viz.meter.version: on disk \"0.2.0\", built \"0.1.0\""
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "catalog-headers-command",
+ "steps": [
+  {
+   "run": [
+    "adp_catalog.py",
+    "headers",
+    "--root",
+    "{catalog-built}"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "ok: 4 header(s) valid, 0 skipped"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "headers",
+    "--root",
+    "{catalog-header-drift}"
+   ],
+   "exit": 1,
+   "stdout_text": [
+    "kit/badge.js: [id] @id nope.badge: kind.name with kind one of guide, kit, layout, pattern, runtime, template, theme, viz",
+    "kit/badge.js: [id-mismatch] @id nope.badge but catalog.json lists this file under kit.badge",
+    "kit/guides/reading.md: [legacy] no @id header",
+    "kit/themes/paper.css: [missing-file] catalog.json lists kit/themes/paper.css for theme.paper but the file is not there"
+   ],
+   "stderr_text": [
+    "3 file(s) with problems"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "headers",
+    "--root",
+    "{catalog-header-drift}",
+    "--report"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "guide     header ok   0   invalid   0   legacy   1",
+    "kit       header ok   0   invalid   1   legacy   0",
+    "theme     header ok   0   invalid   0   legacy   1",
+    "viz       header ok   1   invalid   0   legacy   0",
+    "  rule id: 1",
+    "  rule id-mismatch: 1",
+    "  rule legacy: 1",
+    "  rule missing-file: 1"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "headers",
+    "--root",
+    "{catalog-built}",
+    "{catalog-built}/kit/badge.js",
+    "{catalog-built}/kit/badge.css"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "ok: 1 header(s) valid, 1 skipped"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "headers",
+    "--bogus"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "unknown option --bogus"
+   ]
+  }
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "catalog-drift",
+ "steps": [
+  {
+   "run": [
+    "adp_catalog.py",
+    "drift",
+    "--catalog-dir",
+    "{catalog-header-drift}"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "kit.badge tokens: header=[\"--danger\", \"--f-ui\", \"--ok\", \"--warn\"] catalog=[]",
+    "viz.meter tokens: header=[\"--accent\", \"--f-ui\", \"--ink\", \"--panel\"] catalog=[]",
+    "",
+    "4 entries; 2 without a header in their main file",
+    "field       equal differ  no header",
+    "version         2      0          2",
+    "about           2      0          2",
+    "provides        2      0          2",
+    "tokens          0      2          2",
+    "db              2      0          2",
+    "entries without a header: guide.reading, theme.paper"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "drift",
+    "--catalog-dir",
+    "{catalog-built}",
+    "--field",
+    "version,tokens",
+    "--strict"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "kit.badge tokens: header=[\"--danger\", \"--f-ui\", \"--ok\", \"--warn\"] catalog=[]",
+    "viz.meter tokens: header=[\"--accent\", \"--f-ui\", \"--ink\", \"--panel\"] catalog=[]",
+    "",
+    "4 entries; 0 without a header in their main file",
+    "field       equal differ  no header",
+    "version         4      0          0",
+    "tokens          2      2          0"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "drift",
+    "--catalog-dir",
+    "{catalog-stale-index}",
+    "--field",
+    "version",
+    "--strict"
+   ],
+   "exit": 1,
+   "stdout_text": [
+    "viz.meter version: header=0.1.0 catalog=0.2.0",
+    "",
+    "4 entries; 0 without a header in their main file",
+    "field       equal differ  no header",
+    "version         3      1          0"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "drift",
+    "--field",
+    "nope"
+   ],
+   "exit": 2,
+   "stderr_text": [
+    "usage: adp_catalog.py drift [-h] [--catalog-dir CATALOG_DIR] [--field FIELD]",
+    "                            [--strict]",
+    "adp_catalog.py drift: error: unknown field: nope"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "drift",
+    "-h"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "usage: adp_catalog.py drift [-h] [--catalog-dir CATALOG_DIR] [--field FIELD]",
+    "                            [--strict]",
+    "",
+    "Read-only report: where the header of each entry's main file disagrees with catalog.json.",
+    "",
+    "adp_catalog.py drift [--catalog-dir CATALOG_DIR] [--field version,about,provides,tokens,db] [--strict]",
+    "",
+    "One line per disagreement:  <entry id> <field>: header=<...> catalog=<...>   (values cut to 80 chars)",
+    "Then a summary table (equal / differ / no header per field) and the entries whose main file has no header.",
+    "",
+    "Tolerances:",
+    "  version   exact string match (@version).",
+    "  provides  sets of names (@provides).",
+    "  about     share of the catalog about's words (5+ letters) found in the header's about paragraph >= 0.5.",
+    "  tokens    sets of css custom properties (@tokens, a trailing ? dropped) after leaving out wildcards (names ending in \"-\" or with a",
+    "            <placeholder>), which are listed separately as wildcards.",
+    "  db        the catalog needs.db.note, if any, must appear (first 40 chars, case-insensitive) in the header's @db text;",
+    "            no note matches an absent or \"none\" header text.",
+    "Exit code 0 always, except 1 with --strict when any version or provides disagreement exists.",
+    "",
+    "options:",
+    "  -h, --help            show this help message and exit",
+    "  --catalog-dir CATALOG_DIR",
+    "  --field FIELD         comma list of: version,about,provides,tokens,db",
+    "  --strict              exit 1 if any version or provides disagreement"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "drift",
+    "--bogus"
+   ],
+   "exit": 2,
+   "stderr_text": [
+    "usage: adp_catalog.py drift [-h] [--catalog-dir CATALOG_DIR] [--field FIELD]",
+    "                            [--strict]",
+    "adp_catalog.py drift: error: unrecognized arguments: --bogus"
+   ]
+  }
+ ]
+}
+```
+
+```json fixture
+{
+ "fixture": "inv-catalog",
+ "files": {
+  "kit/badge.js": "/* part:page.script.kit.badge */\n/**\n * Status badge\n * Draws a small label coloured by a meaning token.\n *\n * @id        kit.badge\n * @kind      component\n * @group     Board kit\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   A small label coloured by a meaning token.\n * @tags      badge\n * @requires  none\n * @files     kit/badge.css\n * @provides  Kit.badge.render\n * @tokens    --ok --warn? --bg\n * @globals   none\n * @db        none\n */\nKit.badge = {render(el, o) { el.style.setProperty('--ok', o.c); }};\n/* /part:page.script.kit.badge */\n",
+  "kit/badge.css": "/* part:page.style.kit.badge */\n.kit-badge { color: var(--ok); background: var(--ink, #eee); border-radius: 9px; }\n/* /part:page.style.kit.badge */\n",
+  "kit/themes/default.css": "/* part:page.style.kit.theme.default */\n/**\n * Default\n * The tokens every theme sets.\n *\n * @id        theme.default\n * @kind      theme\n * @group     Themes\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   The tokens every theme sets, light and dark.\n * @tags      palette, tokens\n * @requires  none\n * @files     kit/themes/default.json\n * @provides  none\n * @tokens    none\n * @globals   none\n * @db        none\n */\n:root { --bg: #fff; --ink: #111; --accent: #2f5d50; --surface: var(--bg); }\n@media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) { --bg: #000; --ink: #eee; } }\n:root[data-theme=\"dark\"] { --bg: #000; --ink: #eee; --accent: #7fb8a4; }\n/* /part:page.style.kit.theme.default */\n",
+  "kit/themes/default.json": "{\n \"id\": \"default\",\n \"name\": \"Default\",\n \"light\": {\n  \"--bg\": \"#fff\",\n  \"--ink\": \"#222\",\n  \"--accent\": \"#2f5d50\"\n },\n \"dark\": {\n  \"--bg\": \"#000\",\n  \"--ink\": \"#eee\",\n  \"--accent\": \"#7fb8a4\"\n }\n}\n",
+  "index.html": "<style>.page { color: var(--ink); }</style>\n",
+  "notes.txt": "Notes on --ink and --bg; the font is --f-ui.\n"
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "inv",
+ "files": {
+  "templates/minimal/index.html": "<!doctype html>\n<style>\n:root { --bg: #fff; }\nbody { background: var(--bg, #eee); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; font: 14px/1.4 system-ui, sans-serif; box-shadow: 0 1px 2px rgba(0,0,0,.2); text-transform: uppercase; letter-spacing: .02em; outline: 2px solid red; }\n</style>\n<div style=\"width: var(--w); color: #ff0000\" fill=\"#abc\">x</div>\n<script>\n// a comment that names --ignored\nconst el = document.body, k = '--f-' + name, re = /var\\(--x\\)/;\nel.style.setProperty('--accent', '#123456');\ngetComputedStyle(el).getPropertyValue('--ink');\nel.style.setProperty('--dyn-' + i, 1);\nconst s = `.x { color: var(--panel); padding: ${n}px }`, names = '--ok --warn', c = '#888', m = '<i style=\"color:var(--ink)\"></i>';\n</script>\n",
+  "assets/badge-copy.css": "/* part:page.style.kit.badge */\n.kit-badge { color: var(--ok); background: var(--ink, #eee); border-radius: 9px; }\n/* /part:page.style.kit.badge */\n",
+  "assets/app.js": "document.body.style.color = 'var(--ink)';\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-inventory",
+ "steps": [
+  {
+   "run": [
+    "adp_catalog.py",
+    "build",
+    "{inv-catalog}"
+   ],
+   "exit": 0
+  },
+  {
+   "copy": [
+    "{inv-catalog}",
+    "{inv}/catalog"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "inventory",
+    "--root",
+    "{inv}"
+   ],
+   "exit": 0,
+   "stdout": {
+    "convention": {
+     "dark": [
+      "--accent",
+      "--bg",
+      "--ink"
+     ],
+     "light": [
+      "--accent",
+      "--bg",
+      "--ink"
+     ]
+    },
+    "coverage": {
+     "files": 8,
+     "outside": [
+      {
+       "copy_of": null,
+       "file": "inv/assets/app.js",
+       "names": [
+        "--ink"
+       ]
+      },
+      {
+       "copy_of": "inv/catalog/kit/badge.css",
+       "file": "inv/assets/badge-copy.css",
+       "names": [
+        "--ink",
+        "--ok"
+       ]
+      }
+     ],
+     "scanned": 4,
+     "theme": 2,
+     "unread": [
+      {
+       "file": "inv/catalog/catalog.json",
+       "names": [],
+       "why": "index"
+      },
+      {
+       "file": "inv/catalog/notes.txt",
+       "names": [
+        "--bg",
+        "--f-ui",
+        "--ink"
+       ],
+       "why": "unlisted"
+      }
+     ]
+    },
+    "entries": {
+     "kit.badge": {
+      "colour_strings": [],
+      "declares": {
+       "optional": [
+        "--warn"
+       ],
+       "patterns": [],
+       "required": [
+        "--bg",
+        "--ok"
+       ]
+      },
+      "dynamic": [],
+      "files": [
+       "inv/catalog/kit/badge.css",
+       "inv/catalog/kit/badge.js"
+      ],
+      "kind": "kit",
+      "look": {
+       "colour": {
+        "literal": {
+         "#eee": 1
+        }
+       },
+       "radius": {
+        "literal": {
+         "9px": 1
+        }
+       }
+      },
+      "named": {},
+      "needs_differ": {
+       "header_only": [
+        "--bg",
+        "--ok",
+        "--warn?"
+       ],
+       "needs_only": []
+      },
+      "sets": {
+       "--ok": 1
+      },
+      "undeclared": [
+       "--ink"
+      ],
+      "unused": [
+       "--bg",
+       "--warn"
+      ],
+      "uses": {
+       "--ink": {
+        "bare": 0,
+        "fallbacks": [
+         "#eee"
+        ],
+        "files": {
+         "inv/catalog/kit/badge.css": 1
+        },
+        "in_fallback": 0,
+        "n": 1
+       },
+       "--ok": {
+        "bare": 1,
+        "fallbacks": [],
+        "files": {
+         "inv/catalog/kit/badge.css": 1
+        },
+        "in_fallback": 0,
+        "n": 1
+       }
+      }
+     }
+    },
+    "schema": "adp-inventory/1",
+    "themes": {
+     "theme.default": {
+      "blocks": [
+       {
+        "color-scheme": null,
+        "line": 21,
+        "other": [],
+        "scheme": "light",
+        "selector": ":root",
+        "tokens": 4
+       },
+       {
+        "color-scheme": null,
+        "line": 22,
+        "other": [],
+        "scheme": "dark-media",
+        "selector": "@media (prefers-color-scheme: dark) :root:not([data-theme=\"light\"])",
+        "tokens": 2
+       },
+       {
+        "color-scheme": null,
+        "line": 23,
+        "other": [],
+        "scheme": "dark-attr",
+        "selector": ":root[data-theme=\"dark\"]",
+        "tokens": 3
+       }
+      ],
+      "convention": {
+       "dark": {
+        "extra": [],
+        "missing": []
+       },
+       "light": {
+        "extra": [],
+        "missing": []
+       }
+      },
+      "declares": {
+       "--accent": {
+        "dark": "#7fb8a4",
+        "light": "#2f5d50"
+       },
+       "--bg": {
+        "dark": "#000",
+        "light": "#fff"
+       },
+       "--ink": {
+        "dark": "#eee",
+        "light": "#111"
+       },
+       "--surface": {
+        "dark": null,
+        "dark_via": [
+         "--bg"
+        ],
+        "light": "var(--bg)"
+       }
+      },
+      "files": {
+       "css": "inv/catalog/kit/themes/default.css",
+       "json": "inv/catalog/kit/themes/default.json"
+      },
+      "json": {
+       "dark": {
+        "differ": [],
+        "only_css": [],
+        "only_json": []
+       },
+       "light": {
+        "differ": [
+         "--ink"
+        ],
+        "only_css": [
+         "--surface"
+        ],
+        "only_json": []
+       }
+      },
+      "media_differs": [
+       "--accent"
+      ],
+      "uses": {
+       "--bg": {
+        "by": [
+         "--surface"
+        ],
+        "declared": true
+       }
+      }
+     }
+    },
+    "tokens": {
+     "--accent": {
+      "convention": {
+       "dark": true,
+       "light": true
+      },
+      "declared": {
+       "optional": [],
+       "required": []
+      },
+      "dynamic": [],
+      "named": {},
+      "read": {},
+      "read_in_themes": {},
+      "set": {
+       "base.minimal": 1
+      },
+      "themes": {
+       "css": {
+        "dark": [
+         "theme.default"
+        ],
+        "light": [
+         "theme.default"
+        ]
+       },
+       "json": {
+        "dark": [
+         "theme.default"
+        ],
+        "light": [
+         "theme.default"
+        ]
+       }
+      }
+     },
+     "--bg": {
+      "convention": {
+       "dark": true,
+       "light": true
+      },
+      "declared": {
+       "optional": [],
+       "required": [
+        "kit.badge"
+       ]
+      },
+      "dynamic": [],
+      "named": {},
+      "read": {
+       "base.minimal": 1
+      },
+      "read_in_themes": {
+       "theme.default": 1
+      },
+      "set": {
+       "base.minimal": 1
+      },
+      "themes": {
+       "css": {
+        "dark": [
+         "theme.default"
+        ],
+        "light": [
+         "theme.default"
+        ]
+       },
+       "json": {
+        "dark": [
+         "theme.default"
+        ],
+        "light": [
+         "theme.default"
+        ]
+       }
+      }
+     },
+     "--ink": {
+      "convention": {
+       "dark": true,
+       "light": true
+      },
+      "declared": {
+       "optional": [],
+       "required": []
+      },
+      "dynamic": [],
+      "named": {},
+      "read": {
+       "base.minimal": 3,
+       "catalog.page": 1,
+       "kit.badge": 1
+      },
+      "read_in_themes": {},
+      "set": {},
+      "themes": {
+       "css": {
+        "dark": [
+         "theme.default"
+        ],
+        "light": [
+         "theme.default"
+        ]
+       },
+       "json": {
+        "dark": [
+         "theme.default"
+        ],
+        "light": [
+         "theme.default"
+        ]
+       }
+      }
+     },
+     "--line": {
+      "convention": {
+       "dark": false,
+       "light": false
+      },
+      "declared": {
+       "optional": [],
+       "required": []
+      },
+      "dynamic": [],
+      "named": {},
+      "read": {
+       "base.minimal": 1
+      },
+      "read_in_themes": {},
+      "set": {},
+      "themes": {
+       "css": {
+        "dark": [],
+        "light": []
+       },
+       "json": {
+        "dark": [],
+        "light": []
+       }
+      }
+     },
+     "--ok": {
+      "convention": {
+       "dark": false,
+       "light": false
+      },
+      "declared": {
+       "optional": [],
+       "required": [
+        "kit.badge"
+       ]
+      },
+      "dynamic": [],
+      "named": {
+       "base.minimal": 1
+      },
+      "read": {
+       "kit.badge": 1
+      },
+      "read_in_themes": {},
+      "set": {
+       "kit.badge": 1
+      },
+      "themes": {
+       "css": {
+        "dark": [],
+        "light": []
+       },
+       "json": {
+        "dark": [],
+        "light": []
+       }
+      }
+     },
+     "--panel": {
+      "convention": {
+       "dark": false,
+       "light": false
+      },
+      "declared": {
+       "optional": [],
+       "required": []
+      },
+      "dynamic": [],
+      "named": {},
+      "read": {
+       "base.minimal": 1
+      },
+      "read_in_themes": {},
+      "set": {},
+      "themes": {
+       "css": {
+        "dark": [],
+        "light": []
+       },
+       "json": {
+        "dark": [],
+        "light": []
+       }
+      }
+     },
+     "--surface": {
+      "convention": {
+       "dark": false,
+       "light": false
+      },
+      "declared": {
+       "optional": [],
+       "required": []
+      },
+      "dynamic": [],
+      "named": {},
+      "read": {},
+      "read_in_themes": {},
+      "set": {},
+      "themes": {
+       "css": {
+        "dark": [
+         "theme.default"
+        ],
+        "light": [
+         "theme.default"
+        ]
+       },
+       "json": {
+        "dark": [],
+        "light": []
+       }
+      }
+     },
+     "--w": {
+      "convention": {
+       "dark": false,
+       "light": false
+      },
+      "declared": {
+       "optional": [],
+       "required": []
+      },
+      "dynamic": [],
+      "named": {},
+      "read": {
+       "base.minimal": 1
+      },
+      "read_in_themes": {},
+      "set": {},
+      "themes": {
+       "css": {
+        "dark": [],
+        "light": []
+       },
+       "json": {
+        "dark": [],
+        "light": []
+       }
+      }
+     },
+     "--warn": {
+      "convention": {
+       "dark": false,
+       "light": false
+      },
+      "declared": {
+       "optional": [
+        "kit.badge"
+       ],
+       "required": []
+      },
+      "dynamic": [],
+      "named": {
+       "base.minimal": 1
+      },
+      "read": {},
+      "read_in_themes": {},
+      "set": {},
+      "themes": {
+       "css": {
+        "dark": [],
+        "light": []
+       },
+       "json": {
+        "dark": [],
+        "light": []
+       }
+      }
+     }
+    },
+    "units": {
+     "base.minimal": {
+      "colour_strings": [
+       {
+        "file": "inv/templates/minimal/index.html",
+        "line": 10,
+        "value": "#123456"
+       },
+       {
+        "file": "inv/templates/minimal/index.html",
+        "line": 13,
+        "value": "#888"
+       }
+      ],
+      "dynamic": [
+       {
+        "file": "inv/templates/minimal/index.html",
+        "how": "name",
+        "line": 9,
+        "pattern": "--f-*"
+       },
+       {
+        "file": "inv/templates/minimal/index.html",
+        "how": "set",
+        "line": 12,
+        "pattern": "--dyn-*"
+       }
+      ],
+      "files": [
+       "inv/templates/minimal/index.html"
+      ],
+      "look": {
+       "case": {
+        "literal": {
+         "uppercase": 1
+        }
+       },
+       "colour": {
+        "literal": {
+         "#abc": 1,
+         "#eee": 1,
+         "#ff0000": 1,
+         "#fff": 1,
+         "red": 1,
+         "rgba(0,0,0,.2)": 1
+        }
+       },
+       "edge": {
+        "literal": {
+         "1px": 1
+        }
+       },
+       "family": {
+        "literal": {
+         "system-ui, sans-serif": 1
+        }
+       },
+       "radius": {
+        "literal": {
+         "4px": 1
+        }
+       },
+       "ring": {
+        "literal": {
+         "2px solid red": 1
+        }
+       },
+       "shadow": {
+        "literal": {
+         "0 1px 2px rgba(0, 0, 0, .2)": 1
+        }
+       },
+       "tracking": {
+        "literal": {
+         ".02em": 1
+        }
+       }
+      },
+      "named": {
+       "--ok": 1,
+       "--warn": 1
+      },
+      "sets": {
+       "--accent": 1,
+       "--bg": 1
+      },
+      "uses": {
+       "--bg": {
+        "bare": 0,
+        "fallbacks": [
+         "#eee"
+        ],
+        "files": {
+         "inv/templates/minimal/index.html": 1
+        },
+        "in_fallback": 0,
+        "n": 1
+       },
+       "--ink": {
+        "bare": 3,
+        "fallbacks": [],
+        "files": {
+         "inv/templates/minimal/index.html": 3
+        },
+        "in_fallback": 0,
+        "n": 3
+       },
+       "--line": {
+        "bare": 1,
+        "fallbacks": [],
+        "files": {
+         "inv/templates/minimal/index.html": 1
+        },
+        "in_fallback": 0,
+        "n": 1
+       },
+       "--panel": {
+        "bare": 1,
+        "fallbacks": [],
+        "files": {
+         "inv/templates/minimal/index.html": 1
+        },
+        "in_fallback": 0,
+        "n": 1
+       },
+       "--w": {
+        "bare": 1,
+        "fallbacks": [],
+        "files": {
+         "inv/templates/minimal/index.html": 1
+        },
+        "in_fallback": 0,
+        "n": 1
+       }
+      }
+     },
+     "catalog.page": {
+      "colour_strings": [],
+      "dynamic": [],
+      "files": [
+       "inv/catalog/index.html"
+      ],
+      "look": {},
+      "named": {},
+      "sets": {},
+      "uses": {
+       "--ink": {
+        "bare": 1,
+        "fallbacks": [],
+        "files": {
+         "inv/catalog/index.html": 1
+        },
+        "in_fallback": 0,
+        "n": 1
+       }
+      }
+     }
+    }
+   },
+   "stderr_text": []
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "inventory",
+    "--bogus"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "unknown option --bogus"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "inventory",
+    "--root",
+    "{nothing}"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "FAIL: FileNotFoundError(2, 'No such file or directory')"
+   ]
+  }
  ]
 }
 ```
@@ -778,6 +1903,502 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
     "complete": true
    }
   }
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "catalog-refuses-a-wrong-url",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "catalog"
+   ],
+   "exit": 0,
+   "stdout": {
+    "catalog": null,
+    "next": "adp.py catalog <url> saves the user's catalog (SKILL.md says how to find it); never assume one"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "catalog",
+    "https://example.com/catalog"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "catalog: use a Claude artifact URL"
+   ],
+   "files_out": {
+    "{home}/config.json": null
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "catalog",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c?x=1"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "catalog: use a Claude artifact URL"
+   ]
+  }
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "kit-reads-a-url-catalog",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "kit",
+    "list",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c"
+   ],
+   "exit": 2,
+   "stdout": {
+    "error": "index not fetched",
+    "catalog": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+    "fetch": {
+     "tool": "Artifact",
+     "action": "read",
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+     "path": "catalog.json",
+     "out_dir": "<tmp>/home/catalog",
+     "then": "run `adp.py catalog` again: it lists the reads for the whole kit (My Own Kit)"
+    },
+    "next": "adp.py catalog fetches your whole kit (My Own Kit)"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "catalog",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c/"
+   ],
+   "exit": 0
+  },
+  {
+   "copy": [
+    "{catalog-index-only}",
+    "{home}/catalog"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "kit",
+    "show",
+    "viz.meter",
+    "-"
+   ],
+   "exit": 0,
+   "stdout": {
+    "id": "viz.meter",
+    "name": "Meter",
+    "summary": "A bar that states its value and range in words, with a status badge.",
+    "about": "",
+    "tags": [
+     "meter",
+     "bar",
+     "progress",
+     "value"
+    ],
+    "files": [
+     "kit/viz/meter.js",
+     "kit/viz/meter.css",
+     "kit/samples/viz.json"
+    ],
+    "requires": [
+     "kit.badge"
+    ],
+    "provides": [
+     "Kit.meter.draw"
+    ],
+    "note": "the main-file header is not on disk, so about and the header fields are missing; read it, then run the command again",
+    "fetch": [
+     {
+      "tool": "Artifact",
+      "action": "read",
+      "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+      "paths": [
+       "kit/viz/meter.js"
+      ],
+      "out_dir": "<tmp>/home/catalog",
+      "then": "run the command again"
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "kit",
+    "describe",
+    "kit.badge",
+    "-"
+   ],
+   "exit": 0,
+   "stdout": {
+    "id": "kit.badge",
+    "needs": [],
+    "optional": [],
+    "provides": [
+     "Kit.badge.render"
+    ],
+    "requires": [],
+    "files": [
+     "kit/badge.js",
+     "kit/badge.css"
+    ],
+    "sample": "kit/samples/kit.json",
+    "note": "the main-file header is not on disk, so about and the header fields are missing; read it, then run the command again",
+    "fetch": [
+     {
+      "tool": "Artifact",
+      "action": "read",
+      "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+      "paths": [
+       "kit/badge.js"
+      ],
+      "out_dir": "<tmp>/home/catalog",
+      "then": "run the command again"
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "suggest",
+    "-",
+    "--for",
+    "progress bar"
+   ],
+   "exit": 0,
+   "stdout": [
+    {
+     "id": "viz.meter",
+     "kind": "viz",
+     "requires": [
+      "kit.badge"
+     ],
+     "why": "tags: bar, progress; name/summary: bar",
+     "takes": 2
+    }
+   ],
+   "stderr_text": [
+    "note: 4 main-file headers are not on disk, so their about text was not searched (tags, name, summary, id and provides were); read them, then run the command again:",
+    "{\"tool\": \"Artifact\", \"action\": \"read\", \"url\": \"https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c\", \"paths\": [\"kit/badge.js\", \"kit/guides/reading.md\", \"kit/themes/paper.css\", \"kit/viz/meter.js\"], \"out_dir\": \"<tmp>/home/catalog\", \"then\": \"run the command again\"}"
+   ]
+  },
+  {
+   "copy": [
+    "{catalog-built}",
+    "{home}/catalog"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "kit",
+    "list",
+    "-",
+    "--tag",
+    "meter"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "{\"id\":\"viz.meter\",\"kind\":\"viz\",\"name\":\"Meter\",\"summary\":\"A bar that states its value and range in words, with a status badge.\",\"tags\":[\"meter\",\"bar\",\"progress\",\"value\"]}"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "suggest",
+    "-",
+    "--for",
+    "progress bar",
+    "--n",
+    "1"
+   ],
+   "exit": 0,
+   "stdout": [
+    {
+     "id": "viz.meter",
+     "kind": "viz",
+     "requires": [
+      "kit.badge"
+     ],
+     "why": "tags: bar, progress; name/summary: bar; about: bar",
+     "takes": 2
+    }
+   ],
+   "stderr_text": []
+  }
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "suggest-options",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "suggest",
+    "{catalog-built}/catalog.json",
+    "--for",
+    "bars of values",
+    "--kind",
+    "viz",
+    "--n",
+    "1"
+   ],
+   "exit": 0,
+   "stdout": [
+    {
+     "id": "viz.meter",
+     "kind": "viz",
+     "requires": [
+      "kit.badge"
+     ],
+     "why": "tags: bar, value; name/summary: bar, value; about: bar, value",
+     "takes": 2
+    }
+   ],
+   "stderr_text": [
+    "warning: a local index is a build, not the live catalog: a file it lists may be missing there"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "suggest",
+    "{catalog-built}/catalog.json",
+    "--for",
+    "the status of a label",
+    "--n",
+    "2"
+   ],
+   "exit": 0,
+   "stdout": [
+    {
+     "id": "kit.badge",
+     "kind": "kit",
+     "requires": [],
+     "why": "tags: status, label; name/summary: label, status; about: label",
+     "takes": 2
+    },
+    {
+     "id": "viz.meter",
+     "kind": "viz",
+     "requires": [
+      "kit.badge"
+     ],
+     "why": "name/summary: status; about: label",
+     "takes": 2
+    }
+   ],
+   "stderr_text": [
+    "warning: a local index is a build, not the live catalog: a file it lists may be missing there"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "suggest",
+    "{catalog-built}/catalog.json",
+    "--for",
+    "zzz"
+   ],
+   "exit": 0,
+   "stdout": []
+  },
+  {
+   "run": [
+    "adp.py",
+    "suggest",
+    "{catalog-built}/catalog.json"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py suggest CATALOG --for \"free words\" [--n 3] [--kind K]"
+   ]
+  }
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "catalog-reads-an-older-folder",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "catalog",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c"
+   ],
+   "exit": 0
+  },
+  {
+   "copy": [
+    "{catalog-built}",
+    "{home}/catalogs/00000000-0000-4000-8000-00000000000c"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "catalog"
+   ],
+   "exit": 0,
+   "stdout": {
+    "catalog": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+    "index": "<tmp>/home/catalogs/00000000-0000-4000-8000-00000000000c/catalog.json",
+    "fetched": true,
+    "ver": null,
+    "built": "<time>",
+    "entries": 4,
+    "refresh": {
+     "tool": "Artifact",
+     "action": "read",
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+     "path": "catalog.json",
+     "out_dir": "<tmp>/home/catalogs/00000000-0000-4000-8000-00000000000c",
+     "then": "run `adp.py catalog` again: it lists the reads for the whole kit (My Own Kit)"
+    },
+    "kit": "<tmp>/home/catalogs/00000000-0000-4000-8000-00000000000c",
+    "files": 9,
+    "missing": 0,
+    "complete": true
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "kit",
+    "describe",
+    "kit.badge",
+    "-"
+   ],
+   "exit": 0,
+   "stdout": {
+    "id": "kit.badge",
+    "needs": [],
+    "optional": [],
+    "provides": [
+     "Kit.badge.render"
+    ],
+    "requires": [],
+    "files": [
+     "kit/badge.js",
+     "kit/badge.css"
+    ],
+    "sample": "kit/samples/kit.json",
+    "sample_key": "badge",
+    "db": {
+     "reads": [],
+     "writes": [],
+     "note": ""
+    }
+   }
+  },
+  {
+   "copy": [
+    "{catalog-index-only}",
+    "{home}/catalog"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "catalog"
+   ],
+   "exit": 0,
+   "stdout": {
+    "catalog": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+    "index": "<tmp>/home/catalog/catalog.json",
+    "fetched": true,
+    "ver": null,
+    "built": "<time>",
+    "entries": 4,
+    "refresh": {
+     "tool": "Artifact",
+     "action": "read",
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+     "path": "catalog.json",
+     "out_dir": "<tmp>/home/catalog",
+     "then": "run `adp.py catalog` again: it lists the reads for the whole kit (My Own Kit)"
+    },
+    "kit": "<tmp>/home/catalog",
+    "files": 9,
+    "missing": 9,
+    "complete": false,
+    "reads": [
+     {
+      "tool": "Artifact",
+      "action": "read",
+      "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+      "paths": [
+       "kit/badge.css",
+       "kit/badge.js",
+       "kit/guides/reading.md",
+       "kit/samples/kit.json",
+       "kit/samples/viz.json",
+       "kit/themes/paper.css",
+       "kit/themes/paper.json",
+       "kit/viz/meter.css",
+       "kit/viz/meter.js"
+      ],
+      "out_dir": "<tmp>/home/catalog",
+      "then": "run `adp.py catalog` again: complete is true when every file is here"
+     }
+    ],
+    "calls": 1,
+    "per_call": [
+     9
+    ],
+    "next": "My Own Kit is not complete: make the reads, then run adp.py catalog again"
+   }
+  }
+ ]
+}
+```
+
+```json fixture
+{
+ "fixture": "catalog-orphan-order",
+ "base": "catalog-a",
+ "files": {
+  "kit/b.js": "/* a kit file no entry names */\n",
+  "kit/a/x.js": "/* another one, in a folder that sorts first */\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-orphans-in-tree-order",
+ "run": [
+  "adp_catalog.py",
+  "build",
+  "{catalog-orphan-order}"
+ ],
+ "exit": 1,
+ "stderr_text": [
+  "2 problem(s); catalog.json is not written:",
+  "  kit/b.js: no entry names it (add it to @files in the header of its entry)",
+  "  kit/a/x.js: no entry names it (add it to @files in the header of its entry)"
  ]
 }
 ```

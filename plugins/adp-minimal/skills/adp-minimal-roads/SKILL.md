@@ -9,7 +9,7 @@ metadata:
 # The roads
 
 A road is ADP's name for a fixed procedure that covers one kind of job. There are four. Every step in each is an `adp.py` command. `ADP` below is
-`python3 -I adp.py`, a build of the tool that passes the vectors ([rebuild](../adp-minimal-rebuild/SKILL.md)).
+`python3 -I adp.py`, the tool assembled from these skills ([rebuild](../adp-minimal-rebuild/SKILL.md)).
 
 | The user wants | Road |
 |---|---|
@@ -18,7 +18,7 @@ A road is ADP's name for a fixed procedure that covers one kind of job. There ar
 | to edit or publish a page others also work on, or answer its comments | **edit** |
 | an existing page put on ADP | **adopt** |
 
-On Sites the same roads apply, using native Sites source and record calls instead of the Claude ones
+On another host the same roads apply, using its native source and record calls instead of the Claude ones
 ([host adapters](../adp-minimal-hosts/SKILL.md)).
 
 ## New
@@ -99,7 +99,7 @@ changing how the page looks or behaves**.
   writes). Then write the first records: `ADP seed DIR --by NAME --version V --batches`, with `V` the version the publish returned (add
   `--data FILE|DIR` for the page's own data). A page without `adp.js` does not seed itself, so run the printed batches with ArtifactData,
   `manifest/current` last, and read the records back. Step A is enough for part ids and comment anchors.
-- **Step B, multi-file (optional).** Start a reference project with `ADP new minimal REF`, move the page's copy and views into `index.html`, `content.js`,
+- **Step B, multi-file (optional).** Start a scratch project with `ADP new minimal REF`, move the page's copy and views into `index.html`, `content.js`,
   `styles/*`, `parts/*`, and prove parity: render old and new in a headless browser and compare each element's computed style and box in every view
   and state, at the widths and themes in use. `adp.py` does not automate this comparison. Do not publish Step B until it passes.
 - Never rename a published part id. Restyling is a separate change under the edit road.

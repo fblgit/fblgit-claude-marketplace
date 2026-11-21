@@ -81,9 +81,241 @@ $CAT CATALOG_DIR           # every check must pass: sizes, hashes, orphans, head
    changes on a scratch artifact first, and never change a catalog others use without the owner's approval.
 6. **Use it**: from the page, `adp.py take - <id>`, link, mount ([kit](../adp-minimal-kit/SKILL.md)).
 
+## The header, as code
+
+`adp_catalog.py` reads each entry's header with these fragments; the tag table in [the catalog's header section](../adp-minimal-catalog/SKILL.md#the-header)
+is what they enforce. The vectors that run them are in [the catalog's vectors](../adp-minimal-catalog/vectors.md).
+
+The vocabulary: the ids' prefixes and the allowed values, the tags that repeat, the ones every header carries, and the comma lists. `split_ref`
+splits a sample reference, `bundle-path#key`, into its path and key.
+
+```python
+# ---
+# id: authoring.rules
+# tool: adp_catalog.py
+# section: authoring
+# order: 100
+# needs: [core.catalog-tool]
+# sha: 459346b5c4a6
+# ---
+KINDS = {'kit', 'layout', 'pattern', 'viz', 'theme', 'runtime', 'template', 'guide'}      # the first word of an @id
+KIND = {'component', 'theme', 'template', 'guide'}                                         # @kind
+STATUS = {'new', 'stable'}
+GLOBALS = {'htm-preact', 'marked', 'dompurify'}      # the CDN scripts the catalog page can add
+MANY = ('config', 'source', 'changed')               # these repeat; every other tag once
+ALWAYS = ('id', 'kind', 'group', 'status', 'version', 'updated', 'summary', 'tags', 'requires', 'files', 'globals', 'db')
+KNOWN = {*ALWAYS, *MANY, 'provides', 'tokens', 'preview', 'fonts', 'extends', 'related', 'optional', 'samples'}
+LISTS = ('tags', 'requires', 'provides', 'globals', 'related', 'optional', 'files', 'samples')      # comma lists; `\,` is a comma in an item
+ID = re.compile(r'[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9.-]*')
+SEMVER = re.compile(r'\d+\.\d+\.\d+')
+DATE = re.compile(r'\d{4}-\d{2}-\d{2}')
+MEMBER = re.compile(r'[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*')
+TOKEN = re.compile(r'--[A-Za-z0-9_<>-]+\??')         # a trailing ? marks an optional property
+KEY = re.compile(r'[\w.-]+')                         # a sample's key inside its bundle
+SUMMARY_MAX = 260
+
+
+def split_ref(ref):
+    """'kit/samples/viz.json#meter' -> ('kit/samples/viz.json', 'meter'); a path with no # is (path, None)."""
+    path, sep, key = str(ref).partition('#')
+    return (path, key) if sep else (path, None)
+```
+
+The header is the first `/** ... */` of a `.js` or `.css` file (and of their `.txt` copies), else the first `<!-- ... -->`; `*\/` inside it reads as
+`*/`. Its first line is the name, the first paragraph after it the `about` text, and a line that does not start with `@` continues the tag above it.
+`parse_header` shapes each tag the way the catalog page does: comma lists, `[signature, what]` pairs for `@config`, `{reads, writes, note}` for
+`@db` (`reads a; b / writes c / note text`), `{board, file, what}` for `@source`, and the JSON of `@preview` (`null` when it is not JSON).
+
+```python
+# ---
+# id: authoring.read
+# tool: adp_catalog.py
+# section: authoring
+# order: 110
+# needs: [authoring.rules]
+# sha: 42c4157db705
+# ---
+def comment_of(text, path):
+    """The header comment of a file; None without one."""
+    code = path.endswith(('.js', '.css', '.js.txt', '.css.txt'))
+    m = re.search(r'/\*\*(.*?)\*/' if code else r'<!--(.*?)-->', text[:20000], re.S)
+    return m.group(1).replace('*\\/', '*/') if m else None
+
+
+def parse(comment):
+    """-> (title, about, [(tag, value)])"""
+    title, about, tags, done = '', [], [], False
+    for raw in comment.split('\n'):
+        line = re.sub(r'^\s*\*? ?', '', raw).strip()
+        if m := re.match(r'@([A-Za-z]+)\s*(.*)$', line): tags.append([m.group(1), m.group(2).strip()])
+        elif tags: tags[-1][1] = (tags[-1][1] + ' ' + line).strip() if line else tags[-1][1]
+        elif not line: done = done or bool(about)
+        elif not title: title = line
+        elif not done: about.append(line)
+    return title, ' '.join(about), [tuple(t) for t in tags]
+
+
+def split(v, spaces=False):
+    """The items of a comma list (or a list of tokens separated by spaces too)."""
+    return [x for x in (y.strip() for y in re.split(r'[,\s]+' if spaces else ',', v)) if x]
+
+
+def blank(v):
+    return v is None or str(v).strip().lower() in ('', 'none')
+
+
+def pieces(v, sep):
+    """The trimmed pieces of v between separators; a separator after a backslash is that character."""
+    return [x.replace('\\' + sep, sep).strip() for x in re.split(r'(?<!\\)' + re.escape(sep), v)]
+
+
+def refuse(constant):
+    raise ValueError(constant)           # NaN and Infinity are not JSON: the page's JSON.parse refuses them
+
+
+def shape(raw):
+    h = {}
+    for k, v in raw.items():
+        if k in ('name', 'about'): h[k] = v
+        elif k in LISTS: h[k] = [] if blank(v) else [x for x in pieces(v, ',') if x]
+        elif k == 'tokens': h[k] = [] if blank(v) else v.split()
+        elif k == 'config': h[k] = [[x.replace('\\|', '|').strip() for x in (re.split(r'\s+\|\s+', c, maxsplit=1) + [''])[:2]] for c in v if not blank(c)]
+        elif k == 'source': h[k] = [{'board': a[0], 'file': a[1] if a[1:] else '', 'what': ' | '.join(a[2:])} for a in (pieces(s, '|') for s in v if not blank(s))]
+        elif k == 'changed': h[k] = [x for x in v if not blank(x)]
+        elif k == 'db':
+            h[k] = {'reads': [], 'writes': [], 'note': ''}
+            notes = []
+            for part in [] if blank(v) else re.split(r'\s+/\s+', v):
+                m = re.match(r'(reads|writes|note)\s+(.*)$', part.strip(), re.S)
+                if m and m.group(1) == 'note': notes.append(m.group(2).strip())
+                elif m: h[k][m.group(1)] += [x.strip() for x in m.group(2).split(';') if x.strip()]
+                elif part.strip(): h[k].setdefault('unread', []).append(part.strip())
+            h[k]['note'] = ' '.join(notes)
+        elif k == 'preview' and not blank(v):
+            try: h[k] = json.loads(v, parse_constant=refuse)
+            except ValueError: h[k] = None
+        elif k != 'preview': h[k] = '' if blank(v) else v
+    return h
+
+
+def parse_header(text, path):
+    """The header of a file as a dict (tag names, plus name and about); {} when it has none."""
+    c = comment_of(text or '', path.replace('\\', '/'))
+    if c is None: return {}
+    title, about, tags = parse(c)
+    raw = {}
+    for n, v in tags:
+        if n in MANY: raw.setdefault(n, []).append(v)
+        else: raw[n] = v
+    return shape({**raw, 'name': title, 'about': about}) if title or raw else {}
+```
+
+`validate` returns `(rule, message)` for each broken rule of one header. `entry` is the catalog entry the file is the main file of, and `ids` the ids
+of the catalog:
+
+```python
+# ---
+# id: authoring.validate
+# tool: adp_catalog.py
+# section: authoring
+# order: 200
+# needs: [authoring.read]
+# tests: [catalog-refuses-a-bad-header, catalog-header-rules]
+# sha: 258f1532114a
+# ---
+def validate(path, comment, entry, ids):
+    """[(rule, message)] for one header."""
+    title, about, tags = parse(comment)
+    out, names, val = [], [n for n, _ in tags], {}
+    for n, v in tags:
+        if n not in KNOWN: out.append(('unknown-tag', f'@{n} is not a header tag'))
+        elif n not in MANY and n in val: out.append(('duplicate-tag', f'@{n} appears twice'))
+        else: val.setdefault(n, v)
+    if not title: out.append(('title', 'the first line of the comment is the entry name'))
+    if not about: out.append(('about', 'a paragraph after the name says what the entry is'))
+    need = [*ALWAYS, *(['provides'] * path.endswith('.js')), *(['tokens'] * any(f.get('role') == 'style' for f in entry.get('files', [])))]
+    out += [('missing-tag', f'@{n} is required') for n in need if n not in names or not val.get(n)]
+    used = lambda n: val.get(n) and val[n] != 'none'
+    bad = lambda xs: ', '.join(xs)
+    if i := val.get('id'):
+        if not ID.fullmatch(i) or i.split('.')[0] not in KINDS: out.append(('id', f'@id {i}: kind.name with kind one of {bad(sorted(KINDS))}'))
+        if i != entry['id']: out.append(('id-mismatch', f'@id {i} but catalog.json lists this file under {entry["id"]}'))
+    for n, ok, shown, want in (('status', val.get('status') in STATUS, val.get('status'), f'one of {bad(sorted(STATUS))}'),
+                               ('version', SEMVER.fullmatch(val.get('version', '')), val.get('version'), 'major.minor.patch'),
+                               ('updated', DATE.fullmatch(val.get('updated', '')), val.get('updated'), 'YYYY-MM-DD'),
+                               ('kind', val.get('kind') in KIND, val.get('kind'), f'one of {bad(sorted(KIND))}')):
+        if val.get(n) and not ok: out.append((n, f'@{n} {shown}: {want}'))
+    if len(val.get('summary', '')) > SUMMARY_MAX: out.append(('summary', f'@summary is {len(val["summary"])} characters, at most {SUMMARY_MAX}'))
+    if val.get('files'):
+        got = [] if val['files'] == 'none' else split(val['files'])
+        want = [f['path'] for f in entry.get('files', []) if f['path'] != path]
+        if len(got) != len(set(got)) or sorted(got) != sorted(want):
+            out.append(('files', f'@files lists {bad(got) or "none"}; catalog.json lists the other files {bad(want) or "none"}'))
+    if used('db') and (wrong := [s for s in re.split(r'\s+/\s+', val['db']) if not re.match(r'(reads|writes|note)\s+\S', s.strip())]):
+        out.append(('db', f'@db: sections `reads a; b` / `writes c` / `note text`, keywords in lowercase; not: {wrong[0][:40]}'))
+    if val.get('preview'):
+        try: pv = json.loads(val['preview'])
+        except ValueError: out.append(('preview', '@preview is not one line of JSON'))
+        else:
+            for s in (pv.get('samples') if isinstance(pv, dict) else None) or []:
+                p, k = split_ref(s) if isinstance(s, str) else ('', None)
+                if not p or (k is not None and not KEY.fullmatch(k)):
+                    out.append(('preview', f'@preview samples: a path, or path#key with a key of letters, digits, . _ -; not: {str(s)[:40]}'))
+    if val.get('samples') and (len(ss := split(val['samples'])) != len(set(ss)) or not all(KEY.fullmatch(s) for s in ss)):
+        out.append(('samples', '@samples: a comma list of bundle keys (letters, digits, . _ -), no repeats'))
+    if names.count('changed') > 1: out.append(('changed', '@changed appears once: the newest change'))
+    if val.get('tags') and (len(ts := split(val['tags'])) != len(set(ts)) or any(t != t.lower() for t in ts)):
+        out.append(('tags', '@tags: a comma list, lowercase, no repeats'))
+    for n, fits, msg in (('requires', lambda x: x in ids, '@requires names no catalog entry:'), ('provides', MEMBER.fullmatch, '@provides: dotted names, comma separated; not:'),
+                         ('globals', lambda x: x in GLOBALS, f'@globals: none or {bad(sorted(GLOBALS))}; not:')):
+        if used(n) and (wrong := [x for x in split(val[n]) if not fits(x)]): out.append((n, f'{msg} {bad(wrong)}'))
+    if used('tokens') and (wrong := [t for t in split(val['tokens'], spaces=True) if not TOKEN.fullmatch(t)]):
+        out.append(('tokens', f'@tokens: custom properties like --ink (--ink? when optional); not: {bad(wrong)}'))
+    for n, v in tags:
+        if n == 'config' and ' | ' not in v: out.append(('config', f'@config {v[:40]}: "signature | what it takes"'))
+        if n == 'source' and len(re.split(r'\s\|\s', v)) < 3: out.append(('source', f'@source {v[:40]}: "board | file | what"'))
+    return out
+```
+
+The main file of an entry is the one named by its `main`, else the template or doc, else the first script, else the first style. `check_headers`
+validates the header of each main file of the catalog's `catalog.json`, or of the files it is given. A file that is not a main file is `skipped`; a main
+file listed but absent, or with no `@id` header, is `legacy`:
+
+```python
+# ---
+# id: authoring.check
+# tool: adp_catalog.py
+# section: authoring
+# order: 250
+# needs: [authoring.validate]
+# tests: [catalog-headers-command]
+# sha: 01a962e53c26
+# ---
+def main_file(e):
+    """The file that carries an entry's header."""
+    if e.get('main'): return e['main']
+    for roles in (('template', 'doc'), ('script',), ('style',)):
+        for f in e.get('files', []):
+            if f.get('role') in roles: return f['path']
+
+
+def check_headers(root, files=None):
+    """-> ([(path, state, [(rule, message)])], {main file: entry}); state is header, legacy or skipped"""
+    cat = json.loads(Path(root, 'catalog.json').read_text(encoding='utf-8'))['entries']
+    by_path, ids, results = {m: e for e in cat if (m := main_file(e))}, {e['id'] for e in cat}, []
+    for p in sorted(by_path) if files is None else files:
+        rel = p if files is None else os.path.relpath(os.path.abspath(p), root).replace(os.sep, '/')
+        e, f = by_path.get(rel), Path(root, rel)
+        if e is None: results.append((rel, 'skipped', []))
+        elif not f.is_file(): results.append((rel, 'legacy', [('missing-file', f'catalog.json lists {rel} for {e["id"]} but the file is not there')]))
+        elif (c := comment_of(f.read_text(encoding='utf-8'), rel)) is None or '@id' not in c: results.append((rel, 'legacy', [('legacy', 'no @id header')]))
+        else: results.append((rel, 'header', validate(rel, c, e, ids)))
+    return results, by_path
+```
+
 ## Changing an entry later
 
-Bump `@version`, set `@updated`, replace `@changed` with one sentence describing the newest change, rebuild, recheck. A changed file changes its
+Bump `@version`, set `@updated`, replace `@changed` with one sentence describing the newest change, run `build` again, then the check. A changed file changes its
 `sha256` and the entry `hash`, which is how a page knows its copy is no longer the catalog's. Never change an id: add a new entry, and say in
 the old entry's description paragraph (the `about` text under its name) that it is superseded and by which id. `@status` takes only `new` or
 `stable`.

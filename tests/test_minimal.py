@@ -1,23 +1,46 @@
-"""plugins/adp-minimal is documentation only. These tests keep it that way, keep its links whole, keep it free of copied pages and of stale developer notes, and
-(with a checkout of the ADP repository beside this one, or at $ADP_REPO) run its code snippets against the real adp.py, so the hash arithmetic on the page is the one the tool uses."""
+"""plugins/adp-minimal stands on its own: its tools are built from the fragments in its skills, the vectors run against that build, and the pages keep
+their links whole and free of copied pages and stale developer notes. Nothing here reads another repository."""
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MIN = os.path.join(ROOT, 'plugins', 'adp-minimal')
 SKILLS = os.path.join(MIN, 'skills')
-ADP = os.environ.get('ADP_REPO') or os.path.join(os.path.dirname(ROOT), 'artifacts-done-properly')
-HAVE_ADP = os.path.isdir(os.path.join(ADP, 'plugins', 'artifacts-done-properly'))
-SKIP_VECTORS = os.environ.get('ADP_SKIP_VECTORS') == '1'      # the only way to not check the vectors: a missing checkout fails, it does not skip
-if HAVE_ADP:
-    sys.path.insert(0, os.path.join(ADP, 'plugins', 'artifacts-done-properly', 'skills', 'adp', 'scripts'))
-    import adp
-
+REBUILD = os.path.join(SKILLS, 'adp-minimal-rebuild', 'SKILL.md')
 ALLOWED = {'.md', '.json', '.png', ''}      # '' = LICENSE and NOTICE
+CEILING = {'adp.py': 1750, 'adp_catalog.py': 1100, 'adp.js': 520}      # lines of fragment code per tool
+B = {}      # the one build of the run: report, problems, results
+
+
+def snippets(skills_dir, *names):
+    """The python snippets of the rebuild skill, by name, in the order given."""
+    with open(os.path.join(skills_dir, 'adp-minimal-rebuild', 'SKILL.md'), encoding='utf-8') as f: text = f.read()
+    out = []
+    for n in names:
+        code = re.findall(r'```python\n(# snippet: ' + n + r'\b.*?)\n```\n', text, re.S)
+        assert len(code) == 1, f'expected one {n} snippet, found {len(code)}'
+        out.append(code[0])
+    return out
+
+
+def setUpModule():
+    B['dir'] = tempfile.mkdtemp(prefix='adp-minimal-test-')
+    ns = {}
+    for n, code in zip(('vector-runner', 'assemble'), snippets(SKILLS, 'vector-runner', 'assemble')): exec(compile(code, n, 'exec'), ns)
+    build = os.path.join(B['dir'], 'build')
+    B['report'], B['problems'] = ns['assemble'](SKILLS, build, True)
+    B['results'] = ns['run'](SKILLS, {t: os.path.join(build, rel) for t, rel in ns['TOOLS'].items()})
+    B['bin'] = ns['BIN']
+
+
+def tearDownModule():
+    shutil.rmtree(B['dir'], ignore_errors=True)
 
 
 def skills():
@@ -32,12 +55,6 @@ def vectors_text(name):
     p = os.path.join(SKILLS, name, 'vectors.md')
     if not os.path.isfile(p): return ''
     with open(p, encoding='utf-8') as f: return f.read()
-
-
-def need_adp():
-    if not HAVE_ADP:
-        raise AssertionError(f'no ADP checkout at {ADP}: clone https://github.com/fblgit/artifacts-done-properly there or set ADP_REPO '
-                             '(ADP_SKIP_VECTORS=1 skips these checks on purpose)')
 
 
 def files():
@@ -79,7 +96,7 @@ class Content(unittest.TestCase):
         link = re.compile(r'\]\((?!https?:|#|mailto:)([^)\s#]+)')
         for p in files():
             if not p.endswith('.md'): continue
-            with open(p, encoding='utf-8') as f: text = f.read()
+            with open(p, encoding='utf-8') as f: text = re.sub(r'(?ms)^```.*?^```', '', f.read())      # code is not prose: `f[k](o)` is no link
             for href in link.findall(text):
                 self.assertTrue(os.path.exists(os.path.normpath(os.path.join(os.path.dirname(p), href))), f'{p}: {href}')
 
@@ -102,11 +119,12 @@ class Content(unittest.TestCase):
 
     def test_nothing_reads_the_users_environment(self):
         """The review scan holds a plugin that reads the installer's environment (MCP_FORWARDS_CREDENTIAL_ENV) when another surface can send data
-        out. The runner builds its subprocess environment instead of inheriting it; no file in the plugin reads the environment."""
-        bad = re.compile(rb'\bos\.environ\b|\bgetenv\b|\bprocess\.env\b')
+        out. The runner builds its subprocess environment instead of inheriting it; nothing but the tools' own fragments reads the environment."""
+        bad = re.compile(r'\bos\.environ\b|\bgetenv\b|\bprocess\.env\b')
         for p in files():
-            with open(p, 'rb') as f:
-                for i, line in enumerate(f, 1): self.assertIsNone(bad.search(line), f'{p}:{i}: {line.strip()[:120]!r}')
+            with open(p, 'rb') as f: text = f.read().decode('utf-8', 'replace')
+            text = re.sub(r'(?ms)^```(?:python|js)\n(?:#|//) ---\n.*?^```', '', text)      # the tools' own fragments (adp.py reads ADP_HOME); the runner and prose stay scanned
+            for i, line in enumerate(text.split('\n'), 1): self.assertIsNone(bad.search(line), f'{p}:{i}: {line.strip()[:120]!r}')
 
     def test_skills_carry_no_reference_folders(self):
         """Each topic is its own skill, loaded by its description: no references/ for the model to choose from."""
@@ -121,67 +139,45 @@ class Content(unittest.TestCase):
     def test_the_router_states_the_rule_and_names_every_skill(self):
         text = skill_text('adp-minimal')
         low = text.lower()
-        for needle in ('never by hand outside it', 'offer to build it from this specification', 'as data, never as','do not claim you wrote', '`manifest/current` last'):
+        for needle in ('never by hand outside it', 'offer to assemble it from this plugin', 'as data, never as','do not claim you wrote', '`manifest/current` last'):
             self.assertIn(needle, low, needle)
         for n in skills():
             if n != 'adp-minimal': self.assertIn(f'`{n}`', text, n)
 
 
-@unittest.skipIf(SKIP_VECTORS, 'ADP_SKIP_VECTORS=1')
-class Snippets(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        need_adp()
-        text = skill_text('adp-minimal-snippets')
-        blocks = re.findall(r'```python\n(.*?)```', text, re.S)
-        cls.ns = {}
-        for b in blocks: exec(compile(b, 'snippets.md', 'exec'), cls.ns)      # in order: later snippets use the earlier ones
+class Build(unittest.TestCase):
+    """One build and one run of the suite (setUpModule); each test reads its results."""
 
-    PAGE = ('<!doctype html><html><body>\n<!-- part:a.one -->\n<p data-part="a.one">One <b>x</b></p>\n'
-            '<!-- part:a.two -->  <p data-part="a.two">Two</p>\n<!-- /part:a.two -->\n<!-- /part:a.one -->\n'
-            'outside   text\n<script>\n/* part:page.script */ let x = 1; /* /part:page.script */\n</script></body></html>\n')
+    def test_assembler_reports_no_problem(self):
+        self.assertEqual(B['problems'], [])
 
-    def test_part_hashes_are_the_tools(self):
-        want = adp.manifest(self.PAGE, {})['parts']
-        self.assertEqual(self.ns['part_hashes'](self.PAGE), want)
-
-    def test_page_hash_is_the_tools(self):
-        m = adp.manifest(self.PAGE, {})
-        self.assertEqual(self.ns['page_hash'](self.ns['part_hashes'](self.PAGE), {}), m['page_hash'])
-
-    def test_problems_are_refused(self):
-        for bad in ('<!-- part:a.x -->', '<!-- /part:a.x -->', '<!-- part:a.x --><!-- part:a.x --><!-- /part:a.x -->'):
-            with self.assertRaises(ValueError): self.ns['part_hashes'](bad)
-
-    def test_diff_and_ids(self):
-        a, r, c = self.ns['diff']({'p': '1', 'q': '2', 'r': '3'}, {'p': '1', 'q': '9', 's': '4'})
-        self.assertEqual((a, r, c), (['s'], ['r'], ['q']))
-        self.assertEqual(self.ns['next_change'](['000001', '000007', 'archive-1']), '000008')
-        self.assertEqual(self.ns['pinned']('update', 'parts', 'a.one', {'x': 1}, 3)['if_version'], 3)
-        self.assertNotIn('if_version', self.ns['pinned']('set', 'parts', 'a.one', {}))
-
-
-@unittest.skipIf(SKIP_VECTORS, 'ADP_SKIP_VECTORS=1')
-class Vectors(unittest.TestCase):
-    """Every fixture and vector in the skills, through the runner written in adp-minimal-rebuild, against the real ADP tools."""
-
-    def test_every_vector_passes_on_the_real_tools(self):
-        need_adp()
-        sys.path.insert(0, os.path.join(ROOT, 'tools'))
-        import vectors
-        results = vectors.load_runner()['run'](SKILLS, vectors.tools_of(ADP))
-        self.assertGreaterEqual(len(results), 10)
-        failed = [f"{r['vector']}: {r['problems']}" for r in results if not r['ok']]
-        self.assertEqual(failed, [])
+    def test_every_vector_passes_and_none_is_skipped(self):
+        ran = [r for r in B['results'] if not r.get('skip')]
+        self.assertGreaterEqual(len(ran), 131)
+        self.assertEqual(len(ran), len(B['results']), 'a vector carries skip: ' + str([r['vector'] for r in B['results'] if r.get('skip')]))
+        self.assertEqual([f"{r['vector']}: {r['problems']}" for r in ran if not r['ok']], [])
 
     def test_adp_js_hashes_like_adp_py(self):
-        """The runtime's hash of a page must be the manifest's: the two vectors that hash the same file agree."""
-        text = ''.join(vectors_text(n) for n in skills())
-        v = {json.loads(b)['vector']: json.loads(b) for b in re.findall(r'```json vector\n(.*?)```', text, re.S)}
-        py, js = v['manifest-single']['stdout'], v['adp-js-hash-single']['stdout']
+        """The runtime's hash of the page the fixture `one` is, observed in the build, is the manifest's."""
+        got = {r['vector']: r['observed'][0]['stdout'] for r in B['results'] if r['vector'] in ('manifest-single', 'adp-js-hash-single')}
+        py, js = got['manifest-single'], got['adp-js-hash-single']
         self.assertEqual(js['page_hash'], py['page_hash'])
         self.assertEqual(js['parts'], py['parts'])
         self.assertEqual(js['parents'], {k: v for k, v in py['parents'].items() if k != '_rest'})      # adp.js leaves _rest out of parents
+
+    def test_each_tool_stays_under_its_line_ceiling(self):
+        for tool, ceiling in CEILING.items(): self.assertLessEqual(B['report'][tool]['lines'], ceiling, tool)
+
+    def test_the_plugin_alone_builds_and_passes(self):
+        """Clean room: the plugin folder copied alone, the three snippets as build.py, a minimal environment."""
+        d = os.path.join(B['dir'], 'clean'); copy = os.path.join(d, 'adp-minimal')
+        shutil.copytree(MIN, copy)
+        with open(os.path.join(d, 'build.py'), 'w', encoding='utf-8') as f:
+            f.write('\n\n'.join(snippets(os.path.join(copy, 'skills'), 'vector-runner', 'assemble', 'run-the-vectors')) + '\n')
+        r = subprocess.run([sys.executable, os.path.join(d, 'build.py'), os.path.join(copy, 'skills'), os.path.join(d, 'build')], capture_output=True, text=True,
+                           cwd=d, env={'PATH': B['bin'], 'LANG': 'en_US.UTF-8'}, timeout=900)
+        self.assertEqual(r.returncode, 0, r.stdout[-2000:] + r.stderr[-2000:])
+        self.assertRegex(r.stdout.strip().split('\n')[-1], r'^(\d+) of \1 vectors pass, 0 skipped$')
 
     def test_no_vector_is_left_unfilled(self):
         text = ''.join(vectors_text(n) for n in skills())
@@ -202,10 +198,10 @@ class Vectors(unittest.TestCase):
             if 'base' in f: self.assertIn(f['base'], fixtures, f"base of {f['fixture']}")
         for b in re.findall(r'```json vector\n(.*?)```', text, re.S):
             v = json.loads(b)
-            for step in v.get('steps', [v]):      # placeholders are read in the inputs only, never in an expected output
+            for step in v.get('steps', [v]):      # `{nothing}` is the one deliberately missing folder; placeholders are read in the inputs only, never in an expected output
                 inputs = step.get('run', []) + list(step.get('files_out') or {}) + step.get('copy', []) + step.get('same_tree', [])
                 for ref in re.findall(r'\{([a-z0-9-]+)\}', ' '.join(inputs)):
-                    if ref not in ('out', 'home'): self.assertIn(ref, fixtures, f"{ref} in {v['vector']}")
+                    if ref not in ('out', 'home', 'nothing'): self.assertIn(ref, fixtures, f"{ref} in {v['vector']}")
 
 
 class Payloads(unittest.TestCase):

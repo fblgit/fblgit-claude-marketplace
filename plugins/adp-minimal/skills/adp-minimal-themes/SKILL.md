@@ -65,11 +65,11 @@ has it. A theme may set more. A theme with internal
 names of its own aliases them to the contract names in a second `:root` block (`--f-ui: var(--f-body)`). A **layer theme** builds on another:
 it names the base theme in `@requires`, is linked after it, sets only the tokens it changes, and sets no font token.
 
-The catalog fixture of this specification ships one theme, `theme.paper`. It sets only a few names: it exists to exercise the catalog tool,
+The catalog fixture of this plugin ships one theme, `theme.paper`. It sets only a few names: it exists to exercise the catalog tool,
 which does not check the contract ([catalog](../adp-minimal-catalog/SKILL.md#the-consistency-checks)).
 
 Each theme's stylesheet header lists the text/background pairs that reach 4.5:1 (WCAG AA) in light and dark, and any exception. These ratios are
-stated by the theme's author; no tool in this specification checks them.
+stated by the theme's author; no tool here checks them.
 
 ## Applying a theme
 
@@ -87,6 +87,35 @@ fonts before `page.css` and the theme stylesheet after it:
 
 Because the theme comes after `page.css` and sets only tokens, it overrides the template's placeholder tokens and leaves the page's rules alone.
 For a palette of your own, set the tokens in `page.css` and remove the theme's link.
+
+`link_tags` writes those links. It places the theme's font URLs and the taken entries' stylesheets before `page.css`, theme stylesheets after it
+and scripts before `parts/app.js`, and skips any file `index.html` already loads.
+
+```python
+# ---
+# id: themes.link
+# tool: adp.py
+# section: themes
+# order: 600
+# needs: [core.cli]
+# tests: [new-minimal]
+# sha: 92be9093c7a7
+# ---
+PAGE_CSS = '<link rel="stylesheet" href="styles/page.css">\n'
+APP_JS = '<script src="parts/app.js"></script>'
+
+
+def link_tags(d, files, fonts=()):
+    """Link taken files and theme fonts into DIR/index.html: fonts and entry styles, page.css, theme styles; scripts before parts/app.js."""
+    p = Path(d, 'index.html'); html = p.read_text(encoding='utf-8')
+    fresh = lambda xs, ext: [x for x in dict.fromkeys(xs) if x.endswith(ext) and f'"{x}"' not in html]
+    css = fresh(files, '.css')
+    link = lambda xs: ''.join(f'<link rel="stylesheet" href="{x}">\n' for x in xs)
+    html = html.replace(PAGE_CSS, link(fresh(fonts, '') + [x for x in css if not x.startswith('kit/themes/')]) + PAGE_CSS
+                        + link(x for x in css if x.startswith('kit/themes/')), 1)
+    html = html.replace(APP_JS, ''.join(f'<script src="{x}"></script>\n' for x in fresh(files, '.js')) + APP_JS, 1)
+    p.write_text(html, encoding='utf-8')
+```
 
 **At run time**: a page that has taken several themes and a theme picker from its catalog can switch themes while it is open. A light/dark/system
 control sets `data-theme` on the root; the picker swaps the linked theme. A viewer's picks are kept in their browser. The page-wide choice is the

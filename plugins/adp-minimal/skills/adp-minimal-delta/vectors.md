@@ -1,6 +1,6 @@
 # Vectors: adp-minimal-delta
 
-The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in [adp-minimal-rebuild](../adp-minimal-rebuild/SKILL.md) reads them; they are checked against the real ADP tools.
+The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in [adp-minimal-rebuild](../adp-minimal-rebuild/SKILL.md) reads them.
 
 ## Contract: `classify`, in `adp.py` and `adp.js`
 
@@ -15,8 +15,6 @@ The ids in the `three` fixture cover every class. `same` is unchanged on every s
 `index.html` are `ours`; `theirs`, and `livenew` (present only in live), are `theirs`; `agree` is `applied`, since live and incoming reach the same
 hash; `fresh` is `new`; `old` is `retired`, deleted with a reason. `both` is `held` because each side changed it differently, and `dropped` is `held`
 because incoming deletes it without a reason. `p.c` is `held` for the same reason as `both`; its parent `p` would be `ours`, and the closure holds it.
-
-The two vectors below differ only in the order of `ours`: `adp.py` lists part ids before file paths, while `adp.js` sorts them as one list.
 
 ```json vector
 {
@@ -34,8 +32,8 @@ The two vectors below differ only in the order of `ours`: `adp.py` lists part id
    "fresh"
   ],
   "ours": [
-   "mine",
-   "index.html"
+   "index.html",
+   "mine"
   ],
   "theirs": [
    "livenew",
@@ -899,6 +897,1197 @@ The two vectors below differ only in the order of `ours`: `adp.py` lists part id
      "additionalContext": "adp: no state for this url, an artifact ADP does not manage"
     }
    }
+  }
+ ]
+}
+```
+
+```json fixture
+{
+ "fixture": "refusals",
+ "base": "loop",
+ "files": {
+  "listing.txt": "no rows here\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "loop-refusals",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "classify",
+    "{refusals}/listing.txt",
+    "{refusals}/listing.txt"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py classify BASE.json LIVE.json INCOMING.json"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{refusals}/work"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py export DIR --url URL [--files-listing F] [--docs D] [--version V]"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "ack",
+    "{refusals}/work",
+    "--result",
+    "{refusals}/written.json"
+   ],
+   "exit": 2,
+   "stdout": {
+    "error": "no export yet",
+    "next": "adp.py export <tmp>/refusals/work --url URL"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "propose",
+    "{refusals}/work",
+    "--summary",
+    "x"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py propose DIR --by NAME --summary S [--retire ID --reason R ...]  (every deleted part id needs its own --retire ID --reason R pair, paired in order)"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{refusals}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{refusals}/listing.txt"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "<tmp>/refusals/listing.txt: no file rows (- \"path\"  type  N bytes) and not JSON: save the Artifact list result as it came"
+   ]
+  }
+ ]
+}
+```
+
+```json fixture
+{
+ "fixture": "shapes",
+ "base": "loop",
+ "files": {
+  "work/index.html": null,
+  "work/parts/app.js": null,
+  "work/styles/page.css": null,
+  "work.adp/incoming/files/index.html": "<!doctype html><html><head><meta charset=utf8><title>x</title><style>b{}</style></head><body>\n<header data-part=\"page.header\"><!-- part:page.header --><h1>Board</h1><!-- /part:page.header --></header>\n<!-- part:home --><section data-part=\"home\" data-comment-target><!-- part:home.lead --><p data-part=\"home.lead\" data-comment-target>Hi</p><!-- /part:home.lead --></section><!-- /part:home -->\n<script src=\"parts/app.js\"></script>\n\n</body></html>\n",
+  "listing.txt": "- \"index.html\"  text/html  336 bytes\n- \"parts/app.js\"  text/javascript  71 bytes\n- \"styles/page.css\"  text/css  64 bytes\n- \"seed.json\"  application/json  10 bytes\n",
+  "docs.json": "{\n \"manifest\": {\n  \"current\": {\n   \"data\": {\n    \"schema\": \"adp/2\",\n    \"page_hash\": \"7f4556515dd9\",\n    \"parts\": {\n     \"_rest:index.html\": \"ee2d7cd8fa75\",\n     \"_rest:parts/app.js\": \"e3b0c44298fc\",\n     \"_rest:styles/page.css\": \"e3b0c44298fc\",\n     \"home\": \"081b78b8f894\",\n     \"home.lead\": \"c6a82a517ff8\",\n     \"page.header\": \"0d957e9aee8d\",\n     \"page.script.app\": \"35c146f76e12\",\n     \"page.style\": \"997faceca260\"\n    },\n    \"files\": {\n     \"index.html\": \"bd002c3d502b\",\n     \"parts/app.js\": \"574c60bebc47\",\n     \"styles/page.css\": \"56ee869c6a7b\"\n    },\n    \"parents\": {\n     \"_rest:index.html\": \"\",\n     \"_rest:parts/app.js\": \"\",\n     \"_rest:styles/page.css\": \"\",\n     \"home\": \"\",\n     \"home.lead\": \"home\",\n     \"page.header\": \"\",\n     \"page.script.app\": \"\",\n     \"page.style\": \"\"\n    },\n    \"elements\": {\n     \"_rest:index.html\": 2,\n     \"_rest:parts/app.js\": 0,\n     \"_rest:styles/page.css\": 0,\n     \"home\": 1,\n     \"home.lead\": 1,\n     \"page.header\": 1,\n     \"page.script.app\": 0,\n     \"page.style\": 0\n    },\n    \"part_file\": {\n     \"_rest:index.html\": \"index.html\",\n     \"_rest:parts/app.js\": \"parts/app.js\",\n     \"_rest:styles/page.css\": \"styles/page.css\",\n     \"home\": \"index.html\",\n     \"home.lead\": \"index.html\",\n     \"page.header\": \"index.html\",\n     \"page.script.app\": \"parts/app.js\",\n     \"page.style\": \"styles/page.css\"\n    },\n    \"version\": \"7\"\n   },\n   \"version\": 7\n  }\n },\n \"parts\": [\n  {\n   \"doc_id\": \"parts/home\",\n   \"hash\": \"081b78b8f894\",\n   \"version\": 2\n  },\n  {\n   \"doc_id\": \"parts/home.lead\",\n   \"hash\": \"c6a82a517ff8\",\n   \"version\": 3\n  }\n ],\n \"content\": [\n  {\n   \"id\": \"home.lead\",\n   \"html\": \"<p>Hi</p>\",\n   \"version\": 1\n  }\n ]\n}\n",
+  "mine/content.js": "window.ADP_CONTENT = {\"home.lead\": {\"part\": \"home.lead\", \"title\": \"Lead\", \"html\": \"<p>Howdy</p>\"}};\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "loop-export-reads-every-input-shape",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{shapes}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{shapes}/listing.txt",
+    "--docs",
+    "{shapes}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/shapes/work.adp/state.json",
+    "next": "clean: nothing to send"
+   },
+   "files_out": {
+    "{home}/artifacts.json": {
+     "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001": {
+      "dir": "<tmp>/shapes/work",
+      "name": "work"
+     }
+    },
+    "{shapes}/work.adp/incoming/files.json": [
+     {
+      "path": "index.html",
+      "sha256": "",
+      "bytes": 336,
+      "ref": null
+     },
+     {
+      "path": "parts/app.js",
+      "sha256": "",
+      "bytes": 71,
+      "ref": null
+     },
+     {
+      "path": "styles/page.css",
+      "sha256": "",
+      "bytes": 64,
+      "ref": null
+     }
+    ],
+    "{shapes}/work.adp/incoming/report.json": {
+     "new": [],
+     "ours": [],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "{shapes}/work.adp/incoming/live-manifest.json": {
+     "parts": {
+      "_rest:index.html": "ee2d7cd8fa75",
+      "_rest:parts/app.js": "e3b0c44298fc",
+      "_rest:styles/page.css": "e3b0c44298fc",
+      "home": "081b78b8f894",
+      "home.lead": "c6a82a517ff8",
+      "page.header": "0d957e9aee8d",
+      "page.script.app": "35c146f76e12",
+      "page.style": "997faceca260"
+     },
+     "parents": {
+      "_rest:index.html": "",
+      "_rest:parts/app.js": "",
+      "_rest:styles/page.css": "",
+      "home": "",
+      "home.lead": "home",
+      "page.header": "",
+      "page.script.app": "",
+      "page.style": ""
+     },
+     "files": {
+      "index.html": "bd002c3d502b",
+      "parts/app.js": "574c60bebc47",
+      "styles/page.css": "56ee869c6a7b"
+     },
+     "page_hash": "7f4556515dd9"
+    },
+    "{shapes}/work.adp/incoming/db/manifest/current.json": {
+     "schema": "adp/2",
+     "page_hash": "7f4556515dd9",
+     "parts": {
+      "_rest:index.html": "ee2d7cd8fa75",
+      "_rest:parts/app.js": "e3b0c44298fc",
+      "_rest:styles/page.css": "e3b0c44298fc",
+      "home": "081b78b8f894",
+      "home.lead": "c6a82a517ff8",
+      "page.header": "0d957e9aee8d",
+      "page.script.app": "35c146f76e12",
+      "page.style": "997faceca260"
+     },
+     "files": {
+      "index.html": "bd002c3d502b",
+      "parts/app.js": "574c60bebc47",
+      "styles/page.css": "56ee869c6a7b"
+     },
+     "parents": {
+      "_rest:index.html": "",
+      "_rest:parts/app.js": "",
+      "_rest:styles/page.css": "",
+      "home": "",
+      "home.lead": "home",
+      "page.header": "",
+      "page.script.app": "",
+      "page.style": ""
+     },
+     "elements": {
+      "_rest:index.html": 2,
+      "_rest:parts/app.js": 0,
+      "_rest:styles/page.css": 0,
+      "home": 1,
+      "home.lead": 1,
+      "page.header": 1,
+      "page.script.app": 0,
+      "page.style": 0
+     },
+     "part_file": {
+      "_rest:index.html": "index.html",
+      "_rest:parts/app.js": "parts/app.js",
+      "_rest:styles/page.css": "styles/page.css",
+      "home": "index.html",
+      "home.lead": "index.html",
+      "page.header": "index.html",
+      "page.script.app": "parts/app.js",
+      "page.style": "styles/page.css"
+     },
+     "version": "7"
+    },
+    "{shapes}/work.adp/state.json": {
+     "base": {
+      "manifest": {
+       "files": {
+        "index.html": "bd002c3d502b",
+        "parts/app.js": "574c60bebc47",
+        "styles/page.css": "56ee869c6a7b"
+       },
+       "parents": {
+        "_rest:index.html": "",
+        "_rest:parts/app.js": "",
+        "_rest:styles/page.css": "",
+        "home": "",
+        "home.lead": "home",
+        "page.header": "",
+        "page.script.app": "",
+        "page.style": ""
+       },
+       "parts": {
+        "_rest:index.html": "ee2d7cd8fa75",
+        "_rest:parts/app.js": "e3b0c44298fc",
+        "_rest:styles/page.css": "e3b0c44298fc",
+        "home": "081b78b8f894",
+        "home.lead": "c6a82a517ff8",
+        "page.header": "0d957e9aee8d",
+        "page.script.app": "35c146f76e12",
+        "page.style": "997faceca260"
+       }
+      },
+      "version": "7"
+     },
+     "capabilities": {},
+     "catalog": {
+      "url": "",
+      "vermap": {}
+     },
+     "commits": {
+      "live": "<commit>",
+      "work": "<commit>"
+     },
+     "docs": {
+      "content/home.lead": 1,
+      "manifest/current": 7,
+      "parts/home": 2,
+      "parts/home.lead": 3
+     },
+     "exported_at": "<time>",
+     "files": {
+      "index.html": "bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3",
+      "parts/app.js": "574c60bebc47c67f6767237cf4f4adeb285bafdcc2b9b6ec046ab7a65a3f92df",
+      "styles/page.css": "56ee869c6a7b0e7d21e0dec5797d620a57125641f1be3303654385ab0c9addbc"
+     },
+     "incoming": {
+      "acked": [],
+      "held": [],
+      "pending_replies": [],
+      "proposed": {},
+      "unacked": []
+     },
+     "live": {
+      "at": "<time>",
+      "version": "7"
+     },
+     "live_manifest": {
+      "files": {
+       "index.html": "bd002c3d502b",
+       "parts/app.js": "574c60bebc47",
+       "styles/page.css": "56ee869c6a7b"
+      },
+      "parents": {
+       "_rest:index.html": "",
+       "_rest:parts/app.js": "",
+       "_rest:styles/page.css": "",
+       "home": "",
+       "home.lead": "home",
+       "page.header": "",
+       "page.script.app": "",
+       "page.style": ""
+      },
+      "parts": {
+       "_rest:index.html": "ee2d7cd8fa75",
+       "_rest:parts/app.js": "e3b0c44298fc",
+       "_rest:styles/page.css": "e3b0c44298fc",
+       "home": "081b78b8f894",
+       "home.lead": "c6a82a517ff8",
+       "page.header": "0d957e9aee8d",
+       "page.script.app": "35c146f76e12",
+       "page.style": "997faceca260"
+      }
+     },
+     "name": "work",
+     "page_hash": "7f4556515dd9",
+     "refs": {},
+     "schema": "adp-state/1",
+     "src_copy": {},
+     "status": {},
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001"
+    },
+    "{shapes}/work/index.html": "<header data-part=\"page.header\"><!-- part:page.header --><h1>Board</h1><!-- /part:page.header --></header>\n<!-- part:home --><section data-part=\"home\" data-comment-target><!-- part:home.lead --><p data-part=\"home.lead\" data-comment-target>Hi</p><!-- /part:home.lead --></section><!-- /part:home -->\n<script src=\"parts/app.js\"></script>\n"
+   }
+  },
+  {
+   "same_tree": [
+    "{shapes}/work",
+    "{loop}/work"
+   ]
+  },
+  {
+   "copy": [
+    "{shapes}/mine",
+    "{shapes}/work"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "propose",
+    "{shapes}/work",
+    "--by",
+    "agent-a",
+    "--summary",
+    "Lead: howdy"
+   ],
+   "exit": 0,
+   "stdout": {
+    "proposal": "<pid>",
+    "doc": "<tmp>/shapes/work.adp/propose-<pid>.json",
+    "parts": 3,
+    "files": 2,
+    "chunks": 0,
+    "next": "run the ArtifactData batch, then adp.py ack with its result; an editor applies it on the page",
+    "batches": [
+     [
+      {
+       "op": "set",
+       "collection": "incoming",
+       "doc_id": "<pid>",
+       "file_path": "<tmp>/shapes/work.adp/propose-<pid>.json"
+      },
+      {
+       "op": "set",
+       "collection": "changes",
+       "doc_id": "d-<ms>",
+       "file_path": "<tmp>/shapes/work.adp/propose-<pid>/changes__d-<ms>.json"
+      }
+     ]
+    ],
+    "docs_dir": "<tmp>/shapes/work.adp/propose-<pid>"
+   },
+   "files_out": {
+    "{shapes}/work.adp/propose-*.json": {
+     "by": "agent-a",
+     "at": "<time>",
+     "summary": "Lead: howdy",
+     "threads": [],
+     "base": {
+      "version": "7",
+      "page_hash": "7f4556515dd9",
+      "docs": {
+       "content/home.lead": 1,
+       "manifest/current": 7,
+       "parts/home": 2,
+       "parts/home.lead": 3
+      }
+     },
+     "parts": [
+      {
+       "id": "home",
+       "from": "081b78b8f894",
+       "to": "321732a04e94",
+       "html": "",
+       "retired": false,
+       "reason": ""
+      },
+      {
+       "id": "home.lead",
+       "from": "c6a82a517ff8",
+       "to": "31d186af845c",
+       "html": "<p>Howdy</p>",
+       "retired": false,
+       "reason": ""
+      },
+      {
+       "id": "home.lead",
+       "kind": "content",
+       "from": "9c655e84ab91",
+       "to": "8412217bfb89",
+       "html": "<p>Howdy</p>",
+       "retired": false,
+       "reason": ""
+      }
+     ],
+     "files": [
+      {
+       "path": "content.js",
+       "ifMatch": null,
+       "contentType": "text/javascript",
+       "content": "window.ADP_CONTENT = {\"home.lead\": {\"part\": \"home.lead\", \"title\": \"Lead\", \"html\": \"<p>Howdy</p>\"}};\n"
+      },
+      {
+       "path": "index.html",
+       "ifMatch": "bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3",
+       "contentType": "text/html",
+       "content": "<header data-part=\"page.header\"><!-- part:page.header --><h1>Board</h1><!-- /part:page.header --></header>\n<!-- part:home --><section data-part=\"home\" data-comment-target><!-- part:home.lead --><p data-part=\"home.lead\" data-comment-target>Howdy</p><!-- /part:home.lead --></section><!-- /part:home -->\n<script src=\"parts/app.js\"></script>\n"
+      }
+     ],
+     "live_files": {
+      "index.html": "bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3",
+      "parts/app.js": "574c60bebc47c67f6767237cf4f4adeb285bafdcc2b9b6ec046ab7a65a3f92df",
+      "styles/page.css": "56ee869c6a7b0e7d21e0dec5797d620a57125641f1be3303654385ab0c9addbc"
+     },
+     "classified": {
+      "new": [
+       "content.js"
+      ],
+      "ours": [
+       "home",
+       "home.lead",
+       "index.html"
+      ],
+      "theirs": [],
+      "applied": [],
+      "held": [],
+      "retired": []
+     },
+     "status": "new",
+     "decided": {
+      "by": "",
+      "at": "",
+      "reason": ""
+     },
+     "applied": {
+      "version": "",
+      "at": ""
+     }
+    }
+   }
+  }
+ ]
+}
+```
+
+```json fixture
+{
+ "fixture": "content",
+ "base": "loop",
+ "files": {
+  "work/content/home.lead.html": "Hi copy",
+  "work/content/page.header.html": "Board copy",
+  "docs.json": "{\n \"manifest\": [\n  {\n   \"id\": \"current\",\n   \"data\": {\n    \"schema\": \"adp/2\",\n    \"page_hash\": \"7f4556515dd9\",\n    \"parts\": {\n     \"_rest:index.html\": \"ee2d7cd8fa75\",\n     \"_rest:parts/app.js\": \"e3b0c44298fc\",\n     \"_rest:styles/page.css\": \"e3b0c44298fc\",\n     \"home\": \"081b78b8f894\",\n     \"home.lead\": \"c6a82a517ff8\",\n     \"page.header\": \"0d957e9aee8d\",\n     \"page.script.app\": \"35c146f76e12\",\n     \"page.style\": \"997faceca260\"\n    },\n    \"files\": {\n     \"index.html\": \"bd002c3d502b\",\n     \"parts/app.js\": \"574c60bebc47\",\n     \"styles/page.css\": \"56ee869c6a7b\"\n    },\n    \"parents\": {\n     \"_rest:index.html\": \"\",\n     \"_rest:parts/app.js\": \"\",\n     \"_rest:styles/page.css\": \"\",\n     \"home\": \"\",\n     \"home.lead\": \"home\",\n     \"page.header\": \"\",\n     \"page.script.app\": \"\",\n     \"page.style\": \"\"\n    },\n    \"elements\": {\n     \"_rest:index.html\": 2,\n     \"_rest:parts/app.js\": 0,\n     \"_rest:styles/page.css\": 0,\n     \"home\": 1,\n     \"home.lead\": 1,\n     \"page.header\": 1,\n     \"page.script.app\": 0,\n     \"page.style\": 0\n    },\n    \"part_file\": {\n     \"_rest:index.html\": \"index.html\",\n     \"_rest:parts/app.js\": \"parts/app.js\",\n     \"_rest:styles/page.css\": \"styles/page.css\",\n     \"home\": \"index.html\",\n     \"home.lead\": \"index.html\",\n     \"page.header\": \"index.html\",\n     \"page.script.app\": \"parts/app.js\",\n     \"page.style\": \"styles/page.css\"\n    },\n    \"version\": \"7\"\n   },\n   \"version\": 7\n  }\n ],\n \"parts\": [\n  {\n   \"id\": \"home\",\n   \"data\": {\n    \"hash\": \"081b78b8f894\"\n   },\n   \"version\": 2\n  },\n  {\n   \"id\": \"home.lead\",\n   \"data\": {\n    \"hash\": \"c6a82a517ff8\"\n   },\n   \"version\": 3\n  }\n ],\n \"content\": [\n  {\n   \"id\": \"home.lead\",\n   \"data\": {\n    \"html\": \"Hi copy\"\n   },\n   \"version\": 1\n  },\n  {\n   \"id\": \"page.header\",\n   \"data\": {\n    \"html\": \"Board copy\"\n   },\n   \"version\": 1\n  }\n ]\n}\n",
+  "docs-2.json": "{\n \"manifest\": [\n  {\n   \"id\": \"current\",\n   \"data\": {\n    \"schema\": \"adp/2\",\n    \"page_hash\": \"7f4556515dd9\",\n    \"parts\": {\n     \"_rest:index.html\": \"ee2d7cd8fa75\",\n     \"_rest:parts/app.js\": \"e3b0c44298fc\",\n     \"_rest:styles/page.css\": \"e3b0c44298fc\",\n     \"home\": \"081b78b8f894\",\n     \"home.lead\": \"c6a82a517ff8\",\n     \"page.header\": \"0d957e9aee8d\",\n     \"page.script.app\": \"35c146f76e12\",\n     \"page.style\": \"997faceca260\"\n    },\n    \"files\": {\n     \"index.html\": \"bd002c3d502b\",\n     \"parts/app.js\": \"574c60bebc47\",\n     \"styles/page.css\": \"56ee869c6a7b\"\n    },\n    \"parents\": {\n     \"_rest:index.html\": \"\",\n     \"_rest:parts/app.js\": \"\",\n     \"_rest:styles/page.css\": \"\",\n     \"home\": \"\",\n     \"home.lead\": \"home\",\n     \"page.header\": \"\",\n     \"page.script.app\": \"\",\n     \"page.style\": \"\"\n    },\n    \"elements\": {\n     \"_rest:index.html\": 2,\n     \"_rest:parts/app.js\": 0,\n     \"_rest:styles/page.css\": 0,\n     \"home\": 1,\n     \"home.lead\": 1,\n     \"page.header\": 1,\n     \"page.script.app\": 0,\n     \"page.style\": 0\n    },\n    \"part_file\": {\n     \"_rest:index.html\": \"index.html\",\n     \"_rest:parts/app.js\": \"parts/app.js\",\n     \"_rest:styles/page.css\": \"styles/page.css\",\n     \"home\": \"index.html\",\n     \"home.lead\": \"index.html\",\n     \"page.header\": \"index.html\",\n     \"page.script.app\": \"parts/app.js\",\n     \"page.style\": \"styles/page.css\"\n    },\n    \"version\": \"7\"\n   },\n   \"version\": 7\n  }\n ],\n \"parts\": [\n  {\n   \"id\": \"home\",\n   \"data\": {\n    \"hash\": \"081b78b8f894\"\n   },\n   \"version\": 2\n  },\n  {\n   \"id\": \"home.lead\",\n   \"data\": {\n    \"hash\": \"c6a82a517ff8\"\n   },\n   \"version\": 3\n  }\n ],\n \"content\": [\n  {\n   \"id\": \"home.lead\",\n   \"data\": {\n    \"html\": \"Hi live 2\"\n   },\n   \"version\": 1\n  },\n  {\n   \"id\": \"page.header\",\n   \"data\": {\n    \"html\": \"Board copy\"\n   },\n   \"version\": 1\n  }\n ]\n}\n",
+  "docs-3.json": "{\n \"manifest\": [\n  {\n   \"id\": \"current\",\n   \"data\": {\n    \"schema\": \"adp/2\",\n    \"page_hash\": \"7f4556515dd9\",\n    \"parts\": {\n     \"_rest:index.html\": \"ee2d7cd8fa75\",\n     \"_rest:parts/app.js\": \"e3b0c44298fc\",\n     \"_rest:styles/page.css\": \"e3b0c44298fc\",\n     \"home\": \"081b78b8f894\",\n     \"home.lead\": \"c6a82a517ff8\",\n     \"page.header\": \"0d957e9aee8d\",\n     \"page.script.app\": \"35c146f76e12\",\n     \"page.style\": \"997faceca260\"\n    },\n    \"files\": {\n     \"index.html\": \"bd002c3d502b\",\n     \"parts/app.js\": \"574c60bebc47\",\n     \"styles/page.css\": \"56ee869c6a7b\"\n    },\n    \"parents\": {\n     \"_rest:index.html\": \"\",\n     \"_rest:parts/app.js\": \"\",\n     \"_rest:styles/page.css\": \"\",\n     \"home\": \"\",\n     \"home.lead\": \"home\",\n     \"page.header\": \"\",\n     \"page.script.app\": \"\",\n     \"page.style\": \"\"\n    },\n    \"elements\": {\n     \"_rest:index.html\": 2,\n     \"_rest:parts/app.js\": 0,\n     \"_rest:styles/page.css\": 0,\n     \"home\": 1,\n     \"home.lead\": 1,\n     \"page.header\": 1,\n     \"page.script.app\": 0,\n     \"page.style\": 0\n    },\n    \"part_file\": {\n     \"_rest:index.html\": \"index.html\",\n     \"_rest:parts/app.js\": \"parts/app.js\",\n     \"_rest:styles/page.css\": \"styles/page.css\",\n     \"home\": \"index.html\",\n     \"home.lead\": \"index.html\",\n     \"page.header\": \"index.html\",\n     \"page.script.app\": \"parts/app.js\",\n     \"page.style\": \"styles/page.css\"\n    },\n    \"version\": \"7\"\n   },\n   \"version\": 7\n  }\n ],\n \"parts\": [\n  {\n   \"id\": \"home\",\n   \"data\": {\n    \"hash\": \"081b78b8f894\"\n   },\n   \"version\": 2\n  },\n  {\n   \"id\": \"home.lead\",\n   \"data\": {\n    \"hash\": \"c6a82a517ff8\"\n   },\n   \"version\": 3\n  }\n ],\n \"content\": [\n  {\n   \"id\": \"home.lead\",\n   \"data\": {\n    \"html\": \"Hi live 3\"\n   },\n   \"version\": 1\n  },\n  {\n   \"id\": \"page.header\",\n   \"data\": {\n    \"html\": \"Board copy\"\n   },\n   \"version\": 1\n  }\n ]\n}\n",
+  "mine2/index.html": "<header data-part=\"page.header\"><!-- part:page.header --><h1>Board!</h1><!-- /part:page.header --></header>\n<!-- part:home --><section data-part=\"home\" data-comment-target><!-- part:home.lead --><p data-part=\"home.lead\" data-comment-target>Hi</p><!-- /part:home.lead --></section><!-- /part:home -->\n<script src=\"parts/app.js\"></script>\n",
+  "mine2/parts/app.js": "/* part:page.script.app */\nconsole.log(1);\n/* /part:page.script.app */\n",
+  "mine2/styles/page.css": "/* part:page.style */ body { margin: 0 } /* /part:page.style */\n",
+  "mine2/content/home.lead.html": "Hi copy",
+  "mine2/content/page.header.html": "Board! copy"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "loop-content-merges-over-base",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{content}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{content}/listing.json",
+    "--docs",
+    "{content}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/content/work.adp/state.json",
+    "next": "clean: nothing to send"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{content}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{content}/listing.json",
+    "--docs",
+    "{content}/docs-2.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/content/work.adp/state.json",
+    "next": "clean: nothing to send"
+   },
+   "files_out": {
+    "{content}/work/content/home.lead.html": "Hi live 2"
+   }
+  },
+  {
+   "copy": [
+    "{content}/mine2",
+    "{content}/work"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "propose",
+    "{content}/work",
+    "--by",
+    "agent-a",
+    "--summary",
+    "Header"
+   ],
+   "exit": 0,
+   "stdout": {
+    "proposal": "<pid>",
+    "doc": "<tmp>/content/work.adp/propose-<pid>.json",
+    "parts": 2,
+    "files": 1,
+    "chunks": 0,
+    "next": "run the ArtifactData batch, then adp.py ack with its result; an editor applies it on the page",
+    "batches": [
+     [
+      {
+       "op": "set",
+       "collection": "incoming",
+       "doc_id": "<pid>",
+       "file_path": "<tmp>/content/work.adp/propose-<pid>.json"
+      },
+      {
+       "op": "set",
+       "collection": "changes",
+       "doc_id": "d-<ms>",
+       "file_path": "<tmp>/content/work.adp/propose-<pid>/changes__d-<ms>.json"
+      }
+     ]
+    ],
+    "docs_dir": "<tmp>/content/work.adp/propose-<pid>"
+   },
+   "files_out": {
+    "{content}/work.adp/propose-*.json": {
+     "by": "agent-a",
+     "at": "<time>",
+     "summary": "Header",
+     "threads": [],
+     "base": {
+      "version": "7",
+      "page_hash": "7f4556515dd9",
+      "docs": {
+       "content/home.lead": 1,
+       "content/page.header": 1,
+       "manifest/current": 7,
+       "parts/home": 2,
+       "parts/home.lead": 3
+      }
+     },
+     "parts": [
+      {
+       "id": "page.header",
+       "from": "0d957e9aee8d",
+       "to": "2c848a010972",
+       "html": "Board! copy",
+       "retired": false,
+       "reason": ""
+      },
+      {
+       "id": "page.header",
+       "kind": "content",
+       "from": "6b042a29c9dc",
+       "to": "f530f45d304d",
+       "html": "Board! copy",
+       "retired": false,
+       "reason": ""
+      }
+     ],
+     "files": [
+      {
+       "path": "index.html",
+       "ifMatch": "bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3",
+       "contentType": "text/html",
+       "content": "<header data-part=\"page.header\"><!-- part:page.header --><h1>Board!</h1><!-- /part:page.header --></header>\n<!-- part:home --><section data-part=\"home\" data-comment-target><!-- part:home.lead --><p data-part=\"home.lead\" data-comment-target>Hi</p><!-- /part:home.lead --></section><!-- /part:home -->\n<script src=\"parts/app.js\"></script>\n"
+      }
+     ],
+     "live_files": {
+      "index.html": "bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3",
+      "parts/app.js": "574c60bebc47c67f6767237cf4f4adeb285bafdcc2b9b6ec046ab7a65a3f92df",
+      "styles/page.css": "56ee869c6a7b0e7d21e0dec5797d620a57125641f1be3303654385ab0c9addbc"
+     },
+     "classified": {
+      "new": [],
+      "ours": [
+       "index.html",
+       "page.header"
+      ],
+      "theirs": [],
+      "applied": [],
+      "held": [],
+      "retired": []
+     },
+     "status": "new",
+     "decided": {
+      "by": "",
+      "at": "",
+      "reason": ""
+     },
+     "applied": {
+      "version": "",
+      "at": ""
+     }
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{content}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{content}/listing.json",
+    "--docs",
+    "{content}/docs-3.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [
+      "index.html",
+      "page.header"
+     ],
+     "theirs": [],
+     "applied": [],
+     "held": [
+      {
+       "id": "content/home.lead.html",
+       "base": null,
+       "live": null,
+       "incoming": null
+      }
+     ],
+     "retired": [],
+     "merge_conflict": [
+      "CONFLICT (content): Merge conflict in content/home.lead.html"
+     ]
+    },
+    "merged": false,
+    "state": "<tmp>/content/work.adp/state.json",
+    "next": "held: 1; show both versions to the owner, nobody writes"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "propose",
+    "{content}/work",
+    "--by",
+    "agent-a",
+    "--summary",
+    "Header again"
+   ],
+   "exit": 2,
+   "stdout": {
+    "refused": [
+     {
+      "error": "merge conflict with live",
+      "detail": [
+       "CONFLICT (content): Merge conflict in content/home.lead.html"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}
+```
+
+```json fixture
+{
+ "fixture": "big",
+ "base": "loop",
+ "files": {
+  "listing-big.json": "{\n \"files\": [\n  {\n   \"path\": \"index.html\",\n   \"sha256\": \"bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3\",\n   \"bytes\": 336\n  },\n  {\n   \"path\": \"parts/app.js\",\n   \"sha256\": \"574c60bebc47c67f6767237cf4f4adeb285bafdcc2b9b6ec046ab7a65a3f92df\",\n   \"bytes\": 71\n  },\n  {\n   \"path\": \"styles/page.css\",\n   \"sha256\": \"56ee869c6a7b0e7d21e0dec5797d620a57125641f1be3303654385ab0c9addbc\",\n   \"bytes\": 64\n  },\n  {\n   \"path\": \"lib/shared.js\",\n   \"artifact\": \"00000000-0000-4000-8000-000000000002\",\n   \"ver\": \"3\"\n  }\n ]\n}\n",
+  "work/lib/shared.js": "export const x = 1;\n",
+  "work/data/big.txt": {
+   "fill": 300000
+  },
+  "work/img/dot.png": {
+   "base64": "iVBORw0KGgoAAAANSUhEUg=="
+  },
+  "work/index.html": "<header><h1>Board</h1></header>\n<!-- part:home --><section data-part=\"home\" data-comment-target><!-- part:home.lead --><p data-part=\"home.lead\" data-comment-target>Hi</p><!-- /part:home.lead --></section><!-- /part:home -->\n<script src=\"parts/app.js\"></script>\n",
+  "published.json": "{\n \"shas\": {\n  \"data/big.txt\": \"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\"\n },\n \"version_id\": \"9\"\n}\n",
+  "notjson.txt": "not json\n"
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "big-applied",
+ "files": {
+  "docs.json": "{\n \"manifest\": [\n  {\n   \"id\": \"current\",\n   \"data\": {\n    \"schema\": \"adp/2\",\n    \"page_hash\": \"7f4556515dd9\",\n    \"parts\": {\n     \"_rest:index.html\": \"ee2d7cd8fa75\",\n     \"_rest:parts/app.js\": \"e3b0c44298fc\",\n     \"_rest:styles/page.css\": \"e3b0c44298fc\",\n     \"home\": \"081b78b8f894\",\n     \"home.lead\": \"c6a82a517ff8\",\n     \"page.header\": \"0d957e9aee8d\",\n     \"page.script.app\": \"35c146f76e12\",\n     \"page.style\": \"997faceca260\"\n    },\n    \"files\": {\n     \"index.html\": \"bd002c3d502b\",\n     \"parts/app.js\": \"574c60bebc47\",\n     \"styles/page.css\": \"56ee869c6a7b\"\n    },\n    \"parents\": {\n     \"_rest:index.html\": \"\",\n     \"_rest:parts/app.js\": \"\",\n     \"_rest:styles/page.css\": \"\",\n     \"home\": \"\",\n     \"home.lead\": \"home\",\n     \"page.header\": \"\",\n     \"page.script.app\": \"\",\n     \"page.style\": \"\"\n    },\n    \"elements\": {\n     \"_rest:index.html\": 2,\n     \"_rest:parts/app.js\": 0,\n     \"_rest:styles/page.css\": 0,\n     \"home\": 1,\n     \"home.lead\": 1,\n     \"page.header\": 1,\n     \"page.script.app\": 0,\n     \"page.style\": 0\n    },\n    \"part_file\": {\n     \"_rest:index.html\": \"index.html\",\n     \"_rest:parts/app.js\": \"parts/app.js\",\n     \"_rest:styles/page.css\": \"styles/page.css\",\n     \"home\": \"index.html\",\n     \"home.lead\": \"index.html\",\n     \"page.header\": \"index.html\",\n     \"page.script.app\": \"parts/app.js\",\n     \"page.style\": \"styles/page.css\"\n    },\n    \"version\": \"7\"\n   },\n   \"version\": 7\n  }\n ],\n \"parts\": [\n  {\n   \"id\": \"home\",\n   \"data\": {\n    \"hash\": \"081b78b8f894\"\n   },\n   \"version\": 2\n  },\n  {\n   \"id\": \"home.lead\",\n   \"data\": {\n    \"hash\": \"c6a82a517ff8\"\n   },\n   \"version\": 3\n  }\n ],\n \"incoming\": {\n  \"<pid>\": {\n   \"data\": {\n    \"status\": \"applied\",\n    \"applied\": {\n     \"version\": \"9\",\n     \"at\": \"\"\n    }\n   },\n   \"version\": 1\n  },\n  \"p-1000000000000-abcd\": {\n   \"data\": {\n    \"status\": \"declined\"\n   },\n   \"version\": 1\n  }\n }\n}\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "loop-retire-chunk-and-ack",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{big}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{big}/listing-big.json",
+    "--docs",
+    "{big}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [
+      "data/big.txt",
+      "img/dot.png"
+     ],
+     "ours": [
+      "_rest:index.html",
+      "index.html"
+     ],
+     "theirs": [],
+     "applied": [],
+     "held": [
+      {
+       "id": "page.header",
+       "base": "0d957e9aee8d",
+       "live": "0d957e9aee8d",
+       "incoming": null
+      }
+     ],
+     "retired": []
+    },
+    "merged": false,
+    "state": "<tmp>/big/work.adp/state.json",
+    "next": "held: 1; show both versions to the owner, nobody writes"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "propose",
+    "{big}/work",
+    "--by",
+    "agent-a",
+    "--summary",
+    "Data",
+    "--retire",
+    "page.header"
+   ],
+   "exit": 2,
+   "stdout": {
+    "refused": [
+     {
+      "error": "held",
+      "held": [
+       {
+        "id": "page.header",
+        "base": "0d957e9aee8d",
+        "live": "0d957e9aee8d",
+        "incoming": null
+       }
+      ]
+     },
+     {
+      "error": "deleted without --retire ID --reason R",
+      "ids": [
+       "page.header"
+      ]
+     },
+     {
+      "error": "--retire needs --reason",
+      "ids": [
+       "page.header"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "propose",
+    "{big}/work",
+    "--by",
+    "agent-a",
+    "--summary",
+    "Data",
+    "--retire",
+    "page.header",
+    "--reason",
+    "folded into home"
+   ],
+   "exit": 0,
+   "stdout": {
+    "proposal": "<pid>",
+    "doc": "<tmp>/big/work.adp/propose-<pid>.json",
+    "parts": 2,
+    "files": 3,
+    "chunks": 3,
+    "next": "run the ArtifactData batch, then adp.py ack with its result; an editor applies it on the page",
+    "batches": [
+     [
+      {
+       "op": "set",
+       "collection": "incoming/<pid>/chunks",
+       "doc_id": "0",
+       "file_path": "<tmp>/big/work.adp/propose-<pid>/incoming~<pid>~chunks__0.json"
+      },
+      {
+       "op": "set",
+       "collection": "incoming/<pid>/chunks",
+       "doc_id": "1",
+       "file_path": "<tmp>/big/work.adp/propose-<pid>/incoming~<pid>~chunks__1.json"
+      },
+      {
+       "op": "set",
+       "collection": "incoming/<pid>/chunks",
+       "doc_id": "2",
+       "file_path": "<tmp>/big/work.adp/propose-<pid>/incoming~<pid>~chunks__2.json"
+      },
+      {
+       "op": "set",
+       "collection": "incoming",
+       "doc_id": "<pid>",
+       "file_path": "<tmp>/big/work.adp/propose-<pid>.json"
+      },
+      {
+       "op": "set",
+       "collection": "changes",
+       "doc_id": "d-<ms>",
+       "file_path": "<tmp>/big/work.adp/propose-<pid>/changes__d-<ms>.json"
+      }
+     ]
+    ],
+    "docs_dir": "<tmp>/big/work.adp/propose-<pid>"
+   },
+   "files_out": {
+    "{big}/work.adp/propose-*.json": {
+     "by": "agent-a",
+     "at": "<time>",
+     "summary": "Data",
+     "threads": [],
+     "base": {
+      "version": "7",
+      "page_hash": "7f4556515dd9",
+      "docs": {
+       "manifest/current": 7,
+       "parts/home": 2,
+       "parts/home.lead": 3
+      }
+     },
+     "parts": [
+      {
+       "id": "_rest:index.html",
+       "from": "ee2d7cd8fa75",
+       "to": "0b9c8e0dff05",
+       "html": "",
+       "retired": false,
+       "reason": ""
+      },
+      {
+       "id": "page.header",
+       "from": "0d957e9aee8d",
+       "to": null,
+       "html": "",
+       "retired": true,
+       "reason": "folded into home"
+      }
+     ],
+     "files": [
+      {
+       "path": "data/big.txt",
+       "ifMatch": null,
+       "contentType": "text/plain"
+      },
+      {
+       "path": "img/dot.png",
+       "ifMatch": null,
+       "contentType": "application/octet-stream",
+       "encoding": "base64",
+       "content": "iVBORw0KGgoAAAANSUhEUg=="
+      },
+      {
+       "path": "index.html",
+       "ifMatch": "bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3",
+       "contentType": "text/html",
+       "content": "<header><h1>Board</h1></header>\n<!-- part:home --><section data-part=\"home\" data-comment-target><!-- part:home.lead --><p data-part=\"home.lead\" data-comment-target>Hi</p><!-- /part:home.lead --></section><!-- /part:home -->\n<script src=\"parts/app.js\"></script>\n"
+      }
+     ],
+     "live_files": {
+      "index.html": "bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3",
+      "parts/app.js": "574c60bebc47c67f6767237cf4f4adeb285bafdcc2b9b6ec046ab7a65a3f92df",
+      "styles/page.css": "56ee869c6a7b0e7d21e0dec5797d620a57125641f1be3303654385ab0c9addbc"
+     },
+     "classified": {
+      "new": [
+       "data/big.txt",
+       "img/dot.png"
+      ],
+      "ours": [
+       "_rest:index.html",
+       "index.html"
+      ],
+      "theirs": [],
+      "applied": [],
+      "held": [],
+      "retired": [
+       "page.header"
+      ]
+     },
+     "status": "new",
+     "decided": {
+      "by": "",
+      "at": "",
+      "reason": ""
+     },
+     "applied": {
+      "version": "",
+      "at": ""
+     }
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "ack",
+    "{big}/work",
+    "--result",
+    "{big}/published.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "ack": [
+     "files"
+    ],
+    "live": {
+     "at": "<time>",
+     "version": "9"
+    },
+    "incoming": {
+     "held": [],
+     "pending_replies": [],
+     "unacked": []
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{big}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{big}/listing-big.json",
+    "--docs",
+    "{big-applied}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [
+      "data/big.txt",
+      "img/dot.png"
+     ],
+     "ours": [
+      "_rest:index.html",
+      "index.html"
+     ],
+     "theirs": [],
+     "applied": [],
+     "held": [
+      {
+       "id": "page.header",
+       "base": "0d957e9aee8d",
+       "live": "0d957e9aee8d",
+       "incoming": null
+      }
+     ],
+     "retired": []
+    },
+    "merged": false,
+    "state": "<tmp>/big/work.adp/state.json",
+    "next": "held: 1; show both versions to the owner, nobody writes"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "ack",
+    "{big}/work",
+    "--proposal",
+    "<pid>"
+   ],
+   "exit": 0,
+   "stdout": {
+    "ack": [
+     "incoming/<pid> applied"
+    ],
+    "live": {
+     "at": "<time>",
+     "version": "9"
+    },
+    "incoming": {
+     "held": [
+      "page.header"
+     ],
+     "pending_replies": [],
+     "unacked": []
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "ack",
+    "{big}/work",
+    "--proposal",
+    "p-1000000000000-abcd"
+   ],
+   "exit": 0,
+   "stdout": {
+    "ack": [
+     "incoming/<pid> declined"
+    ],
+    "live": {
+     "at": "<time>",
+     "version": "9"
+    },
+    "incoming": {
+     "held": [
+      "page.header"
+     ],
+     "pending_replies": [],
+     "unacked": []
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "gate"
+   ],
+   "exit": 0,
+   "stdout": {
+    "hookSpecificOutput": {
+     "hookEventName": "PreToolUse",
+     "permissionDecision": "deny",
+     "permissionDecisionReason": "adp: the inbox has held: page.header. Run adp.py export <tmp>/big/work --url https://claude.ai/artifact/00000000-0000-4000-8000-000000000001 and resolve them first"
+    }
+   },
+   "stdin": "{\"tool_name\": \"mcp__claude_ai__ArtifactData\", \"tool_input\": {\"url\": \"https://claude.ai/artifact/00000000-0000-4000-8000-000000000001\", \"action\": \"batch\", \"collection\": \"parts\", \"doc_id\": \"home\", \"if_version\": 1}}"
+  },
+  {
+   "run": [
+    "adp.py",
+    "gate",
+    "--input",
+    "{big}/notjson.txt"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "--input: <tmp>/big/notjson.txt is not JSON: Expecting value: line 1 column 1 (char 0)"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "gate"
+   ],
+   "exit": 0,
+   "stdout": {
+    "hookSpecificOutput": {
+     "hookEventName": "PreToolUse",
+     "permissionDecision": "deny",
+     "permissionDecisionReason": "adp: the inbox has held: page.header. Run adp.py export <tmp>/big/work --url https://claude.ai/artifact/00000000-0000-4000-8000-000000000001 and resolve them first"
+    }
+   },
+   "stdin": "{\"tool_name\": \"Artifact\", \"tool_input\": {\"url\": \"https://claude.ai/artifact/00000000-0000-4000-8000-000000000001\"}}"
+  },
+  {
+   "run": [
+    "adp.py",
+    "ack",
+    "--hook"
+   ],
+   "exit": 0,
+   "stdout": {
+    "ack": [
+     "parts/home"
+    ],
+    "live": {
+     "at": "<time>",
+     "version": "9"
+    },
+    "incoming": {
+     "held": [
+      "page.header"
+     ],
+     "pending_replies": [],
+     "unacked": []
+    }
+   },
+   "stdin": "{\"tool_name\": \"mcp__claude_ai__ArtifactData\", \"tool_input\": {\"url\": \"https://claude.ai/artifact/00000000-0000-4000-8000-000000000001\", \"action\": \"batch\"}, \"tool_response\": [{\"type\": \"text\", \"text\": \"{\\\"results\\\": [{\\\"collection\\\": \\\"parts\\\", \\\"id\\\": \\\"home\\\", \\\"version\\\": 7}]}\"}]}"
   }
  ]
 }

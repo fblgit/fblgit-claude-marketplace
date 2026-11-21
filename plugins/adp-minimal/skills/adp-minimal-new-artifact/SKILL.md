@@ -9,7 +9,7 @@ metadata:
 # Creating a new artifact
 
 Run `adp.py new` rather than hand-writing a single `index.html`. It lays the page out as **adp/2** from a template, takes its kit entries from the
-catalog, and prints the publish call for it. `adp.py` is built from this specification ([rebuild](../adp-minimal-rebuild/SKILL.md)).
+catalog, and prints the publish call for it.
 
 ## Why not one file
 
@@ -46,16 +46,68 @@ optionally `base`, `drop` and `installed`) and the page's files. A template with
 the same name. A template file whose name has another extension before `.txt` is written without the `.txt` (`index.html.txt` becomes
 `index.html`). `{{title}}`, `{{slug}}` and `{{catalog}}` are substituted in every file except `adp.js`, which is copied byte for byte.
 
-This specification ships one template, **`minimal`**, as the fixture `template-minimal` in [vectors.md](vectors.md): the shell, its copy as data,
+This plugin ships one template, **`minimal`**, as the fixture `template-minimal` in [vectors.md](vectors.md): the shell, its copy as data,
 and a status list of what the runtime found on the host (connection, viewer, capabilities, integrity, seeding). It takes nothing from the catalog,
 so a page built from it works with `adp.js` alone. Install it as `templates/minimal/` and start with `adp.py new minimal DIR`.
+
+`installed: true` makes `new` write `installed.json` in DIR: `schema`, the catalog `url`, `ver`, `built`, the `take` list and `entries` (id, name, kind,
+group, summary, version, requires, in dependency order), the record of what the page took that the page's catalog tab lists.
+
+`templates` lists them, one block each. `new` copies the chain of templates (base first, each layer overriding the one before) into DIR; a DIR that
+exists and is not empty exits 1 with `DIR exists and is not empty`:
+
+```python
+# ---
+# id: new.templates
+# tool: adp.py
+# section: new
+# order: 650
+# needs: [core.options, core.io]
+# tests: [templates]
+# sha: 10f15f6275b9
+# ---
+TPL = HERE / 'templates'
+
+
+def tmeta(name):
+    return read_json(TPL / name / 'template.json')
+
+
+def chain(name):
+    """The template and every template under it, base first."""
+    return (chain(tmeta(name)['base']) if tmeta(name).get('base') else []) + [name]
+
+
+def layered(name):
+    """{page path: source file} of a template and its bases, base first; `drop` removes paths. A `.txt` suffix is dropped when the name has another extension."""
+    meta, files = tmeta(name), {}
+    if meta.get('base'): files = layered(meta['base'])
+    for f in sorted(x for x in (TPL / name).rglob('*') if x.is_file() and x.name != 'template.json'):
+        rel = f.relative_to(TPL / name).as_posix()
+        files[rel[:-4] if rel.endswith('.txt') and Path(rel[:-4]).suffix else rel] = f
+    for p in meta.get('drop', []): files.pop(p, None)
+    return files
+
+
+@cmd('templates')
+def templates(a):
+    """templates    the templates `new` can start from, and when to use each"""
+    names = sorted(p.name for p in TPL.iterdir() if (p / 'template.json').is_file())
+    w = max(map(len, names)) + 4
+    for n in names:
+        m = tmeta(n)
+        print(f"{n:<{w}}{m['summary']}\n{'':<{w}}use when: {m['use_when']}")
+```
 
 `{{catalog}}` is the `--catalog` value when it is a catalog URL, else the URL saved by `adp.py catalog`, else the text
 `none saved yet: python3 adp.py catalog <url> saves the owner's catalog url`.
 
 The options of `new`:
 
-- `--title T` (default `Untitled artifact`) and `--slug S` (default: the title in lowercase kebab); a slug that is not lowercase kebab exits 1.
+- `--title T` (default `Untitled artifact`) and `--slug S` (default: the title in lowercase kebab); a slug that is not lowercase kebab exits 1 with `--slug: lowercase kebab, e.g. status-pill`.
+- `--tier T` names the template to start from instead of TEMPLATE: `--tier minimal DIR`. `--tier full` exits 1 with `tier full is not available yet`.
+- `--summary S` and `--role R` go to the seed, as in `seed`.
+- `--url URL` is the catalog url when `--catalog` is a local `catalog.json`.
 - `--by NAME` (default `adp`) names the author of the seed, as in `seed`.
 - `--data FILE|DIR` adds the page's own records to the seed, as `seed --data` does ([packing](../adp-minimal-packing/SKILL.md)).
 - `--catalog URL|-|catalog.json` names the catalog the page takes entries from; omitted or `-`, the catalog saved by `adp.py catalog`.
@@ -66,10 +118,94 @@ The options of `new`:
 
 The page's take list is the template's `take`, then the themes, then the `--layout` ids, without repeats; it is printed as `take`. With a catalog,
 `new` runs `take` on that list, merges its `files` into `publish.files`, and links the themes and `--layout` entries in `index.html` as
-[themes](../adp-minimal-themes/SKILL.md#applying-a-theme) describes. A `take` failure exits 2 with its error. Without a catalog, `next` says to
-take the list later.
+[themes](../adp-minimal-themes/SKILL.md#applying-a-theme) describes. A `take` failure prints its error and exits 2, before anything is
+written. Without a catalog, `next` says to take the list later.
 
-`--tier full` exits 1 with `tier full is not available yet`; this specification defines no other tier.
+Besides `{{title}}`, `{{slug}}` and `{{catalog}}`, every template file may carry the info placeholders: `{{adp_version}}` (the skill's version), `{{adp_sha}}` and `{{adp_sha12}}`
+(the sha256 of `adp.js`, whole and first 12 characters), `{{adp_catalog}}` and `{{adp_components}}` (one `<tr>` of id, version and hash for each entry the page takes, or `none taken`).
+
+```python
+# ---
+# id: new.new
+# tool: adp.py
+# section: new
+# order: 660
+# needs: [new.templates, themes.link, kit.take, packing.seed]
+# tests: [new-minimal, new-from-a-catalog, new-refuses-a-non-empty-folder, new-full-tier-is-not-available, new-refuses-a-bad-slug, new-refuses-an-unknown-theme]
+# sha: fc1d0679762f
+# ---
+import hashlib, html
+@cmd('new')
+def new(a):
+    """new TEMPLATE DIR [--tier T] [--title T] [--slug S] [--by NAME] [--data FILE|DIR] [--summary S] [--role R] [--theme NAME] [--layout ID] [--catalog URL|-|catalog.json] [--url URL]    start a page"""
+    pos = bare(a)
+    if '--tier' in a:
+        tier = opt(a, '--tier')
+        if tier == 'full': sys.exit('tier full is not available yet')
+        if not (TPL / tier / 'template.json').is_file(): sys.exit(f'tier {tier}: no template of that name')
+        pos = [tier] + pos
+    name, d = pos
+    if Path(d).is_dir() and any(Path(d).iterdir()): sys.exit(f'{d} exists and is not empty')
+    layers, d = chain(name), Path(d)
+    meta = tmeta(name)
+    title = opt(a, '--title', 'Untitled artifact')
+    slug = opt(a, '--slug') or re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    if not re.fullmatch(r'[a-z0-9][a-z0-9-]*', slug): sys.exit('--slug: lowercase kebab, e.g. status-pill')
+    every = lambda flag: [a[i + 1] for i, x in enumerate(a) if x == flag]
+    src = opt(a, '--catalog')
+    if src in (None, '-'): src = saved_catalog()
+    live = bool(src and CAT_URL.fullmatch(src))
+    index = cat_dir(src) / 'catalog.json' if live else Path(src or '')
+    index = read_json(index) if index.is_file() else {}
+    ids = [e['id'] for e in index.get('entries', [])]
+    themes = ['theme.' + t.removeprefix('theme.') for t in every('--theme')]
+    have = [i[6:] for i in ids if i.startswith('theme.')]
+    if have and (bad := [t for t in themes if t[6:] not in have]):
+        sys.exit(f'--theme {bad[0][6:]}: the catalog has no such theme. It has: ' + ', '.join(have))
+    themes = themes or [i for i in ids if i == 'theme.default']
+    tk = list(dict.fromkeys(meta.get('take', []) + themes + every('--layout')))
+    got = None
+    if src and (index or opt(a, '--catalog')) and tk:
+        got, code = taken(src, tk, opt(a, '--url'))
+        if code: emit(got); return 2
+    cat = src if live else 'none saved yet: python3 adp.py catalog <url> saves the owner\'s catalog url'
+    by, skill = {e['id']: e for e in index.get('entries', [])}, HERE / 'SKILL.md'
+    ver = re.search(r'^  version: "?([^"\s]+)', skill.read_text(encoding='utf-8') if skill.is_file() else '', re.M)
+    cell = lambda v: '<td>' + html.escape(str(v or '')) + '</td>'
+    info = {'title': title, 'slug': slug, 'catalog': cat, 'adp_catalog': html.escape(cat),
+            'adp_version': html.escape(ver[1] if ver else 'unknown'),
+            'adp_components': ''.join('<tr>' + cell(i) + cell(by.get(i, {}).get('version')) + cell(by.get(i, {}).get('hash')) + '</tr>'
+                                      for i in (got['entries'] if got else tk)) or '<tr><td colspan="3">none taken</td></tr>'}
+    info['adp_sha'] = hashlib.sha256((HERE / 'assets' / 'adp.js').read_bytes()).hexdigest(); info['adp_sha12'] = info['adp_sha'][:12]
+    sub = lambda s: re.sub(r'\{\{(\w+)\}\}', lambda m: info.get(m[1], m[0]), s)
+    files = layered(name); files['adp.js'] = HERE / 'assets' / 'adp.js'
+    for rel, f in files.items():
+        (d / rel).parent.mkdir(parents=True, exist_ok=True)
+        (d / rel).write_bytes(f.read_bytes()) if rel == 'adp.js' else (d / rel).write_text(sub(f.read_text(encoding='utf-8')), encoding='utf-8')
+    if got and (asked := themes + every('--layout')):
+        link, _ = taken(src, asked, opt(a, '--url'))
+        link_tags(d, link['files'], list(link.get('fonts', {}).values()))
+    if any(tmeta(n).get('installed') for n in layers):      # the My catalog tab lists this file; `files` takes the same entries again
+        by = {e['id']: e for e in index.get('entries', [])}
+        keep = ('id', 'name', 'kind', 'group', 'summary', 'version', 'requires')
+        (d / 'installed.json').write_text(json.dumps({'schema': 'installed/1', 'url': got['catalog']['url'] if got else '',
+            'ver': index.get('ver') or '', 'built': index.get('built') or '', 'take': tk,
+            'entries': [{k: by[i][k] for k in keep if k in by[i]} if i in by else {'id': i} for i in (got['entries'] if got else tk)]},
+            ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+    seed_file(str(d), opt(a, '--by', 'adp'), data=data_docs(every('--data')), role=opt(a, '--role'), summary=opt(a, '--summary'))
+    design = next((m['design'] for m in (tmeta(n) for n in reversed(layers)) if m.get('design')), '')
+    out = {'template': name, 'dir': str(d), 'title': title, 'slug': slug,
+           'publish': dict(publish_args(str(d)), capabilities=meta.get('capabilities', {})), 'take': tk, 'design': design}
+    if got: out['publish']['files'].update(got['files']); out['catalog'] = got['catalog']; out['entries'] = got['entries']
+    out['next'] = [f'adp.py check {d}',
+                   'Design it: read `design` above, take a theme and the layouts the content needs from the catalog, then write page.css and the views for this content (a script that emits them beats typing)',
+                   'Artifact publish with the `publish` arguments (first publish: add icon; label "adp/2 start")'
+                   + ('; its files already carry the kit entries' if got else ''),
+                   *([f'adp.py take {src or "<catalog url>"} ' + ' '.join(tk) + ', then publish those files to the same url'] if tk and not got else []),
+                   'Open the page as an editor (you, or the owner): it expands seed.json and seed/ into its database on that first open and shows what ADP is while it does. '
+                   f'Only when nobody can open it: adp.py seed {d} --batches prints the ArtifactData batches']
+    emit(out)
+```
 
 ## The shape of a part
 
@@ -131,15 +267,16 @@ await board.update({title: 'Sprint 12'});
 - Part ids never change after publishing; add a new id instead.
 - If the catalog already provides a part, take it instead of writing it ([catalog](../adp-minimal-catalog/SKILL.md)).
 
-## Contract: `new`
+## The `new` command
 
 `new` copies a template folder into DIR, fills in its title and slug, writes the seed, and prints one publish object. The vectors run it on the
 `minimal` template (fixture `template-minimal`, installed as the only template): the output, the file tree the publish names, a tree that passes
-`check`, the seed it writes, and the refusal of a non-empty DIR. Part counts and sizes in the `check` and `seed` output depend on that template.
+`check`, the seed it writes, a page taken from a catalog (themes, layouts, `installed.json`) and the refusals of a non-empty DIR, a bad slug, an unknown theme and
+`--tier full`. Part counts and sizes in the `check` and `seed` output depend on that template.
 
 | Command | Prints | Exit |
 |---|---|---|
 | `templates` | one block per template: name, what it is, `use when:` | 0 |
-| `new TEMPLATE DIR [--title T] [--slug S] [--by NAME] [--data FILE\|DIR] [--theme NAME] [--layout ID] [--catalog URL\|-\|catalog.json]` | `{template, dir, title, slug, publish {file_path, root, files, capabilities}, take, design, next}`, plus `catalog` and `entries` when a catalog was taken from | 0; 1 when DIR exists and is not empty, on a bad slug or an unknown theme; 2 `{error: "take failed", ...}` when a catalog is given that cannot be taken from |
+| `new TEMPLATE DIR [--title T] [--slug S] [--by NAME] [--data FILE\|DIR] [--theme NAME] [--layout ID] [--catalog URL\|-\|catalog.json]` | `{template, dir, title, slug, publish {file_path, root, files, capabilities}, take, design, next}`, plus `catalog` and `entries` when a catalog was taken from | 0; 1 when DIR exists and is not empty, on a bad slug, an unknown theme or `--tier full`; 2 with the `take` error (`index not fetched` and the read to make) when a catalog is given that cannot be taken from |
 
-Its fixtures and vectors are in [vectors.md](vectors.md), under "Contract: `new`".
+Its fixtures and vectors are in [vectors.md](vectors.md).

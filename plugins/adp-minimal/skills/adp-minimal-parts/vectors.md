@@ -1,6 +1,6 @@
 # Vectors: adp-minimal-parts
 
-The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in [adp-minimal-rebuild](../adp-minimal-rebuild/SKILL.md) reads them; they are checked against the real ADP tools.
+The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in [adp-minimal-rebuild](../adp-minimal-rebuild/SKILL.md) reads them; they are run against the tools assembled from the fragments.
 
 ## Contract: `check`, `manifest`, `diff`, `diff-pages`
 
@@ -28,6 +28,97 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
  "twice.html": "<!-- part:x --><!-- part:x --><p data-part=\"x\">x</p><!-- /part:x -->\n",
  "orphan.html": "<p data-part=\"y\">no markers</p>\n",
  "nodatapart.html": "<!-- part:z --><p>z</p><!-- /part:z -->\n"}}
+```
+
+```json fixture
+{"fixture": "bad2", "files": {
+ "mismatch.html": "<!-- part:a --><p data-part=\"a\">a</p><!-- /part:b -->\n",
+ "dup/one.html": "<!-- part:k --><p data-part=\"k\">one</p><!-- /part:k -->\n",
+ "dup/two.html": "<!-- part:k --><p data-part=\"k\">two</p><!-- /part:k -->\n",
+ "logo.svg": "<svg></svg>\n"}}
+```
+
+```json vector
+{
+ "vector": "check-and-manifest-refusals",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "check",
+    "{bad2}/mismatch.html"
+   ],
+   "exit": 1,
+   "stdout_text": [
+    "0 parts",
+    "  line 1: /part:b closes a",
+    "  part a never closed",
+    "  data-part=\"a\" has no part:a markers (a new piece nobody marked)",
+    "  warning: 1 part roots without data-comment-target: a"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "check",
+    "{bad2}/dup"
+   ],
+   "exit": 1,
+   "stdout_text": [
+    "1 parts in 2 files",
+    "  part k in one.html and two.html",
+    "  warning: 1 part roots without data-comment-target: k"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "manifest",
+    "{bad2}/dup"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "adp check failed:",
+    "  part k in one.html and two.html"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "manifest",
+    "{one}/page.html",
+    "--file",
+    "logo.svg={bad2}/logo.svg"
+   ],
+   "exit": 0,
+   "stdout": {
+    "schema": "adp/1",
+    "page_hash": "64f81151ce3a",
+    "parts": {
+     "a.two": "f67648d6310e",
+     "a.one": "6193e96bef72",
+     "page.script": "aad7378dfeb8",
+     "_rest": "67ea429e991b"
+    },
+    "files": {
+     "logo.svg": "6d6ddf6160db"
+    },
+    "parents": {
+     "a.two": "a.one",
+     "a.one": "",
+     "page.script": "",
+     "_rest": ""
+    },
+    "elements": {
+     "a.two": 1,
+     "a.one": 2,
+     "page.script": 0,
+     "_rest": 3
+    }
+   }
+  }
+ ]
+}
 ```
 
 ```json fixture

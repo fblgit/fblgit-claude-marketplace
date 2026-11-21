@@ -1,6 +1,6 @@
 ---
 name: adp-minimal-hosts
-description: "Reference for the ADP host adapter protocol (adp-host/1): installing a provider with window.ADP_HOST and connect(); the db, user and comments contract; the optional agent, publish and ask handles; why a failed provider never falls back to another host; the host-neutral surface components use (ADP.db, ADP.user, ADP.agent(), ADP.publish(), ADP.ask()) instead of window.claude; the Claude, ChatGPT Sites and OpenAI bridge adapters; the agent-host operations and the receipts that keep source, deployment and record revisions apart; and how to write and test a new adapter. Use when the user asks how ADP runs on a host other than claude.ai, what a component may rely on, how ChatGPT Sites differs from Claude, or how to add a host."
+description: "Reference for the ADP host adapter protocol (adp-host/1): installing a provider with window.ADP_HOST and connect(); the db, user and comments contract; the optional agent, publish and ask handles; why a failed provider never falls back to another host; the host-neutral surface components use (ADP.db, ADP.user, ADP.agent(), ADP.publish(), ADP.ask()) instead of window.claude; the Claude and OpenAI bridge adapters; the agent-host operations and the receipts that keep source, deployment and record revisions apart; and how to write and test a new adapter. Use when the user asks how ADP runs on a host other than claude.ai, what a component may rely on, or how to add a host."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
@@ -8,7 +8,7 @@ metadata:
 
 # Host adapters
 
-ADP runs on more than one host: the claude.ai viewer, ChatGPT Sites, and a local dev shim. The page, the kit and the record format are the same on
+ADP runs on more than one host: the claude.ai viewer and any host whose adapter implements `adp-host/1`. The page, the kit and the record format are the same on
 all of them. What differs is how a page reads and writes its records, who the viewer is, how comments anchor, and how a request reaches an agent. A
 host adapter implements those four concerns so that components never reference a specific host.
 
@@ -48,6 +48,64 @@ window.ADP_HOST = {
   no capability is available.
 - `connect()` must settle, and a provider must not switch identity or store mid-session.
 
+`connectHost` in `adp.js` picks the provider: `window.ADP_HOST` when the page set it (even to a bad value), else the Claude bridge, else
+`{id: 'static'}`. It refuses a connection without an id, a `db` without `doc` and `collection`, and a `user` without `canEdit` and `id`. The Claude
+bridge wraps each `window.claude.use` handle in the neutral shape, and a handle the viewer did not grant becomes `null`. `attach` publishes
+`ADP.host` and resolves the `agent`, `publish` and `ask` handles, turning on their flag in `ADP.host` once each proves valid.
+
+```js
+// ---
+// id: hosts.connect
+// tool: adp.js
+// section: hosts
+// order: 100
+// needs: [core.runtime]
+// tests: [runtime-an-invalid-provider-fails-closed, runtime-an-editor-seeds-an-empty-record]
+// sha: 0c214dbb102e
+// ---
+const isFn = (o, k) => !!o && typeof o[k] === 'function', safely = (f, fallback) => Promise.resolve().then(f).catch(() => fallback);
+const HANDLE_OK = {agent: o => isFn(o, 'canSend') && isFn(o, 'send'), publish: o => isFn(o, 'files'), ask: o => typeof o === 'function'};
+const CLAUDE = {
+  user: u => isFn(u, 'canEdit') ? Object.freeze({canEdit: () => u.canEdit(), id: () => isFn(u, 'id') ? u.id() : '', can: n => isFn(u, 'can') ? u.can(n) : null}) : null,
+  agent: c => isFn(c, 'sendToClaude') && isFn(c, 'canSendToClaude') ? Object.freeze({label: 'Claude', where: 'Claude Code',
+    canSend: () => Promise.resolve(c.canSendToClaude()), anchorFor: el => Promise.resolve(c.anchorFor(el)),
+    send: async m => {
+      m = m || {};
+      const r = await c.sendToClaude(m.threadId ? {threadId: m.threadId, text: m.text} : {anchor: m.anchor, text: m.text});
+      return {threadId: (r && r.threadId) || m.threadId || '', delivery: 'accepted'};
+    }}) : null,
+  publish: a => isFn(a, 'publish') ? Object.freeze({files: (files, opts) => Promise.resolve(a.publish(files, opts))}) : null,
+  ask: s => typeof s === 'function' ? (messages, opts) => s(messages, opts) : null};
+async function connectHost() {
+  let c;
+  if (Object.prototype.hasOwnProperty.call(window, 'ADP_HOST')) {           // an explicit provider never falls back to another host
+    const p = window.ADP_HOST;
+    if (!p || p.protocol !== 'adp-host/1' || !isFn(p, 'connect')) throw new Error('Invalid ADP_HOST provider');
+    c = await p.connect();
+  } else if (isFn(window.claude, 'use')) {
+    const use = name => safely(() => window.claude.use(name), null), comments = use('comments');
+    const [db, user] = await Promise.all([use('db'), use('user')]);
+    c = {id: 'claude', db, user: CLAUDE.user(user), commentsReady: comments, seedFiles: true,
+      agent: comments.then(CLAUDE.agent), publish: use('artifact').then(CLAUDE.publish), ask: use('sample').then(CLAUDE.ask)};
+  } else return {id: 'static'};
+  if (!c || typeof c.id !== 'string' || !c.id.trim()) throw new Error('Host connection needs an id');
+  if (c.db && !(isFn(c.db, 'doc') && isFn(c.db, 'collection'))) throw new Error('Host database needs the document-store profile');
+  if (c.user && !(isFn(c.user, 'canEdit') && isFn(c.user, 'id'))) throw new Error('Invalid host user capability');
+  return c;
+}
+let host = Object.freeze({protocol: 'adp-host/1', id: '', status: 'connecting'}), hostComments = null;
+const handles = {}, hostSet = o => { host = Object.freeze({...host, ...o}); };
+function attach(c) {
+  hostComments = c.comments || null;
+  host = Object.freeze({protocol: 'adp-host/1', id: c.id, status: 'connected', records: !!c.db, comments: isFn(hostComments, 'customAnchors'),
+    seedFiles: c.seedFiles === true, agent: false, publish: false, ask: false});
+  for (const k of ['agent', 'publish', 'ask'])
+    handles[k] = Promise.resolve(c[k]).then(o => HANDLE_OK[k](o) ? o : null, () => null).then(o => { if (o) hostSet({[k]: true}); return o; });
+  (c.commentsReady ? c.commentsReady.then(cm => { hostComments = cm; hostSet({comments: isFn(cm, 'customAnchors')}); return anchors(); }) : anchors())
+    .catch(() => pushErr('comments unavailable'));
+}
+```
+
 ## What a provider supplies
 
 | Part | Contract |
@@ -80,17 +138,14 @@ the related control. A kit entry that must call `window.claude` directly says so
 | Host | How it connects | Notes |
 |---|---|---|
 | **Claude** (built into `adp.js`) | Wraps `window.claude.use('db'\|'user'\|'comments')`. `agent`, `publish` and `ask` map from `comments.sendToClaude`, `artifact.publish` and `sample`, and are `null` where the viewer did not grant the capability. | The reference host: the protocol's guarantees are those of `ArtifactData` and `Artifact`. |
-| **ChatGPT Sites** (`adapters/openai-sites.js` + a Worker) | Authenticated same-origin HTTP at `/api/adp/<artifact-id>`, answered by a Worker backed by a D1 database. Polls every 2 s by default; the interval cannot be set below 1 s. | The server is the authority for every access decision. Committing source does not deploy it, and a deployment is not atomic with record writes, so each step is verified separately. The adapter supplies its own `agent` and no `publish` or `ask`. |
-| **OpenAI bridge** (`adapters/openai.js`) | An integration contract: the integrating application supplies `bridge.connect()`. | Not a native browser SDK. It does not discover tools, install a plugin or deploy a Site. |
-| **Local** (`adp.py dev`) | The dev shim stands in for `window.claude`. | For running pages and tests offline. |
+| **OpenAI bridge** (`adapters/openai.js`) | An integration contract: the integrating application supplies `bridge.connect()`. | Not a native browser SDK. It does not discover tools, install a plugin or deploy a page. |
 
-### Deploying to ChatGPT Sites
+### Deploying to another host
 
-Same parts, same catalog, same protocol; native Sites operations replace the Claude ones. Keep the Site source in the project and confirm the Site ID
-and URL match the checkout. `adp.py files ASSETS --host sites --out SITE_PROJECT` writes the asset snapshot and the API handler, and names the
-required `DB` binding and schema; it deploys nothing. Then:
+Same parts, same catalog, same protocol; the host's native source and record operations replace the Claude ones. Keep the host's project source
+with the page and confirm its id and URL match the checkout. `adp.py files` prints the page's files; it deploys nothing. Then:
 
-1. Publish the source through the native Sites tools, guarded by the expected source revision.
+1. Publish the source through the host's tools, guarded by the expected source revision.
 2. Read the deployed files back.
 3. Write the records, each guarded by its **pin**: the record revision read earlier, passed as `if_version` so a stale write is refused (see
    [the protocol](../adp-minimal-protocol/SKILL.md)). Use the deployment ID as the publication version.
@@ -131,6 +186,79 @@ must provide the same before it can run the [protocol](../adp-minimal-protocol/S
 These apply to the agent's record and publish calls. The browser `db` handle above takes no version argument, so writes made from the page
 (seeding, switches, requests, and the inbox's Apply) are not pinned: an editor's Apply and an agent's `record` on the same page are not
 guarded against each other by the store. Until `db` carries a version, run one of them at a time on a page.
+
+## The Claude adapter in `adp.py`
+
+`adp.py` makes no calls. A host adapter in `HOSTS` turns its plans into the host's calls, which the agent runs, and parses what the calls
+return. An adapter has four functions. `raw` is what the agent saves: `[{call, result}]`, the call printed by `adp.py` and the text it returned.
+
+| Function | Does |
+|---|---|
+| `read_calls(artifact, collections)` | one `ArtifactData list` call per collection |
+| `parse_reads(raw)` | `{docs: [{collection, id, data, revision}], covered, complete, warnings}`; a listing with a `next_cursor` is incomplete |
+| `write_calls(artifact, ops)` | `ops` are `{op, collection, id, data, guard}`, `op` being `create` (a `set` with no pin) or `replace` (pinned to `guard`). Atomic `ArtifactData batch` calls of at most 50 writes and 900 KB, each with its `keys` |
+| `parse_receipt(raw)` | one `{collection, id, outcome, revision, error}` per key: `applied` when the batch result names the document, `rejected` when it reports that nothing was written, else `unknown` |
+
+```python
+# ---
+# id: hosts.claude
+# tool: adp.py
+# section: hosts
+# order: 250
+# needs: [core.io]
+# tests: [bundle-from-raw-reads, move-through-the-raw-adapter]
+# sha: 9a4c1a574f7a
+# ---
+from types import SimpleNamespace
+
+
+def claude_read_calls(artifact, collections):
+    return [{'tool': 'ArtifactData', 'args': {'action': 'list', 'url': artifact, 'collection': c, 'query': {'limit': 1000}}, 'collection': c}
+            for c in collections]
+
+
+def claude_parse_reads(raw):
+    docs, covered, warnings = [], set(), []
+    for r in raw:
+        c, text = r['call']['collection'], r['result']
+        covered.add(c)
+        for line in text.splitlines():
+            if line.startswith('{"id":'):
+                d = json.loads(line)
+                docs.append({'collection': c, 'id': d['id'], 'data': d['data'], 'revision': d.get('version')})
+        if 'next_cursor' in text: warnings.append(f'{c}: more pages (next_cursor)')
+    return {'docs': docs, 'covered': sorted(covered), 'complete': bool(raw) and not warnings, 'warnings': warnings}
+
+
+def claude_write_calls(artifact, ops):
+    calls, cur, size = [], [], 0
+    for o in ops:
+        w = {'op': 'set', 'collection': o['collection'], 'doc_id': o['id'], 'data': o['data']}
+        if o['op'] == 'replace': w['if_version'] = o['guard']
+        n = len(json.dumps(w, ensure_ascii=False).encode())
+        if cur and (len(cur) == 50 or size + n > 900_000): calls.append(cur); cur, size = [], 0
+        cur.append(w); size += n
+    if cur: calls.append(cur)
+    return [{'tool': 'ArtifactData', 'args': {'action': 'batch', 'url': artifact, 'writes': c}, 'atomic': True,
+             'keys': [f"{w['collection']}/{w['doc_id']}" for w in c]} for c in calls]
+
+
+def claude_parse_receipt(raw):
+    out = []
+    for r in raw:
+        text = r['result']
+        done = {f'{c}/{i}': int(v) for c, i, v in re.findall(r'- \w+ "([^"]+)"/"([^"]+)" \(version (\d+)\)', text)}
+        bad = re.search(r'db (?:batch )?write failed[^\n]*|nothing was written[^\n]*', text)
+        for k in r['call']['keys']:
+            c, i = k.rsplit('/', 1)
+            out.append({'collection': c, 'id': i, 'revision': done.get(k), 'error': bad.group(0) if bad and k not in done else None,
+                        'outcome': 'applied' if k in done else 'rejected' if bad else 'unknown'})
+    return out
+
+
+HOSTS = {'claude': SimpleNamespace(read_calls=claude_read_calls, parse_reads=claude_parse_reads, write_calls=claude_write_calls,
+                                   parse_receipt=claude_parse_receipt)}
+```
 
 ## Writing a new adapter
 

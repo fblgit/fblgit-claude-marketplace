@@ -22,6 +22,50 @@ version is stale. A refusal means another writer got there first: read again and
 *field* inside `manifest/current`, `parts/<id>` and `changes/<seq>` is the page's published version, stored verbatim as a string. They are
 unrelated counters.
 
+## The batch writer
+
+Every command that prints a batch builds it with `Batch`. `put` writes a document's `data` to its own file,
+`<collection, "/" as "~">__<doc_id>.json`, under the output folder and adds the entry `{op, collection, doc_id, file_path, if_version?}`: the
+agent passes `file_path` to ArtifactData instead of pasting the document. `if_version` comes from the pins, a map of
+`"<collection>/<doc_id>"` to the version read. A document the caller already wrote to a file is listed by that file: `put(..., path=FILE)`
+writes nothing. An `update`, a `delete`, or a write to a document known to exist (`exists=True`) with no pin
+is listed under `needs_pin`: read those documents, add their versions to the pins and run the command again, because the store refuses an
+unpinned write to an existing document. `emit` prints the entries in batches of at most 50, with the `manifest` collection last, so
+`manifest/current` is always in the last batch, and the folder as `docs_dir`.
+
+```python
+# ---
+# id: payloads.batch
+# tool: adp.py
+# section: payloads
+# order: 200
+# needs: [core.io]
+# sha: 17c7e105b1d5
+# ---
+class Batch:
+    """The writes of one step: one file per document under OUT, listed in batches of at most 50 with manifest/current last."""
+    def __init__(self, out, pins=None):
+        self.out, self.pins, self.writes, self.unpinned = os.path.abspath(out), pins or {}, [], []
+
+    def put(self, op, collection, doc_id, data=None, exists=False, path=None):
+        entry = {'op': op, 'collection': collection, 'doc_id': doc_id}
+        if path: entry['file_path'] = path
+        elif op != 'delete':
+            os.makedirs(self.out, exist_ok=True)
+            entry['file_path'] = os.path.join(self.out, f"{collection.replace('/', '~')}__{doc_id}.json")
+            Path(entry['file_path']).write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding='utf-8')
+        key = f'{collection}/{doc_id}'
+        if key in self.pins: entry['if_version'] = self.pins[key]
+        elif exists or op in ('update', 'delete'): self.unpinned.append(key)
+        self.writes.append(entry)
+
+    def emit(self, **extra):
+        w = sorted(self.writes, key=lambda e: e['collection'] == 'manifest')
+        out = {**extra, 'batches': [w[i:i + 50] for i in range(0, len(w), 50)], 'docs_dir': self.out}
+        if self.unpinned: out['needs_pin'] = self.unpinned
+        emit(out)
+```
+
 ## Step 1: Read
 
 Read the page with `Artifact`, always the latest published version, never a local copy from an earlier session. Then, with ArtifactData,
@@ -44,7 +88,7 @@ Read the page with `Artifact`, always the latest published version, never a loca
 `parts`, `elements` and `part_file` cover every part, including the `_rest:<file>` remainder of each file. `content` maps each
 `content/<part id>` document to the hash of its `html`; it is `{}` when the page keeps no copy in the database.
 
-Compute the page's manifest from the source you just read ([snippets](../adp-minimal-snippets/SKILL.md)). If its `page_hash` differs from
+Compute the page's manifest from the source you just read (`adp.py manifest`, [parts](../adp-minimal-parts/SKILL.md)). If its `page_hash` differs from
 `manifest/current.page_hash`, someone published without recording. Record a `changes/` entry for the gap with `by: "unrecorded"` before going on.
 
 ## Step 2: Hold
