@@ -27,9 +27,9 @@
       "source": "./plugins/adp-setup"
     },
     {
-      "name": "adp-minimal",
+      "name": "artifact-data-protocol",
       "description": "Build reusable claude.ai Artifacts with ADP (Artifacts Done Properly & Artifact Data Protocol): shared catalog components, part-level edits, and a record of every change.",
-      "source": "./plugins/adp-minimal"
+      "source": "./plugins/artifact-data-protocol"
     },
     {
       "name": "panopticon",
