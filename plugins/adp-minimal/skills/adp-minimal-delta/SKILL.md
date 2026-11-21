@@ -195,11 +195,15 @@ merge base git would compute, and returns the merged tree and its conflict lines
 # section: delta
 # order: 430
 # needs: [delta.state, parts.markers]
-# sha: 45e3a921f067
+# sha: a16fb9f13b23
 # ---
+GIT_ENV = {'PATH': os.pathsep.join(filter(None, [os.path.dirname(shutil.which('git') or ''), os.defpath])), 'LANG': 'C',
+           'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_NOSYSTEM': '1'}     # git gets these and nothing else of the caller's environment
+
+
 def git(repo, *args):
     return subprocess.run(['git', '-C', repo, '-c', 'user.name=adp', '-c', 'user.email=adp@localhost', '-c', 'commit.gpgsign=false', *args],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, env=GIT_ENV)
 
 
 def loop_repo(d):
