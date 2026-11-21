@@ -157,6 +157,48 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
 }
 ```
 
+`ADP_PACK` sets the byte size at which `seed` starts another pack:
+
+```json vector
+{
+ "vector": "seed-pack-size-from-the-environment",
+ "run": [
+  "adp.py",
+  "seed",
+  "{page-a}",
+  "--by",
+  "agent-a",
+  "--version",
+  "1"
+ ],
+ "env": {
+  "ADP_PACK": "700"
+ },
+ "exit": 0,
+ "stdout": {
+  "seed": "<tmp>/page-a/seed.json",
+  "written": true,
+  "docs": 8,
+  "collections": {
+   "parts": 5,
+   "changes": 1,
+   "agents": 1,
+   "manifest": 1
+  },
+  "packs": [
+   "seed/pack-001.json",
+   "seed/pack-002.json",
+   "seed/pack-003.json",
+   "seed/pack-004.json",
+   "seed/pack-005.json"
+  ],
+  "bytes": 3246,
+  "skipped_empty": [],
+  "next": "publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database"
+ }
+}
+```
+
 ```json vector
 {
  "vector": "seed-files",
@@ -2946,6 +2988,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
   "target-differs.json": "{\n \"docs\": [\n  {\n   \"collection\": \"decisions\",\n   \"id\": \"lead-tone\",\n   \"data\": {\n    \"text\": \"Instruct, briefly.\",\n    \"by\": \"someone\"\n   },\n   \"revision\": 2\n  }\n ]\n}\n",
   "receipts-all.json": "[\n {\n  \"collection\": \"changes\",\n  \"id\": \"000008\",\n  \"outcome\": \"applied\",\n  \"revision\": 1\n },\n {\n  \"collection\": \"decisions\",\n  \"id\": \"lead-tone\",\n  \"outcome\": \"applied\",\n  \"revision\": 1\n },\n {\n  \"collection\": \"parts\",\n  \"id\": \"home.lead\",\n  \"outcome\": \"applied\",\n  \"revision\": 1\n },\n {\n  \"collection\": \"manifest\",\n  \"id\": \"current\",\n  \"outcome\": \"applied\",\n  \"revision\": 1\n }\n]\n",
   "receipts-one-rejected.json": "[\n {\n  \"collection\": \"changes\",\n  \"id\": \"000008\",\n  \"outcome\": \"applied\",\n  \"revision\": 1\n },\n {\n  \"collection\": \"decisions\",\n  \"id\": \"lead-tone\",\n  \"outcome\": \"rejected\",\n  \"error\": \"if_version mismatch\"\n },\n {\n  \"collection\": \"parts\",\n  \"id\": \"home.lead\",\n  \"outcome\": \"applied\",\n  \"revision\": 1\n },\n {\n  \"collection\": \"manifest\",\n  \"id\": \"current\",\n  \"outcome\": \"applied\",\n  \"revision\": 1\n }\n]\n",
+  "raw-empty.json": "[]",
   "raw-manifest-only.json": "[\n {\n  \"call\": {\n   \"tool\": \"ArtifactData\",\n   \"collection\": \"manifest\"\n  },\n  \"result\": \"{\\\"id\\\": \\\"current\\\", \\\"data\\\": {\\\"schema\\\": \\\"adp/2\\\", \\\"version\\\": \\\"8\\\", \\\"page_hash\\\": \\\"c125279381ff\\\", \\\"parts\\\": {\\\"home\\\": \\\"f98716c9ddf4\\\", \\\"home.lead\\\": \\\"8e7c2ba46ff4\\\"}}, \\\"version\\\": 9}\"\n }\n]\n"
  }
 }
@@ -3081,20 +3124,41 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
 ```json vector
 {
  "vector": "bundle-refuses-an-incomplete-raw-read",
- "run": [
-  "adp.py",
-  "bundle",
-  "{move}/raw-manifest-only.json",
-  "{out}/b",
-  "--host",
-  "claude",
-  "--artifact",
-  "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000a",
-  "--raw"
- ],
- "exit": 1,
- "stderr_text": [
-  "<tmp>/move/raw-manifest-only.json: the read does not cover parts, content, changes, decisions, config, agents, incoming, requests: a bundle from it would silently drop them; read them again"
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "bundle",
+    "{move}/raw-manifest-only.json",
+    "{out}/b",
+    "--host",
+    "claude",
+    "--artifact",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000a",
+    "--raw"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "<tmp>/move/raw-manifest-only.json: the read does not cover parts, content, changes, decisions, config, agents, incoming, requests: a bundle from it would silently drop them; read them again"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "bundle",
+    "{move}/raw-empty.json",
+    "{out}/b",
+    "--host",
+    "claude",
+    "--artifact",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000a",
+    "--raw"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "<tmp>/move/raw-empty.json: the read is incomplete (no read results): read again before planning"
+   ]
+  }
  ]
 }
 ```
@@ -4124,7 +4188,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
     "adp.py",
     "files"
    ],
-   "exit": 1,
+   "exit": 2,
    "stderr_text": [
     "usage: adp.py files DIR [--since MANIFEST.json] [--batch N] [--out DIR]"
    ]

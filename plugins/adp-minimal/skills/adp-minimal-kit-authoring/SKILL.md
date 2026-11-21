@@ -222,7 +222,7 @@ of the catalog:
 # order: 200
 # needs: [authoring.read]
 # tests: [catalog-refuses-a-bad-header, catalog-header-rules]
-# sha: 258f1532114a
+# sha: 972e753e69b2
 # ---
 def validate(path, comment, entry, ids):
     """[(rule, message)] for one header."""
@@ -243,10 +243,10 @@ def validate(path, comment, entry, ids):
         if i != entry['id']: out.append(('id-mismatch', f'@id {i} but catalog.json lists this file under {entry["id"]}'))
     for n, ok, shown, want in (('status', val.get('status') in STATUS, val.get('status'), f'one of {bad(sorted(STATUS))}'),
                                ('version', SEMVER.fullmatch(val.get('version', '')), val.get('version'), 'major.minor.patch'),
-                               ('updated', DATE.fullmatch(val.get('updated', '')), val.get('updated'), 'YYYY-MM-DD'),
-                               ('kind', val.get('kind') in KIND, val.get('kind'), f'one of {bad(sorted(KIND))}')):
+                               ('updated', DATE.fullmatch(val.get('updated', '')), val.get('updated'), 'YYYY-MM-DD')):
         if val.get(n) and not ok: out.append((n, f'@{n} {shown}: {want}'))
     if len(val.get('summary', '')) > SUMMARY_MAX: out.append(('summary', f'@summary is {len(val["summary"])} characters, at most {SUMMARY_MAX}'))
+    if val.get('kind') and val['kind'] not in KIND: out.append(('kind', f'@kind {val["kind"]}: one of {bad(sorted(KIND))}'))
     if val.get('files'):
         got = [] if val['files'] == 'none' else split(val['files'])
         want = [f['path'] for f in entry.get('files', []) if f['path'] != path]
@@ -268,10 +268,9 @@ def validate(path, comment, entry, ids):
     if val.get('tags') and (len(ts := split(val['tags'])) != len(set(ts)) or any(t != t.lower() for t in ts)):
         out.append(('tags', '@tags: a comma list, lowercase, no repeats'))
     for n, fits, msg in (('requires', lambda x: x in ids, '@requires names no catalog entry:'), ('provides', MEMBER.fullmatch, '@provides: dotted names, comma separated; not:'),
+                         ('tokens', TOKEN.fullmatch, '@tokens: custom properties like --ink (--ink? when optional); not:'),
                          ('globals', lambda x: x in GLOBALS, f'@globals: none or {bad(sorted(GLOBALS))}; not:')):
-        if used(n) and (wrong := [x for x in split(val[n]) if not fits(x)]): out.append((n, f'{msg} {bad(wrong)}'))
-    if used('tokens') and (wrong := [t for t in split(val['tokens'], spaces=True) if not TOKEN.fullmatch(t)]):
-        out.append(('tokens', f'@tokens: custom properties like --ink (--ink? when optional); not: {bad(wrong)}'))
+        if used(n) and (wrong := [x for x in split(val[n], spaces=n == 'tokens') if not fits(x)]): out.append((n, f'{msg} {bad(wrong)}'))
     for n, v in tags:
         if n == 'config' and ' | ' not in v: out.append(('config', f'@config {v[:40]}: "signature | what it takes"'))
         if n == 'source' and len(re.split(r'\s\|\s', v)) < 3: out.append(('source', f'@source {v[:40]}: "board | file | what"'))

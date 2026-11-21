@@ -486,7 +486,7 @@ takes no version, so a write is unpinned and the last writer wins.
 // order: 300
 // needs: [runtime.state]
 // tests: [runtime-config-set, runtime-config-set-the-default-removes-it, runtime-config-set-a-wrong-value, runtime-config-set-an-unknown-switch,
-//   runtime-config-set-by-a-viewer, runtime-config-set-checks-each-type]
+//   runtime-config-set-by-a-viewer, runtime-config-set-checks-each-type, runtime-config-define-a-bare-switch]
 // sha: fc87b88df1c0
 // ---
 const REG = {}, lis = {}, SEG = /^[a-z0-9][a-z0-9-]*$/;

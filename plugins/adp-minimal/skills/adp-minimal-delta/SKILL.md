@@ -502,7 +502,7 @@ def loop_propose(a):
 of `{collection, doc_id or id, version}`) updates each record's version, and a publish result `{shas, version}` (or `version_id`, `versionId`)
 the files' SHA-256 and the live version. Input that is not JSON exits 1. As a PostToolUse hook (stdin holds `tool_input`, or `--hook`) it reads
 the call's `tool_response` (content blocks or text) and finds DIR by the call's url; an unmanaged url prints `{ack: null, note}`. Before any
-export it exits 2 as `propose` does. `ack DIR --proposal PID` takes the proposal's status from the last export: `applied` moves base to this
+export it exits 2 as `propose` does. `ack DIR --proposal PID` takes the proposal's status from the last export (the state's table, else the exported record under `incoming/db/incoming/`): `applied` moves base to this
 folder's proposal and its copy, and `declined` leaves base as it is; either way the proposal is closed. Any other status exits 1 with `<pid>: status <status> in the last export; ack it once applied or declined` on stderr.
 It prints `{ack: [what it took], live: {version, at}, incoming: {held, unacked, pending_replies}}`.
 
@@ -514,7 +514,7 @@ It prints `{ack: [what it took], live: {version, at}, incoming: {held, unacked, 
 # order: 470
 # needs: [delta.state]
 # tests: [loop-ours-is-proposed-and-acknowledged, loop-retire-chunk-and-ack, loop-empty-applied-version-and-older-state]
-# sha: 4d96304c4d1d
+# sha: 73d766b46cf6
 # ---
 FLAGS.add('--hook')
 
@@ -546,7 +546,8 @@ def loop_ack(a):
         st['files'].update(res['shas']); done.append('files')
         st['live']['version'] = str(res.get('version') or res.get('version_id') or res.get('versionId') or st['live']['version'])
     if pid:
-        status, version = st.get('status', {}).get(pid, [None, ''])
+        rec = Path(adp_dir(d), 'incoming', 'db', 'incoming', pid + '.json')       # a state without the export's status table: the record as exported
+        status, version = st.get('status', {}).get(pid) or ([(r := read_json(rec)).get('status'), (r.get('applied') or {}).get('version', '')] if rec.is_file() else [None, ''])
         if status not in ('applied', 'declined'): sys.exit(f'{pid}: status {status or "unknown"} in the last export; ack it once applied or declined')
         inc = st['incoming']; prop = inc['proposed'].get(pid)
         if status == 'applied' and prop:                  # this folder's own proposal: its work is the new base

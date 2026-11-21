@@ -109,7 +109,7 @@ named entries own in `@samples`, read from each entry's `main`, else its templat
 # order: 620
 # needs: [core.options, core.io, protocol.switches]
 # tests: [take-with-its-requires, take-a-local-index-needs-a-url, take-unknown, take-fetches-missing-headers, take-url-from-config, take-index-quirks]
-# sha: 17c1a45228d0
+# sha: 9f67db018640
 # ---
 CAT_URL = re.compile(r'https://claude\.ai/(?:code/)?artifact/[A-Za-z0-9-]+/?')
 
@@ -129,9 +129,9 @@ def entry_head(root, e):
     """(the keys `@samples` names, the `@preview` sample refs) of an entry's header file; None when the file is not on disk."""
     main = head_file(e)
     if not main or not (root / main).is_file(): return None
-    text = (root / main).read_text(encoding='utf-8', errors='replace')
-    keys, view = re.search(r'@samples\s+(.+)', text), re.search(r'@preview\s+(\{.*\})', text)
-    return [k.strip() for k in keys.group(1).split(',')] if keys else [], json.loads(view.group(1)).get('samples', []) if view else []
+    h = header_lib().parse_header((root / main).read_text(encoding='utf-8', errors='replace'), main)
+    view = h.get('preview')
+    return h.get('samples') or [], [s for s in (view.get('samples') if isinstance(view, dict) else None) or [] if isinstance(s, str) and '#' in s]
 
 
 def taken(src, ids, url=None, config=None):

@@ -2240,6 +2240,17 @@ The first export fills a folder that holds only dotfiles, a read that was not sa
 }
 ```
 
+A state that predates the status table still acks from the proposal's record under `incoming/db/incoming/` (the fixture `legacy-record`, whose file name takes the proposal id the last step printed):
+
+```json fixture
+{
+ "fixture": "legacy-record",
+ "files": {
+  "work.adp/incoming/db/incoming/<pid>.json": "{\"status\": \"applied\", \"applied\": {\"version\": \"9\", \"at\": \"\"}}"
+ }
+}
+```
+
 ```json vector
 {
  "vector": "loop-empty-applied-version-and-older-state",
@@ -2407,6 +2418,36 @@ The first export fills a folder that holds only dotfiles, a read that was not sa
    "stderr_text": [
     "<pid>: status unknown in the last export; ack it once applied or declined"
    ]
+  },
+  {
+   "copy": [
+    "{legacy-record}/work.adp/incoming",
+    "{legacy}/work.adp/incoming"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "ack",
+    "{legacy}/work",
+    "--proposal",
+    "<pid>"
+   ],
+   "exit": 0,
+   "stdout": {
+    "ack": [
+     "incoming/<pid> applied"
+    ],
+    "live": {
+     "at": "<time>",
+     "version": "9"
+    },
+    "incoming": {
+     "held": [],
+     "unacked": [],
+     "pending_replies": []
+    }
+   }
   }
  ]
 }

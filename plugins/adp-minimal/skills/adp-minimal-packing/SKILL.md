@@ -100,7 +100,7 @@ batch to the same url, noting each version id the tool returns.
 # order: 510
 # needs: [packing.publish, parts.manifest]
 # tests: [files-publish-args, files-since-a-manifest, files-in-batches-then-pins, files-removals-and-kit-references]
-# sha: 2b491b8ee3b1
+# sha: 768ff46a93e1
 # ---
 def page_deps(d):
     """The local files index.html loads, in load order and once each."""
@@ -127,7 +127,7 @@ def batched(out, d, n, where):
 @cmd('files')
 def files_cmd(a):
     """files DIR [--since MANIFEST.json] [--batch N] [--out DIR]    the publish arguments of DIR; --host single --out FILE [--fragment]: DIR packed into one page"""
-    if not bare(a): sys.exit(usage('files'))
+    if not bare(a): print(usage('files'), file=sys.stderr); return 2
     d, host = bare(a)[0], opt(a, '--host', 'claude')
     if host not in ('claude', 'single'): sys.exit(f'files: --host is claude or single, not {host}')
     if host == 'single': return emit(pack_page(d, opt(a, '--out'), '--fragment' in a))
@@ -402,7 +402,7 @@ never appear in the manifest.
 # section: packing
 # order: 550
 # needs: [core.io]
-# tests: [seed-reads-an-adp-seed-1-and-prints-batches]
+# tests: [seed-reads-an-adp-seed-1-and-prints-batches, seed-pack-size-from-the-environment]
 # sha: e3e7003af7fe
 # ---
 PACK = int(os.environ.get('ADP_PACK', 1_500_000))        # bytes of UTF-8 JSON per seed pack
@@ -618,7 +618,7 @@ Records are compared by `chash`: `sha256:` over the document's sorted, compact J
 # order: 590
 # needs: [packing.seed-packs, hosts.claude, protocol.pins]
 # tests: [bundle-asks-for-its-reads, bundle-refuses-an-incomplete-raw-read, bundle-from-raw-reads, move-records-to-an-empty-artifact]
-# sha: ebc04ce7e0d2
+# sha: fc72083aa0c1
 # ---
 BUNDLED = ('manifest', 'parts', 'content', 'changes', 'decisions', 'config', 'agents', 'incoming', 'requests')
 SKIP = ('status', 'presence', 'imports')       # never exported: written by the page, transient, or the shell's own record
@@ -663,7 +663,7 @@ def bundle_cmd(a):
     pos, (ad, art) = bare(a), adapter(a, 'source')
     want = [*BUNDLED, *filter(None, opt(a, '--collections', '').split(','))]
     if not pos: emit({'reads': ad.read_calls(art, want)}); return 2
-    if len(pos) == 1: sys.exit(usage('bundle'))
+    if len(pos) != 2: sys.exit(usage('bundle'))
     docs, _, cov = read_set(a, pos[0], want, 'a bundle from it would silently drop them; read them again')
     if cov is not None and (more := sorted({f"requests/{x['id']}/turns" for x in docs.values() if x['collection'] == 'requests'} - set(cov))):
         print('append the results of these reads to the same file and run bundle again', file=sys.stderr)
@@ -774,7 +774,7 @@ def import_ack(a):
 
 | Command | Does | Prints | Exit |
 |---|---|---|---|
-| `files DIR [--since MANIFEST.json] [--batch N] [--out DIR]` | the publish arguments, as above | `{file_path, root, files}`, plus `skipped` and `kit_refs`; with `--since`, `page_changed`; over N files (default 250) `batches`, `batch_files` and `note` instead of `files` | 0 |
+| `files DIR [--since MANIFEST.json] [--batch N] [--out DIR]` | the publish arguments, as above | `{file_path, root, files}`, plus `skipped` and `kit_refs`; with `--since`, `page_changed`; over N files (default 250) `batches`, `batch_files` and `note` instead of `files` | 0; 2 for no DIR (the usage line on stderr) |
 | `pins publish-K.json=VERSION_ID ... [--out vermap.json]` | the version map of a batched publish | `{pinned, vermap, next}`; no `KEY=VERSION` argument prints the usage line | 0; 1 for no argument |
 | `files DIR --host single --out FILE [--fragment]` | packs DIR into one page | `{host: "single", out, files, bytes, fragment}` | 0; 1 for no `index.html`, a symlink or an unsupported name (each refusal names its cause) or a page over 16 MB |
 | `unpack PACK DEST` | writes every file back, byte for byte, sha256 checked | `{dest, files, bytes}` | 0; 1 for a DEST that is not empty, a mismatch, an unsafe path or no blocks, with nothing written |

@@ -64,9 +64,9 @@ fixture's files; its own files override them, and a file set to `null` is remove
 {"fixture": "example", "files": {"index.html": "<!-- part:a --><p data-part=\"a\">A</p><!-- /part:a -->\n"}}
 ```
 
-A file's value is its text. Three other forms build what text cannot: `{"link": "target"}` is a symbolic link to `target`, `{"fill": N}` is
+A file's value is its text; the text `{adp.js}` alone is the `adp.js` under test, byte for byte. Three other forms build what text cannot: `{"link": "target"}` is a symbolic link to `target`, `{"fill": N}` is
 a file of N bytes, and `{"base64": "..."}` is a file of those bytes. In a command, in `stdin` and in a fixture file written after it, `<pid>`
-stands for the proposal id the last step printed.
+stands for the proposal id the last step printed (a fixture file's name takes it too).
 
 A **vector** is a fenced block whose info string is `json vector`. It runs one command (or several `steps`) and states what must come back:
 
@@ -76,6 +76,7 @@ A **vector** is a fenced block whose info string is `json vector`. It runs one c
 | `skip` | a reason. The vector is kept but not run, and no fragment has to name it |
 | `run` | the command: first the tool (`adp.py`, `adp_catalog.py`, or `adp.js` for the browser runtime), then the arguments. `{name}` is the fixture `name` written to a fresh folder; `{out}` is an empty scratch folder; `{home}` is the vector's `ADP_HOME` |
 | `stdin` | the text the command reads from standard input, with the same `{name}` placeholders; empty when absent |
+| `env` | extra environment variables of the command, `{"ADP_PACK": "300"}`, merged into the hermetic environment |
 | `exit` | the exit code |
 | `stdout` | the JSON printed, after normalization; or `stdout_text`, the text printed, as a list of lines |
 | `stderr_text` | the text written to stderr, as a list of lines; used to assert error messages |
@@ -83,7 +84,7 @@ A **vector** is a fenced block whose info string is `json vector`. It runs one c
 | `steps` | several of the above in order, sharing the folders; `same_tree: [a, b]` then requires two folders to be equal byte for byte, and `copy: [src, dst]` replaces folder dst with a copy of src (a change made between two runs) |
 
 For `adp.js` the "command" is a call into the runtime, loaded in Node with a stub DOM: `["adp.js", "hash", FILE]` prints `ADP.hash(text of FILE)`, and
-`["adp.js", "classify", BASE, LIVE, INCOMING]` prints `ADP.classify` of three JSON files. Two more boot the runtime on a test host (an `adp-host/1`
+`["adp.js", "classify", BASE, LIVE, INCOMING]` prints `ADP.classify` of three JSON files, and `["adp.js", "config-define", GROUP, DEFS_JSON]` calls `ADP.config.define(GROUP, DEFS)` and prints `ADP.config.all()[GROUP]`. Two more boot the runtime on a test host (an `adp-host/1`
 provider with an in-memory document store, `fetch` serving the page folder DIR, the user `agent-a` who can edit, or `viewer-1` who cannot when the last
 argument is `viewer`); STATE.json is `{docs: {"collection/id": data}, provider?: "invalid", seedFiles?: false}`:
 
@@ -144,6 +145,7 @@ const settle = () => new Promise(r => setTimeout(r, 50));
   let out;
   if (op === 'hash') out = await win.ADP.hash(read(a[0]));
   else if (op === 'classify') out = win.ADP.classify(...a.map(p => JSON.parse(read(p))));
+  else if (op === 'config-define') { win.ADP.config.define(a[0], JSON.parse(a[1])); out = win.ADP.config.all()[a[0]]; }
   else {
     await win.ADP.config.ready; await settle();
     out = {host: win.ADP.host, seeded: win.ADP.seeded};
@@ -214,9 +216,9 @@ def one(vec, fixtures, tools, root):
             if not os.path.isdir(d):
                 os.makedirs(d)
                 for rel, content in tree(fixtures, name).items() if name not in ('out', 'home') else ():
-                    p = os.path.join(d, rel); os.makedirs(os.path.dirname(p), exist_ok=True)
+                    p = os.path.join(d, rel.replace('<pid>', last[0])); os.makedirs(os.path.dirname(p), exist_ok=True)
                     if isinstance(content, dict) and 'link' in content: os.symlink(content['link'], p); continue
-                    data = content.replace('<pid>', last[0]).encode() if isinstance(content, str) else b'x' * content['fill'] if 'fill' in content else base64.b64decode(content['base64'])
+                    data = pathlib.Path(tools['adp.js']).read_bytes() if content == '{adp.js}' else content.replace('<pid>', last[0]).encode() if isinstance(content, str) else b'x' * content['fill'] if 'fill' in content else base64.b64decode(content['base64'])
                     with open(p, 'wb') as f: f.write(data)
             return d
         return re.sub(r'\{([a-z0-9-]+)\}', sub, s.replace('<pid>', last[0]))
@@ -228,7 +230,7 @@ def one(vec, fixtures, tools, root):
             name = step['run'][0]
             if name == 'adp.js': cmd = ['node', '-e', NODE, tools['adp.js'], *args]
             else: cmd = [sys.executable, '-I', tools[name], *args]
-            env = {'ADP_HOME': os.path.join(root, 'home'), 'PATH': BIN, 'LANG': 'en_US.UTF-8'}      # hermetic: the parent environment is not inherited
+            env = {'ADP_HOME': os.path.join(root, 'home'), 'PATH': BIN, 'LANG': 'en_US.UTF-8', **step.get('env', {})}      # hermetic: the parent environment is not inherited
             r = subprocess.run(cmd, capture_output=True, text=True, cwd=root, env=env, timeout=60, input=place(step.get('stdin', '')))
             got = {'exit': r.returncode}
             last[:] = PID.findall(r.stdout)[-1:] or last

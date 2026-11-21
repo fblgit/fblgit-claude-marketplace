@@ -410,7 +410,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
 }
 ```
 
-A folder file that is not UTF-8 is read with replacement characters, a manifest without `elements`, `files` or `parents` diffs as if they were empty, and `check` with no argument prints its usage.
+A folder file that is not UTF-8 is read with replacement characters, a manifest without `elements`, `files` or `parents` diffs as if they were empty, and `check` with no argument prints its usage and exits 2.
 
 ```json fixture
 {"fixture": "latin1-page", "files": {"index.html": {"base64": "PCEtLSBwYXJ0OmEgLS0+PHAgZGF0YS1wYXJ0PSJhIj5jYWbpPC9wPjwhLS0gL3BhcnQ6YSAtLT4K"}}}
@@ -466,7 +466,7 @@ A folder file that is not UTF-8 is read with replacement characters, a manifest 
     "adp.py",
     "check"
    ],
-   "exit": 1,
+   "exit": 2,
    "stderr_text": [
     "usage: adp.py check PAGE|DIR    the markers balance, and parts and data-part elements match"
    ]

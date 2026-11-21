@@ -404,14 +404,14 @@ A header line that starts with `@` but is indented continues the tag above it; i
 }
 ```
 
-The header of the runtime itself is a catalog header like any other (`runtime.adp`, the file `adp.js` at the top of the catalog):
+The header of the runtime itself is a catalog header like any other (`runtime.adp`, the file `adp.js` at the top of the catalog); the fixture holds the built `adp.js`:
 
 ```json fixture
 {
  "fixture": "catalog-runtime",
  "files": {
   "kit/.keep": "",
-  "adp.js": "/**\n * ADP runtime\n * The adp/2 page runtime. Load it before the page's own scripts, then call ADP.page({view, expected, titles, legacy, all, reveal}) once the views exist. It paints content/<part id> docs live, lists changes/ and active decisions/ in the What changed panel, shows proposals in incoming/, anchors comments to [data-part] elements, hashes the page's parts at open and compares them with manifest/current (integrity), and writes checks/latest when the viewer can edit. It also carries ADP.config (switches in the db doc config/current), ADP.user, ADP.db and ADP.ns(name), and expands the seed packs published beside the page on first open.\n *\n * --accent is the comment highlight.\n *\n * @id        runtime.adp\n * @kind      component\n * @group     Runtime\n * @status    stable\n * @version   2.1.0\n * @updated   2026-11-21\n * @summary   The adp/2 page runtime: the What changed panel, content as data, part-id comment anchors, page integrity, settings (ADP.config), the viewer (ADP.user), namespaced data (ADP.ns), seeding on first open and the page self-check.\n * @tags      adp, dataplane, runtime, comments, anchors, content, self-check, what changed, config, integrity, seed\n * @requires  none\n * @files     none\n * @provides  window.ADP.host, window.ADP.page, window.ADP.content, window.ADP.config, window.ADP.user, window.ADP.ns, window.ADP.claude, window.ADP.agent, window.ADP.publish, window.ADP.ask, window.ADP.classify, window.ADP.hash, window.ADP.build, window.ADP.integrity, window.ADP.seeded, window.ADP.db, window.ADP_CHECK, window.ADP_SEED\n * @config    <meta name=\"adp:build\"> | the build number, before the script\n * @config    window.ADP_CONTENT | content.js: the baseline copy of the parts\n * @config    page.header, page.tabs, page.changes | parts the page must render; #wc, #wcN, #wcChanges, #wcDecisions for the panel\n * @config    ADP.page(cfg) | {view(), expected(view), titles, legacy, all, reveal(id, key)}\n * @tokens    --accent? --accent-soft? --f-ui? --ink? --ink-3? --panel? --rule? --sunk? --warn?\n * @globals   none\n * @db        reads content; changes; decisions; incoming; manifest/current; config/current / writes status/integrity (attempted for any viewer with a db: it lands only where the db rules allow); checks/latest (editors only); config/current and a changes/d-<time> record when a setting is saved; the seed docs on first open\n * @source    adp-minimal | assets/adp.js | the same bytes\n * @preview   {\"render\": \"runtime.adp\", \"samples\": []}\n * @changed   Adds an explicit host connection boundary while preserving the legacy Claude default, and the host's agent, publish and ask handles (ADP.agent(), ADP.publish(), ADP.ask(): a promise of the handle or null).\n */\n(function(){})();\n"
+  "adp.js": "{adp.js}"
  }
 }
 ```
@@ -554,16 +554,16 @@ The header of the runtime itself is a catalog header like any other (`runtime.ad
   "  kit.badge: kit/badge.js: [status] @status wip: one of new, stable",
   "  kit.badge: kit/badge.js: [version] @version 1.0: major.minor.patch",
   "  kit.badge: kit/badge.js: [updated] @updated yesterday: YYYY-MM-DD",
-  "  kit.badge: kit/badge.js: [kind] @kind widget: one of component, guide, template, theme",
   "  kit.badge: kit/badge.js: [summary] @summary is 300 characters, at most 260",
+  "  kit.badge: kit/badge.js: [kind] @kind widget: one of component, guide, template, theme",
   "  kit.badge: kit/badge.js: [db] @db: sections `reads a; b` / `writes c` / `note text`, keywords in lowercase; not: read x",
   "  kit.badge: kit/badge.js: [preview] @preview is not one line of JSON",
   "  kit.badge: kit/badge.js: [samples] @samples: a comma list of bundle keys (letters, digits, . _ -), no repeats",
   "  kit.badge: kit/badge.js: [changed] @changed appears once: the newest change",
   "  kit.badge: kit/badge.js: [tags] @tags: a comma list, lowercase, no repeats",
   "  kit.badge: kit/badge.js: [provides] @provides: dotted names, comma separated; not: 1bad",
-  "  kit.badge: kit/badge.js: [globals] @globals: none or dompurify, htm-preact, marked; not: jquery",
   "  kit.badge: kit/badge.js: [tokens] @tokens: custom properties like --ink (--ink? when optional); not: ink",
+  "  kit.badge: kit/badge.js: [globals] @globals: none or dompurify, htm-preact, marked; not: jquery",
   "  kit.badge: kit/badge.js: [config] @config oops: \"signature | what it takes\"",
   "  kit.badge: kit/badge.js: [source] @source one | two: \"board | file | what\"",
   "  viz.meter: kit/viz/meter.js: [title] the first line of the comment is the entry name",
@@ -1888,14 +1888,14 @@ The header of the runtime itself is a catalog header like any other (`runtime.ad
 }
 ```
 
-The fixture `catalog-quirks` is a local index whose `kit.a` file carries a pinned `ver`, whose `kit.a` and `kit.b` require each other, and whose `viz.c` names no `main`: its header is found through its script. `take` publishes the pin, ends the cycle, reads the header and refuses a missing saved catalog, a missing index and missing ids with one line.
+The fixture `catalog-quirks` is a local index whose `kit.a` file carries a pinned `ver`, whose `kit.a` and `kit.b` require each other, and whose `viz.c` names no `main`: its header is found through its script. `take` publishes the pin, ends the cycle, reads the header (a `@preview` may continue on the next lines) and refuses a missing saved catalog, a missing index and missing ids with one line.
 
 ```json fixture
 {
  "fixture": "catalog-quirks",
  "files": {
   "catalog.json": "{\n \"entries\": [\n  {\n   \"id\": \"kit.a\",\n   \"kind\": \"component\",\n   \"requires\": [\n    \"kit.b\"\n   ],\n   \"files\": [\n    {\n     \"path\": \"kit/a.js\",\n     \"role\": \"script\",\n     \"ver\": \"v7\"\n    }\n   ]\n  },\n  {\n   \"id\": \"kit.b\",\n   \"kind\": \"component\",\n   \"requires\": [\n    \"kit.a\"\n   ],\n   \"files\": [\n    {\n     \"path\": \"kit/b.js\",\n     \"role\": \"script\"\n    }\n   ]\n  },\n  {\n   \"id\": \"viz.c\",\n   \"kind\": \"component\",\n   \"requires\": [],\n   \"files\": [\n    {\n     \"path\": \"kit/c.js\",\n     \"role\": \"script\"\n    },\n    {\n     \"path\": \"kit/samples/c.json\",\n     \"role\": \"sample\"\n    }\n   ]\n  }\n ]\n}\n",
-  "kit/c.js": "/**\n * C\n * Draws c.\n *\n * @id        viz.c\n * @preview   {\"render\": \"viz.c\", \"samples\": [\"kit/samples/c.json#c\"]}\n * @samples   c\n */\n"
+  "kit/c.js": "/**\n * C\n * Draws c.\n *\n * @id        viz.c\n * @preview   {\"render\": \"viz.c\",\n *            \"samples\": [\"kit/samples/c.json#c\"]}\n * @samples   c\n */\n"
  }
 }
 ```

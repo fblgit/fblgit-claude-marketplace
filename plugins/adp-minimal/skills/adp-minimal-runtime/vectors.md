@@ -681,6 +681,32 @@ An inline `adp-seed/1` seed of 26 documents is written six at a time with a prog
 }
 ```
 
+A page script may register a switch with no description at all (`{x: null}`): it is a text switch whose default is empty.
+
+```json vector
+{
+ "vector": "runtime-config-define-a-bare-switch",
+ "run": [
+  "adp.js",
+  "config-define",
+  "g",
+  "{\"x\": null}"
+ ],
+ "exit": 0,
+ "stdout": {
+  "x": {
+   "group": "g",
+   "name": "x",
+   "type": "text",
+   "level": "page",
+   "default": "",
+   "value": "",
+   "changed": null
+  }
+ }
+}
+```
+
 Each switch type refuses a wrong value, a list of strings is accepted, and a page without a database refuses every write.
 
 ```json vector

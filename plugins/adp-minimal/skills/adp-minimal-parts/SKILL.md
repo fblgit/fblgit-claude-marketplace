@@ -289,12 +289,12 @@ It prints a summary line, then one line per problem, then a warning that lists t
 # needs: [parts.regions]
 # tests: [check-dir, check-single, check-unclosed, check-opened-twice, check-data-part-without-markers, check-part-without-data-part,
 #   check-and-manifest-refusals]
-# sha: bca033b4260a
+# sha: fdade488c605
 # ---
 @cmd('check')
 def check(a):
     """check PAGE|DIR    the markers balance, and parts and data-part elements match"""
-    if not a: sys.exit('usage: adp.py ' + check.__doc__.split('\n')[0])
+    if not a: print('usage: adp.py ' + check.__doc__.split('\n')[0], file=sys.stderr); return 2
     _, marked = load(a[0])
     bad, ids = problems(marked)
     roots = {m.group(1): m.group(0) for m in ROOT.finditer('\n'.join(marked.values()))}
