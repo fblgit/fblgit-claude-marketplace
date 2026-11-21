@@ -1132,7 +1132,7 @@ value it ends up with) and `convention` (the JSON against the tokens `theme.defa
 # order: 640
 # needs: [catalog.unit]
 # tests: [catalog-inventory]
-# sha: 3843912155bd
+# sha: b53a6e011b5e
 # ---
 def glob(pattern):
     """A name pattern (* for a run-time part, <word> for a placeholder) as a regex."""
@@ -1172,7 +1172,7 @@ def theme(base, css, data, ref):
         return sorted({d for r in reads[k] if r in reads and r not in seen for d in ([r] if r in dark else via(r, seen + (k,)))})
     declares = {k: dict({'light': light.get(k), 'dark': dark.get(k)}, **({'dark_via': via(k)} if k not in dark and via(k) else {}))
                 for k in reads}
-    uses = collections.defaultdict(set)
+    uses = collections.defaultdict(lambda: set())
     for k, names in reads.items():
         for r in names: uses[r].add(k)
     j = json.loads(Path(os.path.join(base, data)).read_text(encoding='utf-8'))
@@ -1247,7 +1247,7 @@ the convention has it, the entries that declare it, and `read`, `read_in_themes`
 # order: 660
 # needs: [catalog.declared]
 # tests: [catalog-inventory]
-# sha: 076e1beb8a19
+# sha: 348c352336de
 # ---
 def inventory(root):
     root = os.path.abspath(root)
@@ -1284,7 +1284,7 @@ def inventory(root):
     out['units']['catalog.page'] = unit([p for p in found if p.startswith(rel(cat) + '/') and p not in listed and p != rel(cat, 'catalog.json')], {})
     for name in sorted(os.listdir(tpl)) if os.path.isdir(tpl) else []:
         if os.path.isdir(os.path.join(tpl, name)): out['units']['base.' + name] = unit([p for p in found if p.startswith(rel(tpl, name) + '/')], {})
-    role_of, same = collections.defaultdict(set), {}
+    role_of, same = collections.defaultdict(lambda: set()), {}
     for e in entries:
         for f in e['files']: role_of[rel(cat, f['path'])].add(f.get('role') or 'file')
     for p in sorted(scanned): same.setdefault(Path(os.path.join(base, p)).read_bytes(), p)
