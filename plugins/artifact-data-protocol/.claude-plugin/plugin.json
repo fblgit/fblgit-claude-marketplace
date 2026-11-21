@@ -1,0 +1,19 @@
+{
+  "name": "artifact-data-protocol",
+  "displayName": "Artifact Data Protocol",
+  "version": "2.2.0",
+  "description": "Build reusable claude.ai Artifacts with ADP (Artifacts Done Properly & Artifact Data Protocol): shared catalog components, part-level edits, and a record of every change.",
+  "author": {
+    "name": "Xavier Murias (fblgit)",
+    "url": "https://github.com/fblgit"
+  },
+  "homepage": "https://github.com/fblgit/artifacts-done-properly",
+  "repository": "https://github.com/fblgit/fblgit-claude-marketplace",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude artifacts",
+    "adp",
+    "documentation",
+    "skills"
+  ]
+}

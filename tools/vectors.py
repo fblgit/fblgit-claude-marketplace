@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Assemble the tools of plugins/adp-minimal from its fragments, then run or re-record its vectors against that build.
+"""Assemble the tools of plugins/artifact-data-protocol from its fragments, then run or re-record its vectors against that build.
 
-The assembler and the runner are the snippets in plugins/adp-minimal/skills/adp-minimal-rebuild/SKILL.md (assemble, vector-runner), executed as
+The assembler and the runner are the snippets in plugins/artifact-data-protocol/skills/adp-rebuild/SKILL.md (assemble, vector-runner), executed as
 written there.
 
   python3 tools/vectors.py [--final] [--only NAME ...]      assemble, then run the vectors; prints problems, failures and the totals
@@ -15,8 +15,8 @@ or failing vector.
 import argparse, json, os, re, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKILLS = os.path.join(ROOT, 'plugins', 'adp-minimal', 'skills')
-REBUILD = os.path.join(SKILLS, 'adp-minimal-rebuild', 'SKILL.md')
+SKILLS = os.path.join(ROOT, 'plugins', 'artifact-data-protocol', 'skills')
+REBUILD = os.path.join(SKILLS, 'adp-rebuild', 'SKILL.md')
 
 
 def load():
