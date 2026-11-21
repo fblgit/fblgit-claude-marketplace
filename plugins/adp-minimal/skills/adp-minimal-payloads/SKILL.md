@@ -105,7 +105,7 @@ serializes writers.
 ] }
 ```
 
-A document that does not exist yet, such as your first `agents/<you>`, is created with `set` and no `if_version`. If another writer creates
+A document that does not exist yet, such as your first `agents/<you>`, is created with `"set"` and no `if_version`. If another writer creates
 it first, your write is refused like a stale pin, because it now targets an existing document without `if_version`.
 
 Steps 3 (edit) and 4 (check) work on local files and write nothing to the store.
@@ -154,8 +154,8 @@ One batch, every existing document pinned, `manifest/current` last: the changed 
   changed is updated without them, so another agent's hold on it stays.
 - `changes/` entries are append-only. A change that comes with a publish has the six-digit sequence id `record` writes; a data-only change has
   none to take, and uses `d-` followed by the time in milliseconds since the epoch (below).
-- An added part is a `set` on `parts/<id>` and appears in `changes` with `from: ""`. A removed part is a `delete` and appears with `to: ""`.
-- `manifest/current` is replaced whole with a pinned `set`, never `update`d: an `update` carrying only the changed parts would replace the
+- An added part is a `"set"` on `parts/<id>` and appears in `changes` with `from: ""`. A removed part is a `delete` and appears with `to: ""`.
+- `manifest/current` is replaced whole with a pinned `"set"`, never `update`d: an `update` carrying only the changed parts would replace the
   page's whole `parts` map with them.
 
 A batch holds at most 50 writes. `adp.py record` splits a larger record into several batches and keeps `manifest/current` in the last one.

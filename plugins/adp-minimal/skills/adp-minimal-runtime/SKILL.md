@@ -259,7 +259,7 @@ async function revealThread(h) {
 ```
 
 The self-check runs 1.5 s after the last trigger (`ADP.page()`, a DOM change, a resize, an error, a switch change). It sets `window.ADP_CHECK`
-for anyone, starts the integrity check, and for an editor writes `checks/latest` (an `update`, else a `set`) when its body differs from the last
+for anyone, starts the integrity check, and for an editor writes `checks/latest` (an `update`, else a `"set"`) when its body differs from the last
 one written:
 
 ```js
@@ -352,7 +352,7 @@ While this runs, a first-open panel shows progress and a short introduction to A
 recorded for the self-check, and nothing is written.
 
 Agents read `manifest/current` first and step 1 tests it, so a run that stops partway leaves no manifest and the next editor's open starts over.
-Step 3 narrows the race between two editors but does not close it; that is safe because seed writes are idempotent `set`s of the same data.
+Step 3 narrows the race between two editors but does not close it; that is safe because seed writes are idempotent `"set"` writes of the same data.
 Read-only viewers never seed.
 
 The first-open panel walks through five short paragraphs on ADP while the bar fills, then offers Close (it closes itself after a minute):
@@ -460,7 +460,7 @@ async function seedFromFile(d) {
 
 A switch is one `group.name` value (`edit.locked`, `look.theme`, `look.mode`, `panel.changes`). `config/current` stores a value only when it
 differs from the default, and records in `changed` who last changed each switch and when.
-Groups: `edit`, `parts`, `comments`, `panel`, `playground`, `look`, `links`, `log`. `adp.py config` shows them; its `set` subcommand (a switch name, then the value) changes one.
+Groups: `edit`, `parts`, `comments`, `panel`, `playground`, `look`, `links`, `log`. `adp.py config` shows them; its subcommand that sets a switch (the word set, a switch name, then the value) changes one.
 
 `edit.locked` is advisory. The runtime shows a banner and disables controls marked `data-adp-edit`, and `adp.py hold` and `adp.py record` refuse
 to run while it is on; changing switches from page code is not blocked. If `edit.locked` is true, do not write: tell the user who locked the page, from
@@ -473,7 +473,7 @@ await ADP.config.set('panel.changes', 'off');   // 'everyone', 'editors' or 'off
 ```
 
 `ADP.config.define(group, {name: {type, default, label, help, options, level}})` registers switches; a type is `bool`, `enum`, `url` (`https://`
-or empty), `list` (of strings), `datetime` or `text` (up to 2000 characters, the default type). `set` checks the value, then rewrites
+or empty), `list` (of strings), `datetime` or `text` (up to 2000 characters, the default type). Setting a switch checks the value, then rewrites
 `config/current` from a fresh read (one retry) and logs `changes/d-<ms>`; `reset(name)` sets one switch back to its default and `reset()` clears
 them all. Listeners run when `ready` resolves (the first read of `config/current`, or no database), and then on every change. The page's `db` handle
 takes no version, so a write is unpinned and the last writer wins.
@@ -627,7 +627,7 @@ define('log', {'data-changes': {type: 'bool', default: true, label: 'Log data ch
 | `ADP.build` | The `adp:build` number, as a string. |
 | `ADP.content(id)` | The current HTML of a part ([Content as data](#what-the-runtime-does)). |
 | `ADP.page(cfg)` | Registers the page ([The shell](#the-shell)). |
-| `ADP.config` | The switches: `get`, `on`, `set`, `reset`, `all`, `define`, the `ready` promise and the `doc` getter. |
+| `ADP.config` | The switches: `get()`, `on()`, `set()`, `reset()`, `all()`, `define()`, the `ready` promise and the `doc` getter. |
 | `ADP.user` | `canEdit`, `id`, and `can(name)`: a promise of the host's answer for a named right, or `null`. |
 | `ADP.host` | The connection: `protocol`, `id`, `status`, and booleans for `records`, `comments`, `seedFiles`, `agent`, `publish`, `ask`. |
 | `ADP.agent()`, `ADP.publish()`, `ADP.ask()` | Each returns a promise of the host's handle, or `null` when the host has none. |

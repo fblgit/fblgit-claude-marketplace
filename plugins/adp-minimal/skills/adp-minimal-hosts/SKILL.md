@@ -110,7 +110,7 @@ function attach(c) {
 
 | Part | Contract |
 |---|---|
-| `db` | The document API the runtime already uses: `doc(path)` with `get`, `set`, `update`, `onSnapshot`; `collection(path)` with `onSnapshot`, `where`, `orderBy`, `limit`; snapshots carrying `exists`, `data()`, `docs`, `docChanges()`. If the store cannot implement all of it, omit `db`; do not return a partial implementation. |
+| `db` | The document API the runtime already uses: `doc(path)` with `get()`, `set()`, `update()`, `onSnapshot()`; `collection(path)` with `onSnapshot`, `where`, `orderBy`, `limit`; snapshots carrying `exists`, `data()`, `docs`, `docChanges()`. If the store cannot implement all of it, omit `db`; do not return a partial implementation. |
 | `user` | `canEdit()` must resolve to the boolean `true` to enable editing UI. `id()` is a display and audit name, not a credential. `can(name)` resolves the host's decision for a named permission (the kit asks `data.write`), or `null` when the host has none. |
 | `comments` | `customAnchors(callbacks)`: callbacks `mode`, `threads`, `reveal`, `composing`; the controller provides `compose(anchor, el, {label})` and placement. Anchors are part ids. If the comments capability fails, anchoring is disabled and the page keeps working. |
 | `agent` | `{label, where?, canSend(), send({anchor\|threadId, text}), anchorFor(el)}`: hands a request to an agent. `canSend()` resolves to `available`, `queued`, `writers_only`, `no_session` or `off`. |
@@ -179,7 +179,7 @@ must provide the same before it can run the [protocol](../adp-minimal-protocol/S
 | Guarantee | Requirement |
 |---|---|
 | Versions on read | Every document read returns the store's integer revision of that document, the value a later write passes as `if_version`. |
-| Conditional writes | A write to an existing document carries `if_version` and is refused when the document has changed since that revision, or when `if_version` is missing. A create (`set` with no `if_version`) is refused when the document already exists. |
+| Conditional writes | A write to an existing document carries `if_version` and is refused when the document has changed since that revision, or when `if_version` is missing. A create (`"set"` with no `if_version`) is refused when the document already exists. |
 | Atomic batches | A batch is applied all or nothing: if any write in it is refused, none is applied. The result names every document written and its new revision: `{results: [{collection, doc_id, version}]}`. Separate batches are not atomic as a group. |
 | Guarded publish | Each published file can carry `ifMatch`, the SHA-256 of the file as read; the publish is refused with `conflict` when any such file has changed. The result carries the new version and each file's SHA-256: `{version, shas}`. |
 
@@ -196,7 +196,7 @@ return. An adapter has four functions. `raw` is what the agent saves: `[{call, r
 |---|---|
 | `read_calls(artifact, collections)` | one `ArtifactData list` call per collection |
 | `parse_reads(raw)` | `{docs: [{collection, id, data, revision}], covered, complete, warnings}`; a listing with a `next_cursor` is incomplete, and so is no result at all (`warnings: ["no read results"]`) |
-| `write_calls(artifact, ops)` | `ops` are `{op, collection, id, data, guard}`, `op` being `create` (a `set` with no pin) or `replace` (pinned to `guard`). Atomic `ArtifactData batch` calls of at most 50 writes and 900 KB, each with its `keys` |
+| `write_calls(artifact, ops)` | `ops` are `{op, collection, id, data, guard}`, `op` being `create` (a `"set"` with no pin) or `replace` (pinned to `guard`). Atomic `ArtifactData batch` calls of at most 50 writes and 900 KB, each with its `keys` |
 | `parse_receipt(raw)` | one `{collection, id, outcome, revision, error}` per key: `applied` when the batch result names the document, `rejected` when it reports that nothing was written, else `unknown` |
 
 ```python

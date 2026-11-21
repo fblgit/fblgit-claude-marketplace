@@ -238,7 +238,7 @@ def merge3(repo):
     return (lines[0] if lines else ''), [] if r.returncode == 0 else [x for x in lines if x.startswith('CONFLICT')] or [r.stderr.strip() or 'merge failed']
 ```
 
-### `export`
+### `adp.py export`
 
 `adp.py export DIR --url URL [--files-listing F] [--docs D] [--version V]` reads live in three passes. With no listing saved (default
 `DIR.adp/listing.json`) it prints `{reads, then}`: one `Artifact` list call and where to save its result. With the listing but no records (default
@@ -657,7 +657,7 @@ catalog's own seed is the only writer of its `incoming/`. Never enable it on a p
 
 ## Reading the result
 
-- `theirs`: when nothing is held, `export` has already copied it into `DIR`. No action.
+- `theirs`: when nothing is held, `adp.py export` has already copied it into `DIR`. No action.
 - `ours`: run `propose`.
 - `held`: stop. Both sides changed it, and a person decides: an editor picks a side in the inbox, or the owner chooses after you show both versions,
   or the part's holder (the session named in its `holder` field; see [protocol](../adp-minimal-protocol/SKILL.md)) settles it. Never resolve a hold

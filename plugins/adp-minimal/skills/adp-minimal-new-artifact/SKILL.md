@@ -265,7 +265,7 @@ itself and lists the rest under `skipped`. Store templates and other unserved fi
 ## The page's own code
 
 The page's script reaches the database through the runtime, not the host: `ADP.ns('shared').doc('board/main')` and `.collection('cards')` give
-handles under `ns/shared/`; `ADP.ns('users/<id>')` is per person. A handle has `get`, `set`, `update`, `delete` and `onSnapshot`.
+handles under `ns/shared/`; `ADP.ns('users/<id>')` is per person. A handle has `get()`, `set()`, `update()`, `delete()` and `onSnapshot()`.
 `ADP.config.get('look.mode')` reads a [switch](../adp-minimal-runtime/SKILL.md) (a named page setting in `config/current`).
 
 ```js

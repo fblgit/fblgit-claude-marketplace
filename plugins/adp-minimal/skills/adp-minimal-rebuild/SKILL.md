@@ -76,7 +76,7 @@ A **vector** is a fenced block whose info string is `json vector`. It runs one c
 | `skip` | a reason. The vector is kept but not run, and no fragment has to name it |
 | `run` | the command: first the tool (`adp.py`, `adp_catalog.py`, or `adp.js` for the browser runtime), then the arguments. `{name}` is the fixture `name` written to a fresh folder; `{out}` is an empty scratch folder; `{home}` is the vector's `ADP_HOME` |
 | `stdin` | the text the command reads from standard input, with the same `{name}` placeholders; empty when absent |
-| `env` | extra environment variables of the command, `{"ADP_PACK": "300"}`, merged into the hermetic environment |
+| `"env"` | extra environment variables of the command, `{"ADP_PACK": "300"}`, merged into the hermetic environment |
 | `exit` | the exit code |
 | `stdout` | the JSON printed, after normalization; or `stdout_text`, the text printed, as a list of lines |
 | `stderr_text` | the text written to stderr, as a list of lines; used to assert error messages |

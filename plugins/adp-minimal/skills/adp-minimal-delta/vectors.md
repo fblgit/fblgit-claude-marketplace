@@ -134,7 +134,7 @@ because incoming deletes it without a reason. `p.c` is `held` for the same reaso
 }
 ```
 
-## Contract: the loop (`export`, `propose`, `ack`, `gate`)
+## Contract: the loop (`adp.py export`, `propose`, `ack`, `gate`)
 
 ```json fixture
 {

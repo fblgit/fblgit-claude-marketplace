@@ -140,7 +140,7 @@ stop with exit 2 and a JSON `error`: `locked` (with `by`, `at` and `reason`), or
 may be repeated, lets a locked part through. With `edit.require-hold` on, `record` also wants every part it edits held: `--holds H.json`
 maps part ids to their holder (a name, or the `parts/<id>` document), and a part with no holder stops the record with `error: unheld`.
 
-Each core switch has a kind, which `config` `set` checks: `bool`, `text` (2,000 characters at most), `list` of text, `url` (empty or `https://`),
+Each core switch has a kind, which `adp.py config` checks when it sets one: `bool`, `text` (2,000 characters at most), `list` of text, `url` (empty or `https://`),
 `datetime` (empty or a real ISO date), an enum, or `name` (`look.theme`: the page's own theme names, which only the page knows).
 
 ```python
@@ -208,7 +208,7 @@ def check_value(key, v):
 
 `hold DIR ID ... --by NAME [--hours H] [--pins P.json] [--config C.json] [--unlock ID] [--out DIR]` is step 2. It writes `parts/<id>`
 (`holder`, `hold_until` after at most `--hours`, 2 at most and by default) and `agents/<NAME>` (`holds`, `last_seen`; an `update` when the
-pins have it, else a `set`). It prints `{hold_until, batches, docs_dir}` and, if some pin is missing, `needs_pin`. `--out` defaults to
+pins have it, else a `"set"`). It prints `{hold_until, batches, docs_dir}` and, if some pin is missing, `needs_pin`. `--out` defaults to
 `DIR.adp/`. Setting a hold is pinned: if another agent wrote the part first, the batch is refused.
 
 ```python
@@ -242,7 +242,7 @@ def hold(a):
 is step 6. OLD is `manifest/current` as read, DIR the page as published. It compares their parts (the `_rest` remainders are not parts) and
 writes, `manifest/current` last:
 
-- `parts/<id>`: a `set` for an added part (with `title`, `parent`, `holder: ""`, and `summary` as `added: S`), an `update` with the new
+- `parts/<id>`: a `"set"` for an added part (with `title`, `parent`, `holder: ""`, and `summary` as `added: S`), an `update` with the new
   `hash`, `version`, `at`, `by`, `summary` and `file` for a changed one, a `delete` for a removed one. The hold is cleared (`holder: ""` and
   `hold_until: ""`) on the parts that `--holds` shows held by `--by`; without `--holds`, on the deepest changed parts. A parent that changed
   only through a child is updated without them, so a hold of another agent on it stays;
@@ -327,7 +327,7 @@ def record(a):
 SWITCH is `group.name`, lower case, dashes allowed. A core switch takes only its kind of value (above) and is refused otherwise; any other
 key is the page's own and takes any value. A value equal to the default is not kept in `values` (`changed` still names it), except
 `look.theme`, whose default is the page's own.
-`config/current` is replaced whole (`schema`, `at`, `by`, `values` with the other values kept, `changed {SWITCH: {by, at}}`), so it is a `set`
+`config/current` is replaced whole (`schema`, `at`, `by`, `values` with the other values kept, `changed {SWITCH: {by, at}}`), so it is a `"set"`
 that needs the pin of the document as read (`--doc C.json` is that document and `--pins` its version). Unless the page turned
 `log.data-changes` off, a `changes/d-<ms>` entry in the same batch records it as a data change (`summary: "Set SWITCH = VALUE"`,
 `data: [{doc: "config/current"}]`). `--out` defaults to `ADP_HOME/config`. A switch with no default is written too, and the output says
