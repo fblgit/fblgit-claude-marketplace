@@ -277,7 +277,7 @@ const ADP = window.ADP = {};
 | Payloads | those documents and calls written out as JSON | `adp-minimal-payloads` |
 | New artifact | `adp.py new`, the adp/2 file tree, tiers, seeding | `adp-minimal-new-artifact` |
 | Shell, runtime | the thin `index.html` and `adp.js`, the one script every page loads | `adp-minimal-runtime` |
-| Host adapter | the boundary between the page and its host; what components may rely on | `adp-minimal-hosts` |
+| Host adapter | the boundary between the page and its host, and what components may rely on | `adp-minimal-hosts` |
 | Road | the step-by-step procedure for one kind of job: new, catalog, edit, adopt | `adp-minimal-roads` |
 | Delta, inbox | the classified difference of base, live and incoming; where proposals wait | `adp-minimal-delta` |
 | Packing | one-file pages, seed packs, catalog packs, record bundles | `adp-minimal-packing` |

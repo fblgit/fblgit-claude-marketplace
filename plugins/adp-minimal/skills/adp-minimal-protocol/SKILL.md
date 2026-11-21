@@ -12,8 +12,8 @@ An ADP page keeps its own record (what changed, who changed it, decisions, open 
 
 It applies to every page that has a `manifest/current`. Concurrency is optimistic: every write to an existing document carries the `version` you
 read as `if_version` (the **pin**), and ArtifactData refuses the write if the document has changed since, a compare-and-set. The pin is the only
-enforced lock; a refused write means another writer got there first. The pin, atomic batches and the guarded publish are requirements of the host
-adapter contract ([record and publish guarantees](../adp-minimal-hosts/SKILL.md#the-record-and-publish-guarantees)), so the protocol holds on any
+enforced lock; a refused write means another writer got there first. The pin, atomic batches and the guarded publish are requirements of the
+host adapter contract ([record and publish guarantees](../adp-minimal-hosts/SKILL.md#the-record-and-publish-guarantees)), so the protocol holds on any
 host that meets them. The calls and documents are written out in
 [payloads](../adp-minimal-payloads/SKILL.md); `adp.py` generates them.
 

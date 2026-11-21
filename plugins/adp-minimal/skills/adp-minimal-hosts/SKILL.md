@@ -1,6 +1,6 @@
 ---
 name: adp-minimal-hosts
-description: "Reference for the ADP host adapter protocol (adp-host/1): installing a provider with window.ADP_HOST and connect(); the db, user and comments contract; the optional agent, publish and ask handles; why a failed provider never falls back to another host; the host-neutral surface components use (ADP.db, ADP.user, ADP.agent(), ADP.publish(), ADP.ask()) instead of window.claude; the Claude and OpenAI bridge adapters; the agent-host operations and the receipts that keep source, deployment and record revisions apart; and how to write and test a new adapter. Use when the user asks how ADP runs on a host other than claude.ai, what a component may rely on, or how to add a host."
+description: "Reference for the ADP host adapter protocol (adp-host/1): installing a provider with window.ADP_HOST and connect(); the db, user and comments contract; the optional agent, publish and ask handles; why a failed provider never falls back to another one; the host-neutral surface components use (ADP.db, ADP.user, ADP.agent(), ADP.publish(), ADP.ask()) instead of window.claude; the Claude and OpenAI bridge adapters; the agent-host operations and the receipts that keep source, deployment and record revisions apart; and how to write and test a new adapter. Use when the user asks how ADP runs on a host other than claude.ai, what a component may rely on, or how to add a host."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
@@ -61,7 +61,7 @@ bridge wraps each `window.claude.use` handle in the neutral shape, and a handle 
 // order: 100
 // needs: [core.runtime]
 // tests: [runtime-an-invalid-provider-fails-closed, runtime-an-editor-seeds-an-empty-record]
-// sha: 0c214dbb102e
+// sha: 9ab3f8f10b43
 // ---
 const isFn = (o, k) => !!o && typeof o[k] === 'function', safely = (f, fallback) => Promise.resolve().then(f).catch(() => fallback);
 const HANDLE_OK = {agent: o => isFn(o, 'canSend') && isFn(o, 'send'), publish: o => isFn(o, 'files'), ask: o => typeof o === 'function'};
@@ -78,7 +78,7 @@ const CLAUDE = {
   ask: s => typeof s === 'function' ? (messages, opts) => s(messages, opts) : null};
 async function connectHost() {
   let c;
-  if (Object.prototype.hasOwnProperty.call(window, 'ADP_HOST')) {           // an explicit provider never falls back to another host
+  if (Object.prototype.hasOwnProperty.call(window, 'ADP_HOST')) {           // an explicit provider never falls back to another one
     const p = window.ADP_HOST;
     if (!p || p.protocol !== 'adp-host/1' || !isFn(p, 'connect')) throw new Error('Invalid ADP_HOST provider');
     c = await p.connect();
@@ -140,7 +140,7 @@ the related control. A kit entry that must call `window.claude` directly says so
 | **Claude** (built into `adp.js`) | Wraps `window.claude.use('db'\|'user'\|'comments')`. `agent`, `publish` and `ask` map from `comments.sendToClaude`, `artifact.publish` and `sample`, and are `null` where the viewer did not grant the capability. | The reference host: the protocol's guarantees are those of `ArtifactData` and `Artifact`. |
 | **OpenAI bridge** (`adapters/openai.js`) | An integration contract: the integrating application supplies `bridge.connect()`. | Not a native browser SDK. It does not discover tools, install a plugin or deploy a page. |
 
-### Deploying to another host
+### Deploying to another host adapter
 
 Same parts, same catalog, same protocol; the host's native source and record operations replace the Claude ones. Keep the host's project source
 with the page and confirm its id and URL match the checkout. `adp.py files` prints the page's files; it deploys nothing. Then:
