@@ -1231,12 +1231,12 @@ The inventory. `convention` is the token names `theme.default`'s JSON sets, ligh
 `n` reads, `bare` with no fallback, `in_fallback` inside another `var()`'s fallback), `sets` (custom properties assigned, `{token: n}`), `named`
 (script strings that are only token names; how each is used is not resolved), `dynamic` (`[{file, line, how, pattern}]`: a name built at run time,
 `how` being `"read"`, `"set"` or `"name"`; a string that ends in `-`, such as `'--f-'`, is the start of a name), `colour_strings`, `undeclared` (read, but not in the
-tag, not matched by its patterns and not set by the entry), `unused` (in the tag, but never read or named, and matched by no run-time pattern of the entry)
+tag, not matched by its patterns and not written by the entry), `unused` (in the tag, but never read or named, and matched by no run-time pattern of the entry)
 and `look`. `units` holds the same without `declares` for what is not an entry: `catalog.page` (the files of `catalog/` no entry lists) and
 `base.<name>` (`templates/<name>/`). `coverage` accounts for every file: `files` = `scanned` + `theme` (the themes' CSS and JSON) + `unread`, which lists
 `{file, why, names}` for the files that hold no styles (`why` is the role an entry lists it under, `index` for `catalog.json`, else `unlisted`; `names` is
 every `--name` in the text), and `outside` lists `{file, copy_of, names}` for script, style and markup files elsewhere under `DIR` (`copy_of` is the
-scanned file with the same bytes, else `null`). `tokens{name}` turns it round: the themes that set it (CSS and JSON, light and dark), whether
+scanned file with the same bytes, else `null`). `tokens{name}` turns it round: the themes that define it (CSS and JSON, light and dark), whether
 the convention has it, the entries that declare it, and `read`, `read_in_themes`, `"set"`, `named` and `dynamic` counts by entry or unit.
 
 ```python
