@@ -9,9 +9,6 @@
   },
   "homepage": "https://github.com/fblgit/artifacts-done-properly",
   "repository": "https://github.com/fblgit/fblgit-claude-marketplace",
-  "documentationUrl": "https://github.com/fblgit/artifacts-done-properly/tree/main/docs",
-  "supportUrl": "https://github.com/fblgit/fblgit-claude-marketplace/issues",
-  "termsOfServiceUrl": "https://github.com/fblgit/fblgit-claude-marketplace/blob/main/plugins/adp-minimal/LICENSE",
   "license": "Apache-2.0",
   "keywords": [
     "claude artifacts",
