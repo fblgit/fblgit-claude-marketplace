@@ -963,7 +963,7 @@ def look(prop, value):
     return out
 ```
 
-A `Unit` is what one entry or page reads, sets and hard-codes over all its files. A `getPropertyValue('--x')` is a read and `setProperty('--x', …)` a set
+A `Unit` is what one entry or page reads, sets and hard-codes over all its files. A `getPropertyValue('--x')` is a read and `setProperty('--x', …)` a write
 (`removeProperty` is neither); a name that is not one string is built at run time and recorded in `dynamic` with a `*` pattern; a script string that is
 only token names is `named`; a script string that is only a colour is a `colour_strings` row:
 
@@ -1228,14 +1228,14 @@ The inventory. `convention` is the token names `theme.default`'s JSON sets, ligh
 (the id prefix), `files` (the ones scanned), `declares`, `needs_differ` (only when it exists), `uses` (`{token: {n, bare, in_fallback, fallbacks, files}}`:
 `n` reads, `bare` with no fallback, `in_fallback` inside another `var()`'s fallback), `sets` (custom properties assigned, `{token: n}`), `named`
 (script strings that are only token names; how each is used is not resolved), `dynamic` (`[{file, line, how, pattern}]`: a name built at run time,
-`how` being `read`, `set` or `name`; a string that ends in `-`, such as `'--f-'`, is the start of a name), `colour_strings`, `undeclared` (read, but not in the
+`how` being `"read"`, `"set"` or `"name"`; a string that ends in `-`, such as `'--f-'`, is the start of a name), `colour_strings`, `undeclared` (read, but not in the
 tag, not matched by its patterns and not set by the entry), `unused` (in the tag, but never read or named, and matched by no run-time pattern of the entry)
 and `look`. `units` holds the same without `declares` for what is not an entry: `catalog.page` (the files of `catalog/` no entry lists) and
 `base.<name>` (`templates/<name>/`). `coverage` accounts for every file: `files` = `scanned` + `theme` (the themes' CSS and JSON) + `unread`, which lists
 `{file, why, names}` for the files that hold no styles (`why` is the role an entry lists it under, `index` for `catalog.json`, else `unlisted`; `names` is
 every `--name` in the text), and `outside` lists `{file, copy_of, names}` for script, style and markup files elsewhere under `DIR` (`copy_of` is the
 scanned file with the same bytes, else `null`). `tokens{name}` turns it round: the themes that set it (CSS and JSON, light and dark), whether
-the convention has it, the entries that declare it, and `read`, `read_in_themes`, `set`, `named` and `dynamic` counts by entry or unit.
+the convention has it, the entries that declare it, and `read`, `read_in_themes`, `"set"`, `named` and `dynamic` counts by entry or unit.
 
 ```python
 # ---
