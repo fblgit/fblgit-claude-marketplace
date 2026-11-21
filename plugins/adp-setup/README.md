@@ -5,7 +5,8 @@ full install, which you run yourself.
 
 Install this guide:
 
-    /plugin install adp-setup --marketplace fblgit/fblgit-claude-marketplace
+    /plugin marketplace add fblgit/fblgit-claude-marketplace
+    /plugin install adp-setup@fblgit-claude-marketplace
 
 Then ask Claude to set up ADP; it will have you run:
 

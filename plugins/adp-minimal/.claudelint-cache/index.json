@@ -1,0 +1,83 @@
+{
+  "version": "0.10.0-1795275869663",
+  "entries": {
+    "Commands Validator": {
+      "hash": "9874a86fe777ebd2c67eeee5fae6cc7e77c922f5d77d164d846dcbedcc748466",
+      "timestamp": 1795275961155,
+      "resultFile": "9874a86fe777ebd2c67eeee5fae6cc7e77c922f5d77d164d846dcbedcc748466.json",
+      "fileFingerprints": {}
+    },
+    "Hooks Validator": {
+      "hash": "720c8c9d700ec4c644943d9dabbd1c308dd80a343c87f4955e4c5b32d9ddc3ec",
+      "timestamp": 1795275961157,
+      "resultFile": "720c8c9d700ec4c644943d9dabbd1c308dd80a343c87f4955e4c5b32d9ddc3ec.json",
+      "fileFingerprints": {}
+    },
+    "Agents Validator": {
+      "hash": "49bb2b9b5defb4ece85bf913a6c897f87af5575e93cf0ee05b4a818f7628279f",
+      "timestamp": 1795275961159,
+      "resultFile": "49bb2b9b5defb4ece85bf913a6c897f87af5575e93cf0ee05b4a818f7628279f.json",
+      "fileFingerprints": {}
+    },
+    "LSP Validator": {
+      "hash": "de3b9e5c59a81e202d990a2c06354cb556fadec0132a16311f3a86e202daeb3b",
+      "timestamp": 1795275961160,
+      "resultFile": "de3b9e5c59a81e202d990a2c06354cb556fadec0132a16311f3a86e202daeb3b.json",
+      "fileFingerprints": {}
+    },
+    "Settings Validator": {
+      "hash": "55d02f3c358ba13ae3d23e2e9481073d71c2deb51df6ac2368b3c862dbd0d15e",
+      "timestamp": 1795275961160,
+      "resultFile": "55d02f3c358ba13ae3d23e2e9481073d71c2deb51df6ac2368b3c862dbd0d15e.json",
+      "fileFingerprints": {}
+    },
+    "MCP Validator": {
+      "hash": "4bf486497932a68c60a9b3235f8a249c7c519d7d9405ee3d05d2197ba13c2a8e",
+      "timestamp": 1795275961161,
+      "resultFile": "4bf486497932a68c60a9b3235f8a249c7c519d7d9405ee3d05d2197ba13c2a8e.json",
+      "fileFingerprints": {}
+    },
+    "Output Styles Validator": {
+      "hash": "4d35e3e3c9e7479615f187cb6e48d817d6d6d16c47cf024af0936b25e4146fa1",
+      "timestamp": 1795275961162,
+      "resultFile": "4d35e3e3c9e7479615f187cb6e48d817d6d6d16c47cf024af0936b25e4146fa1.json",
+      "fileFingerprints": {}
+    },
+    "CLAUDE.md Validator": {
+      "hash": "53c54881a5bfc8cb0dd4630f52c073ebe554f2b93b7deefefcfbeceeb9972575",
+      "timestamp": 1795275961170,
+      "resultFile": "53c54881a5bfc8cb0dd4630f52c073ebe554f2b93b7deefefcfbeceeb9972575.json",
+      "fileFingerprints": {}
+    },
+    "Plugin Validator": {
+      "hash": "7de41641736cdfb0a9c9c868cfde54da3f005ac7e458184d8196fa66a5e89b62",
+      "timestamp": 1795275879940,
+      "resultFile": "7de41641736cdfb0a9c9c868cfde54da3f005ac7e458184d8196fa66a5e89b62.json",
+      "fileFingerprints": {
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/.claude-plugin/plugin.json": "2026-11-21T15:36:33.595Z"
+      }
+    },
+    "Skills Validator": {
+      "hash": "4584bf398b64e41d777fdaab7ee85c17dcdd5c967b25b7f2441304c9f9d49200",
+      "timestamp": 1795275961211,
+      "resultFile": "4584bf398b64e41d777fdaab7ee85c17dcdd5c967b25b7f2441304c9f9d49200.json",
+      "fileFingerprints": {
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-catalog/SKILL.md": "2026-11-21T15:17:45.907Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-delta/SKILL.md": "2026-11-21T15:45:07.193Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-hosts/SKILL.md": "2026-11-21T15:41:10.927Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-kit-authoring/SKILL.md": "2026-11-21T15:39:02.268Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-kit/SKILL.md": "2026-11-21T12:43:10.878Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-new-artifact/SKILL.md": "2026-11-21T15:26:24.221Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-packing/SKILL.md": "2026-11-21T12:45:56.662Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-parts/SKILL.md": "2026-11-21T15:45:07.192Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-payloads/SKILL.md": "2026-11-21T15:26:24.221Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-protocol/SKILL.md": "2026-11-21T15:41:10.889Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-rebuild/SKILL.md": "2026-11-21T15:26:24.221Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-roads/SKILL.md": "2026-11-21T15:39:02.269Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-runtime/SKILL.md": "2026-11-21T15:26:24.222Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal-themes/SKILL.md": "2026-11-21T15:39:02.269Z",
+        "/Users/mrv/Desktop/Projects/fblgit-claude-marketplace/plugins/adp-minimal/skills/adp-minimal/SKILL.md": "2026-11-21T15:41:10.888Z"
+      }
+    }
+  }
+}

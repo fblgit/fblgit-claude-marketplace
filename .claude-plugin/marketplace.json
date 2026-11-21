@@ -28,7 +28,7 @@
     },
     {
       "name": "adp-minimal",
-      "description": "ADP (Artifacts Done Properly) explained, one skill per topic, with the contracts and tested vectors to rebuild its tooling; Markdown only",
+      "description": "Build reusable claude.ai Artifacts with ADP (Artifacts Done Properly & Artifact Data Protocol): shared catalog components, part-level edits, and a record of every change.",
       "source": "./plugins/adp-minimal"
     },
     {

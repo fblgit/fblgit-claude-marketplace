@@ -1,18 +1,19 @@
 {
   "name": "adp-minimal",
+  "displayName": "ADP Minimal",
   "version": "2.2.0",
-  "description": "ADP (Artifacts Done Properly) explained, one skill per topic so the right one loads on its own: parts and hashes, the protocol and payloads, new artifacts, the runtime, host adapters, the roads, delta and inbox, packing, the kit, themes, the catalog and kit authoring; plus the contracts and tested vectors to rebuild adp.py, adp.js and the catalog tool. Markdown only.",
+  "description": "Build reusable claude.ai Artifacts with ADP (Artifacts Done Properly & Artifact Data Protocol): shared catalog components, part-level edits, and a record of every change.",
   "author": {
     "name": "Xavier Murias (fblgit)",
     "url": "https://github.com/fblgit"
   },
   "homepage": "https://github.com/fblgit/artifacts-done-properly",
-  "repository": "https://github.com/fblgit/artifacts-done-properly",
+  "repository": "https://github.com/fblgit/fblgit-claude-marketplace",
   "license": "Apache-2.0",
   "keywords": [
     "claude artifacts",
-    "skills",
+    "adp",
     "documentation",
-    "protocol"
+    "skills"
   ]
 }

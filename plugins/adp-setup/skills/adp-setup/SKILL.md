@@ -1,6 +1,6 @@
 ---
 name: adp-setup
-description: "Guided install of ADP (Artifacts Done Properly), the standard and component catalog for claude.ai Artifacts. Use when the user asks to install, set up or get started with ADP."
+description: "Guided install of ADP (Artifacts Done Properly), the framework and shared component library for reusable claude.ai Artifacts. Use when the user asks to install, set up or get started with ADP."
 license: MIT
 ---
 
