@@ -134,13 +134,13 @@ option that takes no value is named in `FLAGS`; the fragment that introduces one
 # section: core
 # order: 10
 # needs: [core.cli]
-# sha: e997038041f5
+# sha: 5afd869a6b39
 # ---
 FLAGS = {'--dry-run'}
 
 
 def opt(a, name, default=None):
-    return a[a.index(name) + 1] if name in a else default
+    return a[a.index(name) + 1] if name in a and a.index(name) + 1 < len(a) else default
 
 
 def bare(a):
@@ -219,10 +219,38 @@ from pathlib import Path
 // tool: adp.js
 // section: core
 // order: 0
+// tests: [catalog-accepts-the-runtime-header]
 // sections: [core 0-99 adp-minimal, hosts 100-199 adp-minimal-hosts, runtime 200-899 adp-minimal-runtime, cli 900-999 adp-minimal]
-// sha: 25fdf3c4502e
+// sha: f6f33f53cbad
 // ---
-/* adp.js: the ADP runtime, the one script every ADP page loads. */
+/**
+ * ADP runtime
+ * The adp/2 page runtime. Load it before the page's own scripts, then call ADP.page({view, expected, titles, legacy, all, reveal}) once the views exist. It paints content/<part id> docs live, lists changes/ and active decisions/ in the What changed panel, shows proposals in incoming/, anchors comments to [data-part] elements, hashes the page's parts at open and compares them with manifest/current (integrity), and writes checks/latest when the viewer can edit. It also carries ADP.config (switches in the db doc config/current), ADP.user, ADP.db and ADP.ns(name), and expands the seed packs published beside the page on first open.
+ *
+ * --accent is the comment highlight.
+ *
+ * @id        runtime.adp
+ * @kind      component
+ * @group     Runtime
+ * @status    stable
+ * @version   2.1.0
+ * @updated   2026-11-21
+ * @summary   The adp/2 page runtime: the What changed panel, content as data, part-id comment anchors, page integrity, settings (ADP.config), the viewer (ADP.user), namespaced data (ADP.ns), seeding on first open and the page self-check.
+ * @tags      adp, dataplane, runtime, comments, anchors, content, self-check, what changed, config, integrity, seed
+ * @requires  none
+ * @files     none
+ * @provides  window.ADP.host, window.ADP.page, window.ADP.content, window.ADP.config, window.ADP.user, window.ADP.ns, window.ADP.claude, window.ADP.agent, window.ADP.publish, window.ADP.ask, window.ADP.classify, window.ADP.hash, window.ADP.build, window.ADP.integrity, window.ADP.seeded, window.ADP.db, window.ADP_CHECK, window.ADP_SEED
+ * @config    <meta name="adp:build"> | the build number, before the script
+ * @config    window.ADP_CONTENT | content.js: the baseline copy of the parts
+ * @config    page.header, page.tabs, page.changes | parts the page must render; #wc, #wcN, #wcChanges, #wcDecisions for the panel
+ * @config    ADP.page(cfg) | {view(), expected(view), titles, legacy, all, reveal(id, key)}
+ * @tokens    --accent? --accent-soft? --f-ui? --ink? --ink-3? --panel? --rule? --sunk? --warn?
+ * @globals   none
+ * @db        reads content; changes; decisions; incoming; manifest/current; config/current / writes status/integrity (attempted for any viewer with a db: it lands only where the db rules allow); checks/latest (editors only); config/current and a changes/d-<time> record when a setting is saved; the seed docs on first open
+ * @source    adp-minimal | assets/adp.js | the same bytes
+ * @preview   {"render": "runtime.adp", "samples": []}
+ * @changed   Adds an explicit host connection boundary while preserving the legacy Claude default, and the host's agent, publish and ask handles (ADP.agent(), ADP.publish(), ADP.ask(): a promise of the handle or null).
+ */
 (function () {
 'use strict';
 const ADP = window.ADP = {};

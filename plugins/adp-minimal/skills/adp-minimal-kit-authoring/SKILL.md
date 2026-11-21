@@ -122,7 +122,7 @@ def split_ref(ref):
 ```
 
 The header is the first `/** ... */` of a `.js` or `.css` file (and of their `.txt` copies), else the first `<!-- ... -->`; `*\/` inside it reads as
-`*/`. Its first line is the name, the first paragraph after it the `about` text, and a line that does not start with `@` continues the tag above it.
+`*/`. Its first line is the name, the first paragraph after it the `about` text, and a line that does not start with `@` at its margin (an indented `@word` too) continues the tag above it.
 `parse_header` shapes each tag the way the catalog page does: comma lists, `[signature, what]` pairs for `@config`, `{reads, writes, note}` for
 `@db` (`reads a; b / writes c / note text`), `{board, file, what}` for `@source`, and the JSON of `@preview` (`null` when it is not JSON).
 
@@ -133,7 +133,8 @@ The header is the first `/** ... */` of a `.js` or `.css` file (and of their `.t
 # section: authoring
 # order: 110
 # needs: [authoring.rules]
-# sha: 42c4157db705
+# tests: [catalog-an-indented-at-line-continues-the-tag]
+# sha: 232ba5cb329a
 # ---
 def comment_of(text, path):
     """The header comment of a file; None without one."""
@@ -146,12 +147,12 @@ def parse(comment):
     """-> (title, about, [(tag, value)])"""
     title, about, tags, done = '', [], [], False
     for raw in comment.split('\n'):
-        line = re.sub(r'^\s*\*? ?', '', raw).strip()
+        line = re.sub(r'^\s*\*? ?', '', raw).rstrip()
         if m := re.match(r'@([A-Za-z]+)\s*(.*)$', line): tags.append([m.group(1), m.group(2).strip()])
-        elif tags: tags[-1][1] = (tags[-1][1] + ' ' + line).strip() if line else tags[-1][1]
-        elif not line: done = done or bool(about)
-        elif not title: title = line
-        elif not done: about.append(line)
+        elif tags: tags[-1][1] = (tags[-1][1] + ' ' + line.strip()).strip() if line.strip() else tags[-1][1]
+        elif not line.strip(): done = done or bool(about)
+        elif not title: title = line.strip()
+        elif not done: about.append(line.strip())
     return title, ' '.join(about), [tuple(t) for t in tags]
 
 

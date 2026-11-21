@@ -50,11 +50,11 @@ This plugin ships one template, **`minimal`**, as the fixture `template-minimal`
 and a status list of what the runtime found on the host (connection, viewer, capabilities, integrity, seeding). It takes nothing from the catalog,
 so a page built from it works with `adp.js` alone. Install it as `templates/minimal/` and start with `adp.py new minimal DIR`.
 
-`installed: true` makes `new` write `installed.json` in DIR: `schema`, the catalog `url`, `ver`, `built`, the `take` list and `entries` (id, name, kind,
+`installed: true` makes `new` write `installed.json` in DIR: `schema`, the catalog `url` (`--url`, else the catalog url of this run, else the index's own), `ver`, `built`, the `take` list and `entries` (id, name, kind,
 group, summary, version, requires, in dependency order), the record of what the page took that the page's catalog tab lists.
 
 `templates` lists them, one block each. `new` copies the chain of templates (base first, each layer overriding the one before) into DIR; a DIR that
-exists and is not empty exits 1 with `DIR exists and is not empty`:
+exists and is not empty exits 1 with `DIR exists and is not empty`, a base that leads back into the chain with `template NAME: base loop (...)`, and a name that is no template with `no template NAME: ` and the names there are:
 
 ```python
 # ---
@@ -63,19 +63,29 @@ exists and is not empty exits 1 with `DIR exists and is not empty`:
 # section: new
 # order: 650
 # needs: [core.options, core.io]
-# tests: [templates]
-# sha: 10f15f6275b9
+# tests: [templates, new-ways-restored]
+# sha: 68f8894d8133
 # ---
 TPL = HERE / 'templates'
 
 
 def tmeta(name):
+    if not (TPL / name / 'template.json').is_file(): sys.exit(f'no template {name}: ' + ', '.join(sorted(p.name for p in TPL.iterdir() if (p / 'template.json').is_file())))
     return read_json(TPL / name / 'template.json')
 
 
 def chain(name):
-    """The template and every template under it, base first."""
-    return (chain(tmeta(name)['base']) if tmeta(name).get('base') else []) + [name]
+    """The template and every template under it, base first; a base that leads back to a template of the chain exits 1."""
+    out = []
+    while name:
+        if name in out: sys.exit(f'template {name}: base loop ({" -> ".join(out + [name])})')
+        out.append(name); name = tmeta(name).get('base')
+    return out[::-1]
+
+
+def expand(take, ids):
+    """`kind.*` in a take list is every entry of that kind the index has, in its order (none without an index)."""
+    return [x for t in take for x in ([i for i in ids if i.startswith(t[:-1])] if t.endswith('.*') else [t])]
 
 
 def layered(name):
@@ -99,12 +109,12 @@ def templates(a):
         print(f"{n:<{w}}{m['summary']}\n{'':<{w}}use when: {m['use_when']}")
 ```
 
-`{{catalog}}` is the `--catalog` value when it is a catalog URL, else the URL saved by `adp.py catalog`, else the text
+`{{catalog}}` is the `--catalog` value when it is a catalog URL, else the URL saved by `adp.py catalog` (also when `--catalog` is a local `catalog.json`), else the text
 `none saved yet: python3 adp.py catalog <url> saves the owner's catalog url`.
 
 The options of `new`:
 
-- `--title T` (default `Untitled artifact`) and `--slug S` (default: the title in lowercase kebab); a slug that is not lowercase kebab exits 1 with `--slug: lowercase kebab, e.g. status-pill`.
+- `--title T` (default `Untitled artifact`) and `--slug S` (default: the title in lowercase kebab, cut at 40 characters, `artifact` when the title has no letter or digit); a slug that is not lowercase kebab exits 1 with `--slug: lowercase kebab, e.g. status-pill`.
 - `--tier T` names the template to start from instead of TEMPLATE: `--tier minimal DIR`. `--tier full` exits 1 with `tier full is not available yet`.
 - `--summary S` and `--role R` go to the seed, as in `seed`.
 - `--url URL` is the catalog url when `--catalog` is a local `catalog.json`.
@@ -116,9 +126,9 @@ The options of `new`:
   `--theme`, the page takes `theme.default` when the index has it.
 - `--layout ID` (repeatable) takes a catalog entry by id.
 
-The page's take list is the template's `take`, then the themes, then the `--layout` ids, without repeats; it is printed as `take`. With a catalog,
+The page's take list is the template's `take` (`kind.*` stands for every entry of that kind in the index), then the themes, then the `--layout` ids, without repeats; it is printed as `take`. With a catalog,
 `new` runs `take` on that list, merges its `files` into `publish.files`, and links the themes and `--layout` entries in `index.html` as
-[themes](../adp-minimal-themes/SKILL.md#applying-a-theme) describes. A `take` failure prints its error and exits 2, before anything is
+[themes](../adp-minimal-themes/SKILL.md#applying-a-theme) describes. A `take` failure prints its error (`{error, catalog, reason}` for one the take itself raised) and exits 2, before anything is
 written. Without a catalog, `next` says to take the list later.
 
 Besides `{{title}}`, `{{slug}}` and `{{catalog}}`, every template file may carry the info placeholders: `{{adp_version}}` (the skill's version), `{{adp_sha}}` and `{{adp_sha12}}`
@@ -132,7 +142,7 @@ Besides `{{title}}`, `{{slug}}` and `{{catalog}}`, every template file may carry
 # order: 660
 # needs: [new.templates, themes.link, kit.take, packing.seed]
 # tests: [new-minimal, new-from-a-catalog, new-refuses-a-non-empty-folder, new-full-tier-is-not-available, new-refuses-a-bad-slug, new-refuses-an-unknown-theme]
-# sha: fc1d0679762f
+# sha: 72d3bf97384e
 # ---
 import hashlib, html
 @cmd('new')
@@ -144,12 +154,13 @@ def new(a):
         if tier == 'full': sys.exit('tier full is not available yet')
         if not (TPL / tier / 'template.json').is_file(): sys.exit(f'tier {tier}: no template of that name')
         pos = [tier] + pos
+    if len(pos) != 2: sys.exit('usage: adp.py new TEMPLATE|--tier T DIR [--title T] [--slug S] [--by NAME] [--data FILE|DIR] [--theme NAME] [--layout ID] [--catalog URL|-|catalog.json]')
     name, d = pos
     if Path(d).is_dir() and any(Path(d).iterdir()): sys.exit(f'{d} exists and is not empty')
     layers, d = chain(name), Path(d)
     meta = tmeta(name)
     title = opt(a, '--title', 'Untitled artifact')
-    slug = opt(a, '--slug') or re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    slug = opt(a, '--slug') or re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')[:40] or 'artifact'
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]*', slug): sys.exit('--slug: lowercase kebab, e.g. status-pill')
     every = lambda flag: [a[i + 1] for i, x in enumerate(a) if x == flag]
     src = opt(a, '--catalog')
@@ -163,12 +174,13 @@ def new(a):
     if have and (bad := [t for t in themes if t[6:] not in have]):
         sys.exit(f'--theme {bad[0][6:]}: the catalog has no such theme. It has: ' + ', '.join(have))
     themes = themes or [i for i in ids if i == 'theme.default']
-    tk = list(dict.fromkeys(meta.get('take', []) + themes + every('--layout')))
+    tk = list(dict.fromkeys(expand(meta.get('take', []), ids) + themes + every('--layout')))
     got = None
     if src and (index or opt(a, '--catalog')) and tk:
-        got, code = taken(src, tk, opt(a, '--url'))
+        try: got, code = taken(src, tk, opt(a, '--url'))
+        except SystemExit as e: got, code = {'error': 'take failed', 'catalog': src, 'reason': str(e.code)}, 2
         if code: emit(got); return 2
-    cat = src if live else 'none saved yet: python3 adp.py catalog <url> saves the owner\'s catalog url'
+    cat = (src if live else saved_catalog()) or 'none saved yet: python3 adp.py catalog <url> saves the owner\'s catalog url'
     by, skill = {e['id']: e for e in index.get('entries', [])}, HERE / 'SKILL.md'
     ver = re.search(r'^  version: "?([^"\s]+)', skill.read_text(encoding='utf-8') if skill.is_file() else '', re.M)
     cell = lambda v: '<td>' + html.escape(str(v or '')) + '</td>'
@@ -188,7 +200,7 @@ def new(a):
     if any(tmeta(n).get('installed') for n in layers):      # the My catalog tab lists this file; `files` takes the same entries again
         by = {e['id']: e for e in index.get('entries', [])}
         keep = ('id', 'name', 'kind', 'group', 'summary', 'version', 'requires')
-        (d / 'installed.json').write_text(json.dumps({'schema': 'installed/1', 'url': got['catalog']['url'] if got else '',
+        (d / 'installed.json').write_text(json.dumps({'schema': 'installed/1', 'url': opt(a, '--url') or (cat if CAT_URL.fullmatch(cat) else '') or index.get('url') or '',
             'ver': index.get('ver') or '', 'built': index.get('built') or '', 'take': tk,
             'entries': [{k: by[i][k] for k in keep if k in by[i]} if i in by else {'id': i} for i in (got['entries'] if got else tk)]},
             ensure_ascii=False, separators=(',', ':')), encoding='utf-8')

@@ -207,7 +207,7 @@ sorted `path=sha256` lines. `old_index` is the `catalog.json` on disk, `{}` when
 # order: 300
 # needs: [authoring.check]
 # tests: [catalog-build, catalog-build-then-check]
-# sha: 2acc8a76f149
+# sha: 7e01e1fb2c8b
 # ---
 import datetime
 
@@ -229,7 +229,8 @@ def sha256(path):
 
 
 def read(root, path):
-    return Path(root, path).read_text(encoding='utf-8', errors='replace')
+    try: return Path(root, path).read_text(encoding='utf-8', errors='replace')
+    except OSError: return ''          # a file that cannot be read has no header: it is listed as a file no entry names
 
 
 def role(path):
@@ -265,7 +266,7 @@ once the tree is sound:
 # section: catalog
 # order: 310
 # needs: [catalog.index]
-# tests: [catalog-build, catalog-refuses-an-orphan, catalog-orphans-in-tree-order, catalog-refuses-a-missing-require, catalog-refuses-bad-files]
+# tests: [catalog-build, catalog-refuses-an-orphan, catalog-orphans-in-tree-order, catalog-refuses-a-missing-require, catalog-refuses-bad-files, catalog-lists-an-unreadable-file]
 # sha: 730981e6b0cf
 # ---
 def build_index(root):
@@ -516,7 +517,7 @@ def headers(argv):
 
 `drift [--catalog-dir D] [--field F,..] [--strict]` is a read-only report of where the header of each entry's main file disagrees with the entry in
 `catalog.json`: one line per disagreement, a table of equal, differing and header-less entries per field, and the entries with no header. `-h` prints
-the tolerances of each field; an unknown field or option is an argparse error (exit 2). The `about`, `tokens` and `db` fields are read from an
+the tolerances of each field; an unknown field or option is an argparse error (exit 2); a folder with no readable `catalog.json` prints the `FAIL` line of `check` and exits 1. The `about`, `tokens` and `db` fields are read from an
 index that carries them (`about`, `needs.tokens`, `needs.db.note`); an index `build` wrote has none, so those fields differ for every entry that has a
 header value, and the header is the only record:
 
@@ -528,7 +529,7 @@ header value, and the header is the only record:
 # order: 500
 # needs: [catalog.commands]
 # tests: [catalog-drift]
-# sha: ee524004b21d
+# sha: 08f0c3c826cc
 # ---
 import argparse
 
@@ -575,7 +576,7 @@ Tolerances:
             <placeholder>), which are listed separately as wildcards.
   db        the catalog needs.db.note, if any, must appear (first 40 chars, case-insensitive) in the header's @db text;
             no note matches an absent or "none" header text.
-Exit code 0 always, except 1 with --strict when any version or provides disagreement exists."""
+Exit code 0, except 1 with --strict when any version or provides disagreement exists, and 1 with the FAIL line `check` prints when the folder has no catalog.json."""
 
 
 def drift(argv):
@@ -586,7 +587,8 @@ def drift(argv):
     a = ap.parse_args(argv)
     root, fields = Path(a.catalog_dir), [f.strip() for f in a.field.split(',') if f.strip()]
     if (bad := [f for f in fields if f not in DRIFT_FIELDS]) or not fields: ap.error('unknown field: ' + ','.join(bad or ['(none)']))
-    ents = old_index(root).get('entries', [])
+    if not (index := old_index(root)): print('FAIL: 1 problem(s)', 'catalog.json: missing or not JSON', sep='\n  '); return 1
+    ents = index.get('entries', [])
     lines, counts, nohdr, wild = [], {f: collections.Counter() for f in fields}, [], []
     for e in ents:
         main = main_file(e)

@@ -3973,3 +3973,493 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
  ]
 }
 ```
+
+## Contract: the edges of `files`, `unpack`, `seed`, `bundle`, `import-plan` and `import-ack`
+
+```json fixture
+{"fixture": "page-tree", "files": {"index.html": "<link rel=\"stylesheet\" href=\"z.css\"><script src=\"a.js\"></script><script src=\"https://x.example/c.js\"></script>\n", "a.js": "1\n", "z.css": "b{}\n", "m.txt": "m\n", "parts/.keep.txt": "k\n", "__pycache__/x.pyc": "x\n", ".git/c": "c\n"}}
+```
+
+```json fixture
+{"fixture": "page-script-ws", "files": {"index.html": "<script src=\"app.js\">\n</script>\n", "app.js": "1\n"}}
+```
+
+```json fixture
+{"fixture": "page-script-adj", "files": {"index.html": "<script src=\"app.js\"></script>\n", "app.js": "1\n"}}
+```
+
+```json fixture
+{"fixture": "pack-edge", "files": {"cat.json": "{\"schema\": \"adp-catalog-pack/1\", \"files\": {\"ok.json\": \"{}\", \"../x\": \"bad\", \"/abs\": \"bad\", \"n.txt\": 5}}", "empty.json": "{\"schema\": \"adp-catalog-pack/1\", \"files\": {}}"}}
+```
+
+```json fixture
+{"fixture": "page-seed-gap", "base": "page-a", "files": {"seed.json": "{\"schema\": \"adp-seed/2\", \"version\": \"2\", \"by\": \"ana\", \"at\": \"2026-01-01T00:00:00Z\", \"docs\": 3, \"collections\": {}, \"packs\": [\"seed/pack-001.json\"]}"}}
+```
+
+```json fixture
+{"fixture": "seed-data-bad", "files": {"nodata.json": "[{\"collection\": \"parts\", \"id\": \"x\"}]", "nolist.json": "{\"x\": 1}", "nocoll.json": "[{\"id\": \"a\", \"data\": {}}]"}}
+```
+
+```json fixture
+{"fixture": "move-absent", "base": "move", "files": {"target-absent.json": "{\"docs\": [{\"collection\": \"imports\", \"id\": \"claude-https:-claude.ai-artifact-00000000-0000-4000-8000-00000000000a\", \"exists\": false, \"revision\": 2}, {\"collection\": \"decisions\", \"id\": \"lead-tone\", \"exists\": false, \"revision\": 5}, {\"collection\": \"config\", \"id\": \"current\"}]}"}}
+```
+
+```json vector
+{
+ "vector": "files-and-unpack-edges",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "files",
+    "{page-tree}",
+    "--batch",
+    "2",
+    "--out",
+    "{out}/new/dir"
+   ],
+   "exit": 0,
+   "stdout": {
+    "file_path": "<tmp>/page-tree/index.html",
+    "root": "<tmp>/page-tree",
+    "batches": [
+     {
+      "z.css": "z.css",
+      "a.js": "a.js"
+     },
+     {
+      "m.txt": "m.txt",
+      "parts/.keep.txt": "parts/.keep.txt"
+     }
+    ],
+    "batch_files": [
+     "<tmp>/out/new/dir/publish-1.json",
+     "<tmp>/out/new/dir/publish-2.json"
+    ],
+    "note": "4 files: publish the page with batches[0] (new artifact: add capabilities, icon), then each other batch to the same url; every publish passes file_path and root, the tool refuses files without them; note every version id, then adp.py pins"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "files",
+    "{page-script-ws}",
+    "--host",
+    "single",
+    "--out",
+    "{out}/ws.html"
+   ],
+   "exit": 0,
+   "stdout": {
+    "host": "single",
+    "out": "<tmp>/out/ws.html",
+    "files": 2,
+    "bytes": 1844,
+    "fragment": false
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "files",
+    "{page-script-adj}",
+    "--host",
+    "single",
+    "--out",
+    "{out}/adj.html"
+   ],
+   "exit": 0,
+   "stdout": {
+    "host": "single",
+    "out": "<tmp>/out/adj.html",
+    "files": 2,
+    "bytes": 1844,
+    "fragment": false
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "unpack",
+    "{pack-edge}/cat.json",
+    "{out}/c"
+   ],
+   "exit": 0,
+   "stdout": {
+    "dest": "<tmp>/out/c",
+    "files": 1,
+    "bytes": 2
+   },
+   "files_out": {
+    "{out}/c/ok.json": {}
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "unpack",
+    "{pack-edge}/empty.json",
+    "{out}/e"
+   ],
+   "exit": 0,
+   "stdout": {
+    "dest": "<tmp>/out/e",
+    "files": 0,
+    "bytes": 0
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "unpack",
+    "{pack-edge}/cat.json"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py unpack PACK DEST"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "files"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py files DIR [--since MANIFEST.json] [--batch N] [--out DIR]"
+   ]
+  }
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "seed-tolerates-a-missing-pack-and-refuses-bad-data",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "seed",
+    "{page-seed-gap}"
+   ],
+   "exit": 0,
+   "stdout": {
+    "seed": "<tmp>/page-seed-gap/seed.json",
+    "written": true,
+    "docs": 8,
+    "collections": {
+     "parts": 5,
+     "changes": 1,
+     "agents": 1,
+     "manifest": 1
+    },
+    "packs": [
+     "seed/pack-001.json"
+    ],
+    "bytes": 2998,
+    "skipped_empty": [],
+    "next": "publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "seed",
+    "{page-a}",
+    "--data",
+    "{seed-data-bad}/nodata.json"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "--data <tmp>/seed-data-bad/nodata.json: a doc needs collection, id and data (an object)"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "seed",
+    "{page-a}",
+    "--data",
+    "{seed-data-bad}/nocoll.json"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "--data <tmp>/seed-data-bad/nocoll.json: a doc needs collection, id and data (an object)"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "seed",
+    "{page-a}",
+    "--data",
+    "{seed-data-bad}/nolist.json"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "--data <tmp>/seed-data-bad/nolist.json: a list of docs or {docs: [...]}"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "seed"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py seed DIR [--by NAME] [--version V] [--data FILE|DIR]... [--summary S] [--role R] [--at TIME] [--batches] [--dry-run]"
+   ]
+  }
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "move-absent-snapshots-and-option-first-ack",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "bundle",
+    "{move}/source.json",
+    "{out}/b",
+    "--host",
+    "claude",
+    "--artifact",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000a",
+    "--version",
+    "8",
+    "--by",
+    "agent-a"
+   ],
+   "exit": 0
+  },
+  {
+   "run": [
+    "adp.py",
+    "import-plan",
+    "{out}/b",
+    "{move-absent}/target-absent.json",
+    "--host",
+    "claude",
+    "--artifact",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000b",
+    "--only",
+    "decisions",
+    "--out",
+    "{out}/plan.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "schema": "adp-import-plan/1",
+    "bundle": {
+     "id": "b-38cea1308050",
+     "schema": "adp-seed/2",
+     "docs": 1,
+     "source": {
+      "id": "b-38cea1308050",
+      "host": "claude",
+      "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000a",
+      "version": "8",
+      "exportedAt": "<time>",
+      "by": "agent-a"
+     }
+    },
+    "target": {
+     "host": "claude",
+     "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000b",
+     "readAt": "<time>"
+    },
+    "only": [
+     "decisions"
+    ],
+    "ops": [
+     {
+      "key": "decisions/lead-tone",
+      "class": "new",
+      "baseHash": null,
+      "liveHash": null,
+      "incomingHash": "sha256:0d4e6c46b46c6bc7b8b7752646737dffc1c35759886f102e3f312f4a9a8a020b",
+      "guard": 5,
+      "action": "create",
+      "op": "create",
+      "collection": "decisions",
+      "id": "lead-tone",
+      "data": {
+       "text": "Greet, do not instruct.",
+       "by": "owner"
+      }
+     }
+    ],
+    "held": [],
+    "counts": {
+     "create": 1,
+     "replace": 0,
+     "skip": 0,
+     "hold": 0
+    },
+    "provenance": {
+     "collection": "imports",
+     "id": "claude-https:-claude.ai-artifact-00000000-0000-4000-8000-00000000000a",
+     "exists": false,
+     "guard": 2,
+     "records": {}
+    },
+    "calls": [
+     {
+      "tool": "ArtifactData",
+      "args": {
+       "action": "batch",
+       "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000b",
+       "writes": [
+        {
+         "op": "set",
+         "collection": "decisions",
+         "doc_id": "lead-tone",
+         "data": {
+          "text": "Greet, do not instruct.",
+          "by": "owner"
+         }
+        }
+       ]
+      },
+      "atomic": true,
+      "keys": [
+       "decisions/lead-tone"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "import-ack",
+    "--host",
+    "claude",
+    "{out}/plan.json",
+    "{move}/receipts-all.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "applied": 1,
+    "failed": [],
+    "warnings": [],
+    "record": [
+     {
+      "tool": "ArtifactData",
+      "args": {
+       "action": "batch",
+       "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000b",
+       "writes": [
+        {
+         "op": "set",
+         "collection": "imports",
+         "doc_id": "claude-https:-claude.ai-artifact-00000000-0000-4000-8000-00000000000a",
+         "data": {
+          "schema": "adp-import/1",
+          "source": {
+           "id": "b-38cea1308050",
+           "host": "claude",
+           "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000a",
+           "version": "8",
+           "exportedAt": "<time>",
+           "by": "agent-a"
+          },
+          "bundle": "b-38cea1308050",
+          "at": "<time>",
+          "target": {
+           "host": "claude",
+           "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000b",
+           "readAt": "<time>"
+          },
+          "records": {
+           "decisions/lead-tone": {
+            "hash": "sha256:0d4e6c46b46c6bc7b8b7752646737dffc1c35759886f102e3f312f4a9a8a020b",
+            "revision": 1
+           }
+          },
+          "only": [
+           "decisions"
+          ]
+         }
+        },
+        {
+         "op": "set",
+         "collection": "changes",
+         "doc_id": "d-<ms>",
+         "data": {
+          "version": "",
+          "at": "<time>",
+          "by": "adp",
+          "parts": [],
+          "threads": [],
+          "summary": "Imported 1 records from claude:https://claude.ai/artifact/00000000-0000-4000-8000-00000000000a (bundle b-38cea1308050)",
+          "data": [
+           {
+            "doc": "decisions/lead-tone"
+           },
+           {
+            "doc": "imports/claude-https:-claude.ai-artifact-00000000-0000-4000-8000-00000000000a"
+           }
+          ]
+         }
+        }
+       ]
+      },
+      "atomic": true,
+      "keys": [
+       "imports/claude-https:-claude.ai-artifact-00000000-0000-4000-8000-00000000000a",
+       "changes/d-<ms>"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "import-ack",
+    "{out}/plan.json",
+    "--host",
+    "claude"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py import-ack PLAN.json RECEIPTS.json --host H [--by NAME] [--raw]"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "import-plan",
+    "--host",
+    "claude",
+    "--artifact",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000b"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py import-plan BUNDLE [TARGET.json] --host H --artifact DST [--only C,...] [--base BUNDLE] [--out PLAN.json] [--raw]"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "bundle",
+    "{move}/source.json",
+    "--host",
+    "claude",
+    "--artifact",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000a"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py bundle [DOCS.json OUT_DIR] --host H --artifact SRC [--version V] [--by NAME] [--collections C,...] [--at TIME] [--raw]"
+   ]
+  }
+ ]
+}
+```

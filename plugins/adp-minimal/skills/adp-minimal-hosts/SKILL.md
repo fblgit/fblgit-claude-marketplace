@@ -195,7 +195,7 @@ return. An adapter has four functions. `raw` is what the agent saves: `[{call, r
 | Function | Does |
 |---|---|
 | `read_calls(artifact, collections)` | one `ArtifactData list` call per collection |
-| `parse_reads(raw)` | `{docs: [{collection, id, data, revision}], covered, complete, warnings}`; a listing with a `next_cursor` is incomplete |
+| `parse_reads(raw)` | `{docs: [{collection, id, data, revision}], covered, complete, warnings}`; a listing with a `next_cursor` is incomplete, and so is no result at all (`warnings: ["no read results"]`) |
 | `write_calls(artifact, ops)` | `ops` are `{op, collection, id, data, guard}`, `op` being `create` (a `set` with no pin) or `replace` (pinned to `guard`). Atomic `ArtifactData batch` calls of at most 50 writes and 900 KB, each with its `keys` |
 | `parse_receipt(raw)` | one `{collection, id, outcome, revision, error}` per key: `applied` when the batch result names the document, `rejected` when it reports that nothing was written, else `unknown` |
 
@@ -207,7 +207,7 @@ return. An adapter has four functions. `raw` is what the agent saves: `[{call, r
 # order: 250
 # needs: [core.io]
 # tests: [bundle-from-raw-reads, move-through-the-raw-adapter]
-# sha: 9a4c1a574f7a
+# sha: 6a83d54d8106
 # ---
 from types import SimpleNamespace
 
@@ -227,7 +227,7 @@ def claude_parse_reads(raw):
                 d = json.loads(line)
                 docs.append({'collection': c, 'id': d['id'], 'data': d['data'], 'revision': d.get('version')})
         if 'next_cursor' in text: warnings.append(f'{c}: more pages (next_cursor)')
-    return {'docs': docs, 'covered': sorted(covered), 'complete': bool(raw) and not warnings, 'warnings': warnings}
+    return {'docs': docs, 'covered': sorted(covered), 'complete': bool(raw) and not warnings, 'warnings': warnings or ([] if raw else ['no read results'])}
 
 
 def claude_write_calls(artifact, ops):

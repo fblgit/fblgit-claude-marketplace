@@ -409,3 +409,68 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
  }
 }
 ```
+
+A folder file that is not UTF-8 is read with replacement characters, a manifest without `elements`, `files` or `parents` diffs as if they were empty, and `check` with no argument prints its usage.
+
+```json fixture
+{"fixture": "latin1-page", "files": {"index.html": {"base64": "PCEtLSBwYXJ0OmEgLS0+PHAgZGF0YS1wYXJ0PSJhIj5jYWbpPC9wPjwhLS0gL3BhcnQ6YSAtLT4K"}}}
+```
+
+```json fixture
+{"fixture": "bare-manifests", "files": {"old.json": "{\"page_hash\": \"aaaaaaaaaaaa\", \"parts\": {\"a\": \"111111111111\"}}", "new.json": "{\"page_hash\": \"bbbbbbbbbbbb\", \"parts\": {\"a\": \"222222222222\"}}"}}
+```
+
+```json vector
+{
+ "vector": "parts-lenient-inputs",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "check",
+    "{latin1-page}"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "1 parts, ok; 0 chars (0%) outside every part, hashed as _rest",
+    "  warning: 1 part roots without data-comment-target: a"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "diff",
+    "{bare-manifests}/old.json",
+    "{bare-manifests}/new.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "page_hash": [
+     "aaaaaaaaaaaa",
+     "bbbbbbbbbbbb"
+    ],
+    "added": [],
+    "removed": [],
+    "changed": [
+     "a"
+    ],
+    "deepest": [
+     "a"
+    ],
+    "elements": {},
+    "files": {}
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "check"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py check PAGE|DIR    the markers balance, and parts and data-part elements match"
+   ]
+  }
+ ]
+}
+```

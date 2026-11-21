@@ -3067,3 +3067,140 @@ The work vectors below read files in the form `[{collection, id, data, revision}
  ]
 }
 ```
+
+A request whose `progress`, `scope` or `execution.origin` is null lists and takes a progress step as if it were empty or missing, and an option that takes a value but comes last has no value.
+
+```json fixture
+{"fixture": "asks-null", "files": {"dump.json": "[{\"id\": \"r-1\", \"version\": 2, \"data\": {\"lane\": \"edit\", \"text\": \"Null progress\", \"by\": \"viewer-1\", \"at\": \"2026-11-19T09:00:00Z\", \"progress\": null, \"scope\": null, \"execution\": {\"actor\": \"agent-a\", \"state\": \"working\", \"origin\": null}}}, {\"id\": \"r-2\", \"version\": 1, \"data\": {\"lane\": \"ask\", \"text\": \"Null last step\", \"by\": \"viewer-2\", \"at\": \"2026-11-19T10:00:00Z\", \"progress\": [{\"at\": \"2026-11-19T10:05:00Z\", \"text\": \"first\"}, null]}}]"}}
+```
+
+```json vector
+{
+ "vector": "requests-null-fields",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "requests",
+    "{asks-null}/dump.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "open": [
+     {
+      "id": "r-1",
+      "lane": "edit",
+      "state": "queue",
+      "scope": {},
+      "project": "",
+      "text": "Null progress",
+      "quote": "",
+      "by": "viewer-1",
+      "at": "<time>",
+      "reopened": false,
+      "last_progress": "",
+      "resolved": false,
+      "lease": {
+       "actor": "agent-a",
+       "state": "working",
+       "until": null,
+       "attempt": null,
+       "host": null
+      }
+     },
+     {
+      "id": "r-2",
+      "lane": "ask",
+      "state": "queue",
+      "scope": {},
+      "project": "",
+      "text": "Null last step",
+      "quote": "",
+      "by": "viewer-2",
+      "at": "<time>",
+      "reopened": false,
+      "last_progress": "",
+      "resolved": false,
+      "lease": null
+     }
+    ],
+    "count": 2,
+    "trailer": "· adp request {<rid>} · lane <lane> · scope part:<id>|page"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "requests",
+    "{asks-null}/dump.json",
+    "--progress",
+    "r-1",
+    "--text",
+    "Drafting",
+    "--by",
+    "agent-a",
+    "--out",
+    "{out}"
+   ],
+   "exit": 0,
+   "stdout": {
+    "request": "r-1",
+    "state": "working",
+    "batches": [
+     [
+      {
+       "op": "update",
+       "collection": "requests",
+       "doc_id": "r-1",
+       "file_path": "<tmp>/out/requests__r-1.json",
+       "if_version": 2
+      },
+      {
+       "op": "set",
+       "collection": "presence",
+       "doc_id": "agent-a",
+       "file_path": "<tmp>/out/presence__agent-a.json"
+      }
+     ]
+    ],
+    "docs_dir": "<tmp>/out"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "hold",
+    "{page-a}",
+    "home.lead",
+    "--out",
+    "{out}",
+    "--by"
+   ],
+   "exit": 0,
+   "stdout": {
+    "hold_until": "<time>",
+    "batches": [
+     [
+      {
+       "op": "update",
+       "collection": "parts",
+       "doc_id": "home.lead",
+       "file_path": "<tmp>/out/parts__home.lead.json"
+      },
+      {
+       "op": "set",
+       "collection": "agents",
+       "doc_id": "agent",
+       "file_path": "<tmp>/out/agents__agent.json"
+      }
+     ]
+    ],
+    "docs_dir": "<tmp>/out",
+    "needs_pin": [
+     "parts/home.lead"
+    ]
+   }
+  }
+ ]
+}
+```

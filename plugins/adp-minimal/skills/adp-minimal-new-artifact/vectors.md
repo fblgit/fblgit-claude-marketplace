@@ -26,6 +26,8 @@ The template `new` builds from, installed as `templates/minimal/` beside the too
  "stdout_text": [
   "catalog    The minimal page, taking kit.badge from the catalog.",
   "           use when: Checking that `new` layers a template on a base, takes from a catalog and records what it took.",
+  "loop       A template that is its own base.",
+  "           use when: Checking that `new` refuses a base that leads back to itself.",
   "minimal    The smallest adp/2 page: the shell, its copy as data, and a status list of what the runtime found (host, viewer, capabilities, integrity, seeding). Needs nothing from the catalog.",
   "           use when: Starting a page from the specification alone, or checking a build of the tools and the runtime on a real host."
  ]
@@ -194,7 +196,7 @@ The template `new` builds from, installed as `templates/minimal/` beside the too
 ```
 
 ```json fixture
-{"fixture": "template-catalog", "files": {"template.json": "{\n \"name\": \"catalog\",\n \"summary\": \"The minimal page, taking kit.badge from the catalog.\",\n \"use_when\": \"Checking that `new` layers a template on a base, takes from a catalog and records what it took.\",\n \"base\": \"minimal\",\n \"take\": [\n  \"kit.badge\"\n ],\n \"installed\": true,\n \"drop\": [\n  \"styles/page.css\"\n ]\n}\n", "notes.md.txt": "# {{title}} ({{slug}})\n", "info.txt.txt": "{{adp_version}}\n{{adp_sha12}}\n{{adp_sha}}\n{{adp_catalog}}\n{{adp_components}}\n"}}
+{"fixture": "template-catalog", "files": {"template.json": "{\n \"name\": \"catalog\",\n \"summary\": \"The minimal page, taking kit.badge from the catalog.\",\n \"use_when\": \"Checking that `new` layers a template on a base, takes from a catalog and records what it took.\",\n \"base\": \"minimal\",\n \"take\": [\n  \"kit.badge\",\n  \"theme.*\"\n ],\n \"installed\": true,\n \"drop\": [\n  \"styles/page.css\"\n ]\n}\n", "notes.md.txt": "# {{title}} ({{slug}})\n", "info.txt.txt": "{{adp_version}}\n{{adp_sha12}}\n{{adp_sha}}\n{{adp_catalog}}\n{{adp_components}}\n"}}
 ```
 
 The fixture `template-catalog` is a second template: it starts from `minimal`, adds a file, adds `info.txt` with the five info placeholders, drops one, takes `kit.badge` and records what it took.
@@ -524,3 +526,231 @@ The fixture `config-links` is a page configuration that sets `links.catalog`, th
 }
 ```
 
+The fixture `template-loop` names itself as its base. `new` expands `kind.*` entries of a template's `take` (here `theme.*`) over the catalog's index, records the catalog url in `installed.json` (`--url`, else the saved catalog, else the index's own), fills `{{catalog}}` with the saved catalog when `--catalog` is a local index, falls back to the slug `artifact` for a title with no letters or digits and cuts a slug at 40 characters, prints the `take` error as JSON with exit 2, and answers a bad invocation, a base loop and an unknown template with one line.
+
+```json fixture
+{
+ "fixture": "template-loop",
+ "files": {
+  "template.json": "{\n \"name\": \"loop\",\n \"summary\": \"A template that is its own base.\",\n \"use_when\": \"Checking that `new` refuses a base that leads back to itself.\",\n \"base\": \"loop\"\n}\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "new-ways-restored",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "catalog",
+    "{out}/p",
+    "--catalog",
+    "{catalog-built}/catalog.json",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002"
+   ],
+   "exit": 0,
+   "files_out": {
+    "{out}/p/installed.json": {
+     "schema": "installed/1",
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+     "ver": "",
+     "built": "<time>",
+     "take": [
+      "kit.badge",
+      "theme.paper"
+     ],
+     "entries": [
+      {
+       "id": "kit.badge",
+       "name": "Status badge",
+       "kind": "component",
+       "group": "Board kit",
+       "summary": "A small label coloured by a meaning token.",
+       "version": "0.1.0",
+       "requires": []
+      },
+      {
+       "id": "theme.paper",
+       "name": "Paper",
+       "kind": "theme",
+       "group": "Themes",
+       "summary": "Warm paper by day, ink-blue by night, one green accent.",
+       "version": "0.1.0",
+       "requires": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "catalog",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c"
+   ],
+   "exit": 0
+  },
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "catalog",
+    "{out}/q"
+   ],
+   "exit": 0,
+   "files_out": {
+    "{out}/q/installed.json": {
+     "schema": "installed/1",
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-00000000000c",
+     "ver": "",
+     "built": "",
+     "take": [
+      "kit.badge"
+     ],
+     "entries": [
+      {
+       "id": "kit.badge"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "catalog",
+    "{out}/r",
+    "--catalog",
+    "{catalog-built}/catalog.json",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002"
+   ],
+   "exit": 0,
+   "files_out": {
+    "{out}/r/info.txt": "unknown\n<adp.js sha12>\n<adp.js sha>\nhttps://claude.ai/artifact/00000000-0000-4000-8000-00000000000c\n<tr><td>kit.badge</td><td>0.1.0</td><td>04fb713a8c9d</td></tr><tr><td>theme.paper</td><td>0.1.0</td><td>de7027176d74</td></tr>\n",
+    "{out}/r/installed.json": {
+     "schema": "installed/1",
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+     "ver": "",
+     "built": "<time>",
+     "take": [
+      "kit.badge",
+      "theme.paper"
+     ],
+     "entries": [
+      {
+       "id": "kit.badge",
+       "name": "Status badge",
+       "kind": "component",
+       "group": "Board kit",
+       "summary": "A small label coloured by a meaning token.",
+       "version": "0.1.0",
+       "requires": []
+      },
+      {
+       "id": "theme.paper",
+       "name": "Paper",
+       "kind": "theme",
+       "group": "Themes",
+       "summary": "Warm paper by day, ink-blue by night, one green accent.",
+       "version": "0.1.0",
+       "requires": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "catalog",
+    "{out}/s",
+    "--title",
+    "Проект"
+   ],
+   "exit": 0,
+   "files_out": {
+    "{out}/s/notes.md": "# Проект (artifact)\n"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "catalog",
+    "{out}/t",
+    "--title",
+    "Quarterly kiln maintenance and glaze test schedule for all sites"
+   ],
+   "exit": 0,
+   "files_out": {
+    "{out}/t/notes.md": "# Quarterly kiln maintenance and glaze test schedule for all sites (quarterly-kiln-maintenance-and-glaze-tes)\n"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "--tier",
+    "minimal",
+    "minimal",
+    "{out}/u"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py new TEMPLATE|--tier T DIR [--title T] [--slug S] [--by NAME] [--data FILE|DIR] [--theme NAME] [--layout ID] [--catalog URL|-|catalog.json]"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "catalog",
+    "{out}/v",
+    "--catalog",
+    "{catalog-built}/catalog.json",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+    "--layout",
+    "viz.nope"
+   ],
+   "exit": 2,
+   "stdout": {
+    "error": "take failed",
+    "catalog": "<tmp>/catalog-built/catalog.json",
+    "reason": "no entry viz.nope in <tmp>/catalog-built/catalog.json"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "loop",
+    "{out}/w"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "template loop: base loop (loop -> loop)"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "new",
+    "nosuch",
+    "{out}/x"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "no template nosuch: catalog, loop, minimal"
+   ]
+  }
+ ]
+}
+```

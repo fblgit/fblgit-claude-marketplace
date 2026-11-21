@@ -172,7 +172,7 @@ JavaScript also matches U+FEFF. Text containing those characters hashes differen
 ## Reading a page
 
 PAGE is one file. DIR is a page laid out at its published paths. In a DIR every file is hashed by its bytes except dotfiles, the root
-`seed.json` and `seed/`, and the text files that hold markers are parsed one by one:
+`seed.json` and `seed/`, and the text files that hold markers (read as UTF-8, bad bytes replaced) are parsed one by one:
 
 ```python
 # ---
@@ -181,7 +181,8 @@ PAGE is one file. DIR is a page laid out at its published paths. In a DIR every 
 # section: parts
 # order: 140
 # needs: [parts.markers, parts.hash]
-# sha: 35dd4038cad7
+# tests: [parts-lenient-inputs]
+# sha: a28b012e7747
 # ---
 def load(path):
     """PAGE or DIR -> (files {path: hash}, marked {path: text}). A PAGE has no files, and its text is under the path ''."""
@@ -190,8 +191,8 @@ def load(path):
     for p in sorted(Path(path).rglob('*')):
         rel = p.relative_to(path).as_posix()
         if p.is_dir() or rel == 'seed.json' or rel.startswith(('seed/', '.')) or '/.' in rel: continue
-        files[rel] = H(p.read_bytes())
-        if rel.endswith(TEXT) and MARK.search(text := p.read_text(encoding='utf-8')): marked[rel] = text
+        files[rel] = H(raw := p.read_bytes())
+        if rel.endswith(TEXT) and MARK.search(text := raw.decode('utf-8', 'replace')): marked[rel] = text
     return files, marked
 ```
 
@@ -288,11 +289,12 @@ It prints a summary line, then one line per problem, then a warning that lists t
 # needs: [parts.regions]
 # tests: [check-dir, check-single, check-unclosed, check-opened-twice, check-data-part-without-markers, check-part-without-data-part,
 #   check-and-manifest-refusals]
-# sha: fa6957820b72
+# sha: bca033b4260a
 # ---
 @cmd('check')
 def check(a):
     """check PAGE|DIR    the markers balance, and parts and data-part elements match"""
+    if not a: sys.exit('usage: adp.py ' + check.__doc__.split('\n')[0])
     _, marked = load(a[0])
     bad, ids = problems(marked)
     roots = {m.group(1): m.group(0) for m in ROOT.finditer('\n'.join(marked.values()))}
@@ -343,19 +345,19 @@ The fields, from the two manifests' `parts`, `parents`, `elements` and `files` (
 # order: 180
 # needs: [parts.manifest]
 # tests: [diff-manifests]
-# sha: ddfccf89f164
+# sha: f3a7273753d0
 # ---
 def diff(old, new):
-    op, np = old['parts'], new['parts']
-    oe, ne, of = old['elements'], new['elements'], old['files']
+    op, np = old.get('parts', {}), new.get('parts', {})
+    oe, ne, of = old.get('elements', {}), new.get('elements', {}), old.get('files', {})
     added, removed = sorted(set(np) - set(op)), sorted(set(op) - set(np))
     changed = sorted((p for p in np if p in op and op[p] != np[p]), key=lambda p: (-p.count('.'), p))
-    parents = {**old['parents'], **new['parents']}
+    parents = {**old.get('parents', {}), **new.get('parents', {})}
     inner = {parents.get(p) for p in [*added, *removed, *changed]}
-    return {'page_hash': [old['page_hash'], new['page_hash']], 'added': added, 'removed': removed, 'changed': changed,
+    return {'page_hash': [old.get('page_hash'), new.get('page_hash')], 'added': added, 'removed': removed, 'changed': changed,
             'deepest': sorted({p for p in changed if p not in inner} | {*added, *removed}),
             'elements': {p: f'{ne[p] - oe[p]:+d}' for p in changed if p in oe and p in ne and ne[p] != oe[p]},
-            'files': {f: [of.get(f, ''), h] for f, h in new['files'].items() if of.get(f) != h}}
+            'files': {f: [of.get(f, ''), h] for f, h in new.get('files', {}).items() if of.get(f) != h}}
 
 
 @cmd('diff')

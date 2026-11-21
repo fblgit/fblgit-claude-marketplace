@@ -97,9 +97,9 @@ paragraph says what it returns; `@provides` names the functions.
 ## `take`
 
 `take CATALOG ID... [--url URL] [--config C.json]` reads the catalog's index and resolves each id's `@requires` first. CATALOG is a catalog url (the index `adp.py catalog` fetched
-into `ADP_HOME/catalog/`; when it is not there, `take` prints the `Artifact read` that fetches it and exits 2), `-` for the saved catalog, or a
-local `catalog.json`, whose url is `--url`, else `links.catalog` of the `--config` document, else the index's own `url`; with none it exits 1 with `take: no catalog url. ...`. An unknown id exits 1 with `no entry ID in CATALOG`. It prints `catalog`, `entries` in dependency order, the `files` map, `sha256`, `samples` (the `@preview` refs of the keys the
-named entries own in `@samples`; `fetch_headers` lists the `Artifact read` of main files not on disk yet) and, for themes, `fonts`. A sample bundle is in `files` only for a named entry, and not when the entry only borrows it for its preview.
+into `ADP_HOME/catalog/`; when it is not there, `take` prints the `Artifact read` that fetches it and exits 2), `-` for the saved catalog (none saved: exit 1, `take: no saved catalog; ...`), or a
+local `catalog.json` (a path that is no file exits 1), whose url is `--url`, else `links.catalog` of the `--config` document, else the index's own `url`; with none it exits 1 with `take: no catalog url. ...`. An unknown id exits 1 with `no entry ID in CATALOG`; no ids prints the usage line and exits 1; a cycle in `@requires` ends at the id already visited. A `files` ref carries the entry file's pinned `ver` when the index has one. It prints `catalog`, `entries` in dependency order, the `files` map, `sha256`, `samples` (the `@preview` refs of the keys the
+named entries own in `@samples`, read from each entry's `main`, else its template, doc, script or style file; `fetch_headers` lists the `Artifact read` of main files not on disk yet) and, for themes, `fonts`. A sample bundle is in `files` only for a named entry, and not when the entry only borrows it for its preview.
 
 ```python
 # ---
@@ -108,8 +108,8 @@ named entries own in `@samples`; `fetch_headers` lists the `Artifact read` of ma
 # section: kit
 # order: 620
 # needs: [core.options, core.io, protocol.switches]
-# tests: [take-with-its-requires, take-a-local-index-needs-a-url, take-unknown, take-fetches-missing-headers, take-url-from-config]
-# sha: 9c5c8f0a25c4
+# tests: [take-with-its-requires, take-a-local-index-needs-a-url, take-unknown, take-fetches-missing-headers, take-url-from-config, take-index-quirks]
+# sha: 17c1a45228d0
 # ---
 CAT_URL = re.compile(r'https://claude\.ai/(?:code/)?artifact/[A-Za-z0-9-]+/?')
 
@@ -119,40 +119,48 @@ def saved_catalog():
     return read_json(p).get('catalog') if p.is_file() else None
 
 
+def head_file(e):
+    """The file that carries an entry's header (its `main`, else its template, script or style); None when it has none or it points outside the catalog."""
+    m = header_lib().main_file(e)
+    return m if m and not m.startswith('/') and '..' not in m.split('/') else None
+
+
 def entry_head(root, e):
-    """(the keys `@samples` names, the `@preview` sample refs) of an entry's main file; None when the file is not on disk."""
-    main = root / e.get('main', '')
-    if not main.is_file(): return None
-    text = main.read_text(encoding='utf-8', errors='replace')
+    """(the keys `@samples` names, the `@preview` sample refs) of an entry's header file; None when the file is not on disk."""
+    main = head_file(e)
+    if not main or not (root / main).is_file(): return None
+    text = (root / main).read_text(encoding='utf-8', errors='replace')
     keys, view = re.search(r'@samples\s+(.+)', text), re.search(r'@preview\s+(\{.*\})', text)
     return [k.strip() for k in keys.group(1).split(',')] if keys else [], json.loads(view.group(1)).get('samples', []) if view else []
 
 
 def taken(src, ids, url=None, config=None):
     """(result, exit code) of `take`: the entries `ids` need, in dependency order, and the files map that publishes them."""
-    src = saved_catalog() if src == '-' else src
+    src = saved_catalog() or sys.exit('take: no saved catalog; adp.py catalog <url> saves one') if src == '-' else src
     live = bool(CAT_URL.fullmatch(src))
     idx = cat_dir(src) / 'catalog.json' if live else Path(src)
     url = src.rstrip('/') if live else url
     if not idx.is_file():
+        if not live: sys.exit(f'take: {src} is neither a catalog url nor a catalog.json')
         return {'error': 'index not fetched', 'catalog': url, 'fetch': {'tool': 'Artifact', 'action': 'read', 'url': url,
                 'path': 'catalog.json', 'out_dir': str(idx.parent)}}, 2
     cat = read_json(idx)
     url = url or (switches(unwrap(read_json(config))).get('links.catalog') if config else None) or cat.get('url')
     if not url: sys.exit('take: no catalog url. Pass the catalog url as CATALOG (then the index is the live one), or --url with a local index')
-    by, order = {e['id']: e for e in cat['entries']}, []
+    by, order, seen = {e['id']: e for e in cat['entries']}, [], set()
 
     def visit(i):
+        if i in seen: return
         if i not in by: sys.exit(f'no entry {i} in {src}')
-        if i not in order:
-            for r in by[i].get('requires', []): visit(r)
-            order.append(i)
+        seen.add(i)
+        for r in by[i].get('requires', []): visit(r)
+        order.append(i)
     for i in ids: visit(i)
     named = [by[i] for i in ids if any(f.get('role') == 'sample' for f in by[i]['files'])]
     heads = {e['id']: entry_head(idx.parent, e) for e in named}
     own = {i: [r for r in h[1] if r.split('#')[-1] in h[0]] for i, h in heads.items() if h}
     idle = {i: {r.split('#')[0] for r in h[1]} - {r.split('#')[0] for r in own[i]} for i, h in heads.items() if h}   # a bundle borrowed for the preview only
-    files = {f['path']: {'artifact': url, 'path': f['path']} for i in order for f in by[i]['files']
+    files = {f['path']: {'artifact': url, 'path': f['path'], **({'ver': f['ver']} if f.get('ver') else {})} for i in order for f in by[i]['files']
              if f.get('role') != 'sample' or (i in ids and f['path'] not in idle.get(i, ()))}
     out = {'catalog': {'url': url, 'index': str(idx.resolve()), 'live': live, 'ver': cat.get('ver') or None, 'built': cat.get('built')},
            'entries': order, 'files': files,
@@ -160,7 +168,7 @@ def taken(src, ids, url=None, config=None):
     if not live: out['catalog']['warning'] = ('a local index is a build, not the live catalog: a file it lists may be missing there. '
                                               'adp.py take <catalog url> ... reads the fetched live index')
     if any(own.values()): out['samples'] = {i: r for i, r in own.items() if r}
-    if live and (want := [e['main'] for e in named if heads[e['id']] is None]):
+    if live and (want := [m for e in named if heads[e['id']] is None and (m := head_file(e))]):
         out['fetch_headers'] = [{'tool': 'Artifact', 'action': 'read', 'url': url, 'paths': want, 'out_dir': str(idx.parent), 'then': 'run the command again'}]
     if fonts := {i: by[i]['fonts'] for i in order if by[i].get('fonts')}: out['fonts'] = fonts
     return out, 0
@@ -169,7 +177,8 @@ def taken(src, ids, url=None, config=None):
 @cmd('take')
 def take(a):
     """take CATALOG ID ... [--url URL] [--config C.json]    the entries and their requires, as the files map that publishes them"""
-    src, *ids = bare(a)
+    src, *ids = bare(a) or ['']
+    if not ids: sys.exit('usage: adp.py take CATALOG ID ... [--url URL] [--config C.json]   CATALOG: the catalog url, - (saved), or a local catalog.json')
     out, code = taken(src, ids, opt(a, '--url'), opt(a, '--config'))
     emit(out); return code
 ```

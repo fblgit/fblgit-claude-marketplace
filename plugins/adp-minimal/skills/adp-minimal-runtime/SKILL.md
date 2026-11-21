@@ -487,15 +487,16 @@ takes no version, so a write is unpinned and the last writer wins.
 // needs: [runtime.state]
 // tests: [runtime-config-set, runtime-config-set-the-default-removes-it, runtime-config-set-a-wrong-value, runtime-config-set-an-unknown-switch,
 //   runtime-config-set-by-a-viewer, runtime-config-set-checks-each-type]
-// sha: 0806e1c05723
+// sha: fc87b88df1c0
 // ---
 const REG = {}, lis = {}, SEG = /^[a-z0-9][a-z0-9-]*$/;
 let vals = {}, changed = {}, cdoc = null, isReady = false, resolveReady;
 const readyP = new Promise(r => { resolveReady = r; });
 function define(group, defs) {
   if (!SEG.test(group)) throw new Error('bad config group: ' + group);
-  Object.entries(defs || {}).forEach(([n, d = {}]) => {
+  Object.entries(defs || {}).forEach(([n, d]) => {
     if (!SEG.test(n)) throw new Error('bad config name: ' + n);
+    d = d || {};
     REG[group + '.' + n] = {...d, group, name: n, type: d.type || 'text', level: d.level || 'page',
       default: 'default' in d ? d.default : d.type === 'bool' ? false : d.type === 'list' ? [] : ''};
   });
@@ -691,7 +692,7 @@ Object.freeze(Object.assign(ADP, {build: BUILD, page: cfg => { PAGE = cfg; later
 
 ## One runtime
 
-`adp.js` is a catalog entry (`runtime.adp`). The copy in a page, the copy in the catalog and the assembled `adp.js` are byte-identical; the catalog
+`adp.js` is a catalog entry (`runtime.adp`): it opens with the header comment of the entry, the first lines of the file. The copy in a page, the copy in the catalog and the assembled `adp.js` are byte-identical; the catalog
 check fails when they differ. Pages must not modify `adp.js`; a runtime change is a change to the catalog entry.
 
 ## Hashing and classifying in `adp.js`

@@ -307,7 +307,7 @@ def live_copy(ad):
 
 With both reads saved, export classifies work against base and live and prints `{report, merged, state, next}`; it exits 0.
 
-- **The first export is the import.** Base and work start from live, and an empty or missing `DIR` is filled with the live files.
+- **The first export is the import.** Base and work start from live, and a `DIR` that is missing or holds only dotfiles is filled with the live files. A `theirs` file that was not saved under `incoming/files` is not copied.
 - **Nothing held:** git merges live into work over base. Clean: the merge is committed on `work`, every `theirs` file is copied into `DIR`, the
   merged copy into `DIR/content/` when that folder exists, base moves to live, and `merged` is `true`. A conflict (two edits of one copy)
   adds `merge_conflict` with git's lines and holds each conflicting path.
@@ -327,8 +327,8 @@ record but the copy as `db/<collection>/<id>.json`.
 # section: delta
 # order: 450
 # needs: [delta.repo, delta.listing, parts.manifest]
-# tests: [loop-export-asks-for-its-reads, loop-the-first-export-is-the-import, loop-theirs-lands-in-the-folder, loop-both-sides-changed-is-held, loop-export-reads-every-input-shape, loop-content-merges-over-base, loop-refusals]
-# sha: e526b7da0f6e
+# tests: [loop-export-asks-for-its-reads, loop-the-first-export-is-the-import, loop-theirs-lands-in-the-folder, loop-both-sides-changed-is-held, loop-export-reads-every-input-shape, loop-content-merges-over-base, loop-refusals, loop-import-and-unsaved-reads]
+# sha: 2ec086a54c1f
 # ---
 CONFLICT = re.compile(r'CONFLICT \([^)]*\): (?:Merge conflict in )?(\S+)')
 
@@ -369,7 +369,7 @@ def loop_export(a):
     lsha = commit_tree(repo, 'live', loop_tree(inc, live, lc), f'live {version}')
     if not prev:
         git(repo, 'branch', '-f', 'work', 'live'); git(repo, 'branch', '-f', 'base', 'live')
-        if not os.path.isdir(d) or not os.listdir(d): shutil.copytree(inc, d, dirs_exist_ok=True)
+        if not load(d)[0]: shutil.copytree(inc, d, dirs_exist_ok=True)
     work, wc = work_of(d, refs)
     commit_tree(repo, 'work', loop_tree(d, work, {**lc, **wc}), 'work')
     rep = classify(base['manifest'], live, work)
@@ -381,7 +381,7 @@ def loop_export(a):
             rep['held'] += [{'id': x, 'base': None, 'live': None, 'incoming': None} for x in CONFLICT.findall('\n'.join(conflicts))]
         else:
             git(repo, 'reset', '-q', '--hard', git(repo, 'commit-tree', tree, '-p', 'work', '-p', 'live', '-m', f'merge live {version}').stdout.strip())
-            for x in (x for x in rep['theirs'] if x in live['files']):
+            for x in (x for x in rep['theirs'] if x in live['files'] and Path(inc, x).is_file()):
                 Path(d, x).parent.mkdir(parents=True, exist_ok=True); shutil.copyfile(Path(inc, x), Path(d, x))
             if Path(d, 'content').is_dir():                               # the merged copy, when the folder keeps one
                 for c in Path(repo, 'content').glob('*.html'): shutil.copyfile(c, Path(d, 'content', c.name))
@@ -415,7 +415,7 @@ def loop_export(a):
 
 `adp.py propose DIR --by NAME --summary S [--retire ID --reason R ...]` classifies work against the base and live of the last export
 and merges it with live. Before any export it prints `{error: "no export yet", next}` and exits 2. Each deleted part or file needs its own
-`--retire ID --reason R` pair, matched in order.
+`--retire ID --reason R` pair, matched in order. A `state.json` without `live_manifest` takes the live manifest from `incoming/live-manifest.json`.
 
 - **Refused:** it prints `{refused: [...]}` and exits 2, listing every reason that applies: `merge conflict with live` (git's lines), `held` (the
   held ids), `deleted without --retire ID --reason R`, and `--retire needs --reason` (a `--retire` with no reason after it).
@@ -433,8 +433,8 @@ and merges it with live. Before any export it prints `{error: "no export yet", n
 # section: delta
 # order: 460
 # needs: [delta.export, payloads.batch]
-# tests: [loop-ours-is-proposed-and-acknowledged, loop-propose-with-nothing-changed, loop-both-sides-changed-is-held, loop-propose-before-any-export, loop-retire-chunk-and-ack]
-# sha: 65f16bb1856e
+# tests: [loop-ours-is-proposed-and-acknowledged, loop-propose-with-nothing-changed, loop-both-sides-changed-is-held, loop-propose-before-any-export, loop-retire-chunk-and-ack, loop-empty-applied-version-and-older-state]
+# sha: 0d00ca6dccf7
 # ---
 CHUNK = 200 * 1024
 CTYPE = {'.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
@@ -449,7 +449,8 @@ def loop_propose(a):
     d = bare(a)[0]; ad, st, every = adp_dir(d), exported(d), lambda k: [a[i + 1] for i, x in enumerate(a) if x == k]
     if not st: return 2
     retire = dict(zip(every('--retire'), every('--reason') + [''] * len(every('--retire'))))
-    (work, wc), live, lc = work_of(d, st.get('refs', {})), st['live_manifest'], live_copy(ad)
+    (work, wc), lc = work_of(d, st.get('refs', {})), live_copy(ad)
+    live = st.get('live_manifest') or (read_json(p) if os.path.isfile(p := os.path.join(ad, 'incoming', 'live-manifest.json')) else st['base']['manifest'])
     work['retired'] = retired = {k: v for k, v in retire.items() if v}
     repo = loop_repo(d); wsha = commit_tree(repo, 'work', loop_tree(d, work, {**lc, **wc}), f'propose: {summary}')
     _, conflicts = merge3(repo)
@@ -478,7 +479,7 @@ def loop_propose(a):
         if len(text.encode()) <= CHUNK: e['content'] = text; continue
         pieces = [text[i:i + CHUNK // 2] for i in range(0, len(text), CHUNK // 2)]
         chunks += [{'path': x, 'n': n, 'of': len(pieces), 'content': c} for n, c in enumerate(pieces)]
-    doc = {'by': by, 'at': at, 'summary': summary, 'threads': [], 'base': {'version': st['live']['version'], 'page_hash': st['page_hash'], 'docs': st['docs']},
+    doc = {'by': by, 'at': at, 'summary': summary, 'threads': [], 'base': {'version': st['live']['version'], 'page_hash': st.get('page_hash', live.get('page_hash', '')), 'docs': st['docs']},
            'parts': parts, 'files': files, 'live_files': st['files'], 'classified': rep, 'status': 'new',
            'decided': {'by': '', 'at': '', 'reason': ''}, 'applied': {'version': '', 'at': ''}}
     p = os.path.abspath(os.path.join(ad, f'propose-{pid}.json'))
@@ -512,8 +513,8 @@ It prints `{ack: [what it took], live: {version, at}, incoming: {held, unacked, 
 # section: delta
 # order: 470
 # needs: [delta.state]
-# tests: [loop-ours-is-proposed-and-acknowledged, loop-retire-chunk-and-ack]
-# sha: 99ed24eb0af7
+# tests: [loop-ours-is-proposed-and-acknowledged, loop-retire-chunk-and-ack, loop-empty-applied-version-and-older-state]
+# sha: 4d96304c4d1d
 # ---
 FLAGS.add('--hook')
 
@@ -545,12 +546,13 @@ def loop_ack(a):
         st['files'].update(res['shas']); done.append('files')
         st['live']['version'] = str(res.get('version') or res.get('version_id') or res.get('versionId') or st['live']['version'])
     if pid:
-        status, version = st['status'].get(pid, [None, ''])
+        status, version = st.get('status', {}).get(pid, [None, ''])
         if status not in ('applied', 'declined'): sys.exit(f'{pid}: status {status or "unknown"} in the last export; ack it once applied or declined')
         inc = st['incoming']; prop = inc['proposed'].get(pid)
         if status == 'applied' and prop:                  # this folder's own proposal: its work is the new base
             git(loop_repo(d), 'branch', '-f', 'base', prop['work'])
-            st['base'], st['src_copy'], st['live']['version'] = {'version': version, 'manifest': prop['manifest']}, prop['src_copy'], version
+            st['base'], st['src_copy'] = {'version': version, 'manifest': prop['manifest']}, prop['src_copy']
+            if version: st['live']['version'] = version
         inc['unacked'] = [x for x in inc['unacked'] if x != pid]
         inc['acked'] = sorted({*inc['acked'], pid}); done.append(f'incoming/{pid} {status}')
     save_loop(d, st)

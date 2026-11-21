@@ -333,6 +333,105 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
 }
 ```
 
+The fixture `catalog-unreadable` is a built catalog with one more file under `kit/` that cannot be read (a link to nothing). It has no header, so
+`build` and the check list it as a file no entry names:
+
+```json fixture
+{
+ "fixture": "catalog-unreadable",
+ "base": "catalog-built",
+ "files": {
+  "kit/gone.js": {"link": "nowhere.js"}
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-lists-an-unreadable-file",
+ "steps": [
+  {
+   "run": [
+    "adp_catalog.py",
+    "build",
+    "{catalog-unreadable}"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "1 problem(s); catalog.json is not written:",
+    "  kit/gone.js: no entry names it (add it to @files in the header of its entry)"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "{catalog-unreadable}"
+   ],
+   "exit": 1,
+   "stdout_text": [
+    "FAIL: 1 problem(s)",
+    "  tree: kit/gone.js: no entry names it (add it to @files in the header of its entry)"
+   ]
+  }
+ ]
+}
+```
+
+A header line that starts with `@` but is indented continues the tag above it; it does not begin a tag:
+
+```json fixture
+{
+ "fixture": "catalog-continued-tag",
+ "files": {
+  "kit/a.js": "/**\n * A\n * Draws a.\n *\n * @id        kit.a\n * @kind      component\n * @group     Board kit\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-21\n * @summary   Draws a.\n * @tags      a\n * @requires  none\n * @files     none\n * @provides  Kit.a\n * @globals   none\n * @db        none\n * @config    size\n *            @see next\n */\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-an-indented-at-line-continues-the-tag",
+ "run": [
+  "adp_catalog.py",
+  "build",
+  "{catalog-continued-tag}"
+ ],
+ "exit": 1,
+ "stderr_text": [
+  "1 problem(s); catalog.json is not written:",
+  "  kit.a: kit/a.js: [config] @config size @see next: \"signature | what it takes\""
+ ]
+}
+```
+
+The header of the runtime itself is a catalog header like any other (`runtime.adp`, the file `adp.js` at the top of the catalog):
+
+```json fixture
+{
+ "fixture": "catalog-runtime",
+ "files": {
+  "kit/.keep": "",
+  "adp.js": "/**\n * ADP runtime\n * The adp/2 page runtime. Load it before the page's own scripts, then call ADP.page({view, expected, titles, legacy, all, reveal}) once the views exist. It paints content/<part id> docs live, lists changes/ and active decisions/ in the What changed panel, shows proposals in incoming/, anchors comments to [data-part] elements, hashes the page's parts at open and compares them with manifest/current (integrity), and writes checks/latest when the viewer can edit. It also carries ADP.config (switches in the db doc config/current), ADP.user, ADP.db and ADP.ns(name), and expands the seed packs published beside the page on first open.\n *\n * --accent is the comment highlight.\n *\n * @id        runtime.adp\n * @kind      component\n * @group     Runtime\n * @status    stable\n * @version   2.1.0\n * @updated   2026-11-21\n * @summary   The adp/2 page runtime: the What changed panel, content as data, part-id comment anchors, page integrity, settings (ADP.config), the viewer (ADP.user), namespaced data (ADP.ns), seeding on first open and the page self-check.\n * @tags      adp, dataplane, runtime, comments, anchors, content, self-check, what changed, config, integrity, seed\n * @requires  none\n * @files     none\n * @provides  window.ADP.host, window.ADP.page, window.ADP.content, window.ADP.config, window.ADP.user, window.ADP.ns, window.ADP.claude, window.ADP.agent, window.ADP.publish, window.ADP.ask, window.ADP.classify, window.ADP.hash, window.ADP.build, window.ADP.integrity, window.ADP.seeded, window.ADP.db, window.ADP_CHECK, window.ADP_SEED\n * @config    <meta name=\"adp:build\"> | the build number, before the script\n * @config    window.ADP_CONTENT | content.js: the baseline copy of the parts\n * @config    page.header, page.tabs, page.changes | parts the page must render; #wc, #wcN, #wcChanges, #wcDecisions for the panel\n * @config    ADP.page(cfg) | {view(), expected(view), titles, legacy, all, reveal(id, key)}\n * @tokens    --accent? --accent-soft? --f-ui? --ink? --ink-3? --panel? --rule? --sunk? --warn?\n * @globals   none\n * @db        reads content; changes; decisions; incoming; manifest/current; config/current / writes status/integrity (attempted for any viewer with a db: it lands only where the db rules allow); checks/latest (editors only); config/current and a changes/d-<time> record when a setting is saved; the seed docs on first open\n * @source    adp-minimal | assets/adp.js | the same bytes\n * @preview   {\"render\": \"runtime.adp\", \"samples\": []}\n * @changed   Adds an explicit host connection boundary while preserving the legacy Claude default, and the host's agent, publish and ask handles (ADP.agent(), ADP.publish(), ADP.ask(): a promise of the handle or null).\n */\n(function(){})();\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-accepts-the-runtime-header",
+ "run": [
+  "adp_catalog.py",
+  "build",
+  "{catalog-runtime}"
+ ],
+ "exit": 0,
+ "stdout_text": [
+  "wrote <tmp>/catalog-runtime/catalog.json: 1 entries, 1 files"
+ ],
+ "stderr_text": []
+}
+```
+
 ```json vector
 {
  "vector": "catalog-refuses-a-bad-header",
@@ -716,6 +815,20 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
    "run": [
     "adp_catalog.py",
     "drift",
+    "--catalog-dir",
+    "{catalog-a}",
+    "--strict"
+   ],
+   "exit": 1,
+   "stdout_text": [
+    "FAIL: 1 problem(s)",
+    "  catalog.json: missing or not JSON"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "drift",
     "-h"
    ],
    "exit": 0,
@@ -738,7 +851,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
     "            <placeholder>), which are listed separately as wildcards.",
     "  db        the catalog needs.db.note, if any, must appear (first 40 chars, case-insensitive) in the header's @db text;",
     "            no note matches an absent or \"none\" header text.",
-    "Exit code 0 always, except 1 with --strict when any version or provides disagreement exists.",
+    "Exit code 0, except 1 with --strict when any version or provides disagreement exists, and 1 with the FAIL line `check` prints when the folder has no catalog.json.",
     "",
     "options:",
     "  -h, --help            show this help message and exit",
@@ -1771,6 +1884,123 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
  "exit": 1,
  "stderr_text": [
   "no entry viz.nope in <tmp>/catalog-built/catalog.json"
+ ]
+}
+```
+
+The fixture `catalog-quirks` is a local index whose `kit.a` file carries a pinned `ver`, whose `kit.a` and `kit.b` require each other, and whose `viz.c` names no `main`: its header is found through its script. `take` publishes the pin, ends the cycle, reads the header and refuses a missing saved catalog, a missing index and missing ids with one line.
+
+```json fixture
+{
+ "fixture": "catalog-quirks",
+ "files": {
+  "catalog.json": "{\n \"entries\": [\n  {\n   \"id\": \"kit.a\",\n   \"kind\": \"component\",\n   \"requires\": [\n    \"kit.b\"\n   ],\n   \"files\": [\n    {\n     \"path\": \"kit/a.js\",\n     \"role\": \"script\",\n     \"ver\": \"v7\"\n    }\n   ]\n  },\n  {\n   \"id\": \"kit.b\",\n   \"kind\": \"component\",\n   \"requires\": [\n    \"kit.a\"\n   ],\n   \"files\": [\n    {\n     \"path\": \"kit/b.js\",\n     \"role\": \"script\"\n    }\n   ]\n  },\n  {\n   \"id\": \"viz.c\",\n   \"kind\": \"component\",\n   \"requires\": [],\n   \"files\": [\n    {\n     \"path\": \"kit/c.js\",\n     \"role\": \"script\"\n    },\n    {\n     \"path\": \"kit/samples/c.json\",\n     \"role\": \"sample\"\n    }\n   ]\n  }\n ]\n}\n",
+  "kit/c.js": "/**\n * C\n * Draws c.\n *\n * @id        viz.c\n * @preview   {\"render\": \"viz.c\", \"samples\": [\"kit/samples/c.json#c\"]}\n * @samples   c\n */\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "take-index-quirks",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "take",
+    "{catalog-quirks}/catalog.json",
+    "kit.a",
+    "viz.c",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002"
+   ],
+   "exit": 0,
+   "stdout": {
+    "catalog": {
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+     "index": "<tmp>/catalog-quirks/catalog.json",
+     "live": false,
+     "ver": null,
+     "built": null,
+     "warning": "a local index is a build, not the live catalog: a file it lists may be missing there. adp.py take <catalog url> ... reads the fetched live index"
+    },
+    "entries": [
+     "kit.b",
+     "kit.a",
+     "viz.c"
+    ],
+    "files": {
+     "kit/b.js": {
+      "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+      "path": "kit/b.js"
+     },
+     "kit/a.js": {
+      "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+      "path": "kit/a.js",
+      "ver": "v7"
+     },
+     "kit/c.js": {
+      "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+      "path": "kit/c.js"
+     },
+     "kit/samples/c.json": {
+      "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+      "path": "kit/samples/c.json"
+     }
+    },
+    "sha256": {},
+    "samples": {
+     "viz.c": [
+      "kit/samples/c.json#c"
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "take",
+    "-",
+    "kit.a"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "take: no saved catalog; adp.py catalog <url> saves one"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "take",
+    "{catalog-quirks}/none.json",
+    "kit.a"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "take: <tmp>/catalog-quirks/none.json is neither a catalog url nor a catalog.json"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "take",
+    "{catalog-quirks}/catalog.json"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py take CATALOG ID ... [--url URL] [--config C.json]   CATALOG: the catalog url, - (saved), or a local catalog.json"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "take"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp.py take CATALOG ID ... [--url URL] [--config C.json]   CATALOG: the catalog url, - (saved), or a local catalog.json"
+   ]
+  }
  ]
 }
 ```

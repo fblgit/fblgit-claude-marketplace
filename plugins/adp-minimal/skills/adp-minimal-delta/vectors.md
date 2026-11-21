@@ -2092,3 +2092,323 @@ because incoming deletes it without a reason. `p.c` is `held` for the same reaso
  ]
 }
 ```
+
+The first export fills a folder that holds only dotfiles, a read that was not saved under `incoming/files` is not copied into the folder, a proposal applied without a version leaves the live version as it was, and a state written without `live_manifest` or `status` still proposes (its live manifest is read from `incoming/live-manifest.json`) and refuses to acknowledge a proposal it has no status for.
+
+```json fixture
+{
+ "fixture": "strays",
+ "base": "loop",
+ "files": {
+  "work/index.html": null,
+  "work/parts/app.js": null,
+  "work/styles/page.css": null,
+  "work/.DS_Store": "x"
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "sparse",
+ "files": {
+  "parts/app.js": "/* part:page.script.app */\nconsole.log(1);\n/* /part:page.script.app */\n",
+  "styles/page.css": "/* part:page.style */ body { margin: 0 } /* /part:page.style */\n"
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "applied-empty",
+ "files": {
+  "docs.json": "{\n \"manifest\": [\n  {\n   \"id\": \"current\",\n   \"data\": {\n    \"schema\": \"adp/2\",\n    \"page_hash\": \"7f4556515dd9\",\n    \"parts\": {\n     \"_rest:index.html\": \"ee2d7cd8fa75\",\n     \"_rest:parts/app.js\": \"e3b0c44298fc\",\n     \"_rest:styles/page.css\": \"e3b0c44298fc\",\n     \"home\": \"081b78b8f894\",\n     \"home.lead\": \"c6a82a517ff8\",\n     \"page.header\": \"0d957e9aee8d\",\n     \"page.script.app\": \"35c146f76e12\",\n     \"page.style\": \"997faceca260\"\n    },\n    \"files\": {\n     \"index.html\": \"bd002c3d502b\",\n     \"parts/app.js\": \"574c60bebc47\",\n     \"styles/page.css\": \"56ee869c6a7b\"\n    },\n    \"parents\": {\n     \"_rest:index.html\": \"\",\n     \"_rest:parts/app.js\": \"\",\n     \"_rest:styles/page.css\": \"\",\n     \"home\": \"\",\n     \"home.lead\": \"home\",\n     \"page.header\": \"\",\n     \"page.script.app\": \"\",\n     \"page.style\": \"\"\n    },\n    \"elements\": {\n     \"_rest:index.html\": 2,\n     \"_rest:parts/app.js\": 0,\n     \"_rest:styles/page.css\": 0,\n     \"home\": 1,\n     \"home.lead\": 1,\n     \"page.header\": 1,\n     \"page.script.app\": 0,\n     \"page.style\": 0\n    },\n    \"part_file\": {\n     \"_rest:index.html\": \"index.html\",\n     \"_rest:parts/app.js\": \"parts/app.js\",\n     \"_rest:styles/page.css\": \"styles/page.css\",\n     \"home\": \"index.html\",\n     \"home.lead\": \"index.html\",\n     \"page.header\": \"index.html\",\n     \"page.script.app\": \"parts/app.js\",\n     \"page.style\": \"styles/page.css\"\n    },\n    \"version\": \"7\"\n   },\n   \"version\": 7\n  }\n ],\n \"parts\": [\n  {\n   \"id\": \"home\",\n   \"data\": {\n    \"hash\": \"081b78b8f894\"\n   },\n   \"version\": 2\n  },\n  {\n   \"id\": \"home.lead\",\n   \"data\": {\n    \"hash\": \"c6a82a517ff8\"\n   },\n   \"version\": 3\n  }\n ],\n \"incoming\": {\n  \"<pid>\": {\n   \"data\": {\n    \"status\": \"applied\",\n    \"applied\": {\n     \"version\": \"\",\n     \"at\": \"\"\n    }\n   },\n   \"version\": 1\n  },\n  \"p-1000000000000-abcd\": {\n   \"data\": {\n    \"status\": \"declined\"\n   },\n   \"version\": 1\n  }\n }\n}\n"
+ }
+}
+```
+
+```json fixture
+{
+ "fixture": "legacy",
+ "base": "loop",
+ "files": {
+  "work.adp/state.json": "{\"schema\": \"adp-state/1\", \"name\": \"work\", \"url\": \"https://claude.ai/artifact/00000000-0000-4000-8000-000000000001\", \"capabilities\": {}, \"exported_at\": \"2026-11-19T09:00:00Z\", \"catalog\": {\"url\": \"\", \"vermap\": {}}, \"live\": {\"version\": \"7\", \"at\": \"2026-11-19T09:00:00Z\"}, \"docs\": {}, \"files\": {\"index.html\": \"bd002c3d502bcfb11ad737f90788ece3ee82fb00e1fc958c2e3a92809a4fdfc3\", \"parts/app.js\": \"574c60bebc47c67f6767237cf4f4adeb285bafdcc2b9b6ec046ab7a65a3f92df\", \"styles/page.css\": \"56ee869c6a7b0e7d21e0dec5797d620a57125641f1be3303654385ab0c9addbc\"}, \"refs\": {}, \"src_copy\": {}, \"base\": {\"version\": \"7\", \"manifest\": {\"parts\": {\"_rest:index.html\": \"ee2d7cd8fa75\", \"_rest:parts/app.js\": \"e3b0c44298fc\", \"_rest:styles/page.css\": \"e3b0c44298fc\", \"home\": \"081b78b8f894\", \"home.lead\": \"c6a82a517ff8\", \"page.header\": \"0d957e9aee8d\", \"page.script.app\": \"35c146f76e12\", \"page.style\": \"997faceca260\"}, \"parents\": {\"_rest:index.html\": \"\", \"_rest:parts/app.js\": \"\", \"_rest:styles/page.css\": \"\", \"home\": \"\", \"home.lead\": \"home\", \"page.header\": \"\", \"page.script.app\": \"\", \"page.style\": \"\"}, \"files\": {\"index.html\": \"bd002c3d502b\", \"parts/app.js\": \"574c60bebc47\", \"styles/page.css\": \"56ee869c6a7b\"}}}, \"incoming\": {\"held\": [], \"unacked\": [], \"pending_replies\": [], \"proposed\": {}, \"acked\": []}}",
+  "work.adp/incoming/live-manifest.json": "{\"parts\": {\"_rest:index.html\": \"ee2d7cd8fa75\", \"_rest:parts/app.js\": \"e3b0c44298fc\", \"_rest:styles/page.css\": \"e3b0c44298fc\", \"home\": \"081b78b8f894\", \"home.lead\": \"c6a82a517ff8\", \"page.header\": \"0d957e9aee8d\", \"page.script.app\": \"35c146f76e12\", \"page.style\": \"997faceca260\"}, \"parents\": {\"_rest:index.html\": \"\", \"_rest:parts/app.js\": \"\", \"_rest:styles/page.css\": \"\", \"home\": \"\", \"home.lead\": \"home\", \"page.header\": \"\", \"page.script.app\": \"\", \"page.style\": \"\"}, \"files\": {\"index.html\": \"bd002c3d502b\", \"parts/app.js\": \"574c60bebc47\", \"styles/page.css\": \"56ee869c6a7b\"}, \"page_hash\": \"7f4556515dd9\"}"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "loop-import-and-unsaved-reads",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{strays}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{strays}/listing.json",
+    "--docs",
+    "{strays}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/strays/work.adp/state.json",
+    "next": "clean: nothing to send"
+   },
+   "files_out": {
+    "{strays}/work/styles/page.css": "/* part:page.style */ body { margin: 0 } /* /part:page.style */\n"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{loop}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{loop}/listing.json",
+    "--docs",
+    "{loop}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/loop/work.adp/state.json",
+    "next": "clean: nothing to send"
+   }
+  },
+  {
+   "copy": [
+    "{sparse}",
+    "{loop}/work.adp/incoming/files"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{loop}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{loop}/listing-8.json",
+    "--docs",
+    "{loop}/docs-8.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [],
+     "theirs": [
+      "home",
+      "home.lead",
+      "index.html"
+     ],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/loop/work.adp/state.json",
+    "next": "clean: nothing to send"
+   }
+  }
+ ]
+}
+```
+
+```json vector
+{
+ "vector": "loop-empty-applied-version-and-older-state",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{loop}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{loop}/listing.json",
+    "--docs",
+    "{loop}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/loop/work.adp/state.json",
+    "next": "clean: nothing to send"
+   }
+  },
+  {
+   "copy": [
+    "{loop}/mine",
+    "{loop}/work"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "propose",
+    "{loop}/work",
+    "--by",
+    "agent-a",
+    "--summary",
+    "Lead: greeting"
+   ],
+   "exit": 0,
+   "stdout": {
+    "proposal": "<pid>",
+    "doc": "<tmp>/loop/work.adp/propose-<pid>.json",
+    "parts": 2,
+    "files": 1,
+    "chunks": 0,
+    "next": "run the ArtifactData batch, then adp.py ack with its result; an editor applies it on the page",
+    "batches": [
+     [
+      {
+       "op": "set",
+       "collection": "incoming",
+       "doc_id": "<pid>",
+       "file_path": "<tmp>/loop/work.adp/propose-<pid>.json"
+      },
+      {
+       "op": "set",
+       "collection": "changes",
+       "doc_id": "d-<ms>",
+       "file_path": "<tmp>/loop/work.adp/propose-<pid>/changes__d-<ms>.json"
+      }
+     ]
+    ],
+    "docs_dir": "<tmp>/loop/work.adp/propose-<pid>"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{loop}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{loop}/listing.json",
+    "--docs",
+    "{applied-empty}/docs.json"
+   ],
+   "exit": 0
+  },
+  {
+   "run": [
+    "adp.py",
+    "ack",
+    "{loop}/work",
+    "--proposal",
+    "<pid>"
+   ],
+   "exit": 0,
+   "stdout": {
+    "ack": [
+     "incoming/<pid> applied"
+    ],
+    "live": {
+     "at": "<time>",
+     "version": "7"
+    },
+    "incoming": {
+     "held": [],
+     "unacked": [],
+     "pending_replies": []
+    }
+   }
+  },
+  {
+   "copy": [
+    "{legacy}/mine",
+    "{legacy}/work"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "propose",
+    "{legacy}/work",
+    "--by",
+    "agent-a",
+    "--summary",
+    "Lead: greeting"
+   ],
+   "exit": 0,
+   "stdout": {
+    "proposal": "<pid>",
+    "doc": "<tmp>/legacy/work.adp/propose-<pid>.json",
+    "parts": 2,
+    "files": 1,
+    "chunks": 0,
+    "next": "run the ArtifactData batch, then adp.py ack with its result; an editor applies it on the page",
+    "batches": [
+     [
+      {
+       "op": "set",
+       "collection": "incoming",
+       "doc_id": "<pid>",
+       "file_path": "<tmp>/legacy/work.adp/propose-<pid>.json"
+      },
+      {
+       "op": "set",
+       "collection": "changes",
+       "doc_id": "d-<ms>",
+       "file_path": "<tmp>/legacy/work.adp/propose-<pid>/changes__d-<ms>.json"
+      }
+     ]
+    ],
+    "docs_dir": "<tmp>/legacy/work.adp/propose-<pid>"
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "ack",
+    "{legacy}/work",
+    "--proposal",
+    "<pid>"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "<pid>: status unknown in the last export; ack it once applied or declined"
+   ]
+  }
+ ]
+}
+```
+

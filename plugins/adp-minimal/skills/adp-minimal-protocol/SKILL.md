@@ -397,8 +397,8 @@ version in the dump, the pin comes from `--pins` or is listed under `needs_pin`.
 # section: protocol
 # order: 360
 # needs: [protocol.pins]
-# tests: [requests-open, requests-ack, requests-progress, requests-done, requests-unknown-id, requests-turns-and-dump-forms, protocol-usage]
-# sha: 5a79b117d0fb
+# tests: [requests-open, requests-ack, requests-progress, requests-done, requests-unknown-id, requests-turns-and-dump-forms, protocol-usage, requests-null-fields]
+# sha: 3187918e31f6
 # ---
 def dump(path):
     """A dump of a collection -> {id: (fields, version or None)}, in any of the forms the notes above list."""
@@ -421,11 +421,11 @@ def requests(a):
     need(len(bare(a)) == 1, usage('requests'))
     docs, acts = dump(bare(a)[0]), [f for f in ('--ack', '--progress', '--done') if f in a]
     if not acts:
-        rows = [{'id': k, 'lane': d.get('lane', ''), 'state': state_of(d), 'scope': d.get('scope', {}), 'project': d.get('project', ''), 'text': d.get('text', ''),
+        rows = [{'id': k, 'lane': d.get('lane', ''), 'state': state_of(d), 'scope': d.get('scope') or {}, 'project': d.get('project', ''), 'text': d.get('text', ''),
                  'quote': d.get('quote', ''), 'by': d.get('by', ''), 'at': d.get('at', ''), 'reopened': bool(d.get('response') or d.get('doneAt')),
-                 'last_progress': (d.get('progress') or [{}])[-1].get('text', ''), 'resolved': d.get('resolved') is True,
+                 'last_progress': ((d.get('progress') or [{}])[-1] or {}).get('text', ''), 'resolved': d.get('resolved') is True,
                  'lease': {'actor': e.get('actor'), 'state': e.get('state'), 'until': e.get('leaseUntil'), 'attempt': e.get('attempt'),
-                           'host': e.get('origin', {}).get('host')} if (e := d.get('execution')) else None}
+                           'host': (e.get('origin') or {}).get('host')} if (e := d.get('execution')) else None}
                 for k, (d, _) in docs.items() if d.get('status') != 'done']
         return emit({'open': sorted(rows, key=lambda r: r['at']), 'count': len(rows), 'trailer': '· adp request {<rid>} · lane <lane> · scope part:<id>|page'})
     need(len(acts) == 1, 'one of --ack, --progress, --done')
@@ -438,7 +438,7 @@ def requests(a):
     if act == '--ack': patch, doing = {'state': 'ack', 'ackBy': by, 'ackAt': at}, f"{rid} ({d.get('lane', '')})"
     elif act == '--progress':
         need(opt(a, '--text'), '--progress needs --text T')
-        patch, doing = {'state': 'working', 'progress': [*d.get('progress', []), {'at': at, 'text': opt(a, '--text')}]}, f"{rid} ({d.get('lane', '')})"
+        patch, doing = {'state': 'working', 'progress': [*(d.get('progress') or []), {'at': at, 'text': opt(a, '--text')}]}, f"{rid} ({d.get('lane', '')})"
     else:
         need(opt(a, '--response'), '--done needs --response FILE (Markdown)')
         patch = {'status': 'done', 'doneAt': at, 'changed': [x for x in opt(a, '--changed', '').split(',') if x], 'version': opt(a, '--version', '')}
