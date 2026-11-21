@@ -28,7 +28,7 @@
     },
     {
       "name": "adp-minimal",
-      "description": "Teaches Claude to build and maintain reusable claude.ai Artifacts with ADP; the skills also carry the source of ADP's tools",
+      "description": "Build reusable claude.ai Artifacts with ADP: shared catalog components, part-level edits, and a record of every change.",
       "source": "./plugins/adp-minimal"
     },
     {
