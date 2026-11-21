@@ -28,7 +28,7 @@
     },
     {
       "name": "adp-minimal",
-      "description": "Skills that explain ADP to Claude; documentation only, the tools are in artifacts-done-properly",
+      "description": "ADP as skills: each explains one topic to Claude and carries the code of the tools, with test vectors to assemble and check them",
       "source": "./plugins/adp-minimal"
     },
     {
