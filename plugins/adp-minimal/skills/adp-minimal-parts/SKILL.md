@@ -1,6 +1,6 @@
 ---
 name: adp-minimal-parts
-description: "Explains ADP parts and hashes, with the code that computes them: part markers (<!-- part:id -->, /* part:id */), the part id grammar, data-part and data-comment-target, nesting, the _rest bucket, the part hash and page hash rule, adp.py check, manifest, diff and diff-pages, and comment anchors that are part ids. Use when the user asks what a part is, how to mark one, why a hash changed, what deepest or elements mean in a diff, or how comments stay anchored."
+description: "Explains ADP parts and hashes, with the code that computes them: part markers (HTML and CSS/JS comments that carry part:id), the part id grammar, data-part and data-comment-target, nesting, the _rest bucket, the part hash and page hash rule, adp.py check, manifest, diff and diff-pages, and comment anchors that are part ids. Use when the user asks what a part is, how to mark one, why a hash changed, what deepest or elements mean in a diff, or how comments stay anchored."
 license: Apache-2.0
 metadata:
   version: "2.2.0"

@@ -1,6 +1,6 @@
 ---
 name: adp-minimal-delta
-description: "Explains the ADP delta and inbox: the base, live and incoming manifests; classification into new, ours, theirs, applied, retired and held, and the closure over parents and requires; the loop (export, classify, propose, ack) and the gate hook; local state in DIR.adp/; the incoming/<pid> proposal; applying and declining in the page's inbox. Use when the user asks how ADP merges concurrent work, what held or theirs means, what a proposal is, or why propose or the gate refused."
+description: "Explains the ADP delta and inbox: the base, live and incoming manifests; classification into new, ours, theirs, applied, retired and held, and the closure over parents and requires; the loop (export, classify, propose, ack) and the gate hook; local state in DIR.adp/; the incoming/PID proposal; applying and declining in the page's inbox. Use when the user asks how ADP merges concurrent work, what held or theirs means, what a proposal is, or why propose or the gate refused."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
