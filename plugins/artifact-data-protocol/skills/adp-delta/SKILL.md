@@ -250,7 +250,7 @@ The listing is read as JSON (`{files: [...]}` or a list, with `sha256` or `sha`)
 rows; a text with no row exits 1). The seed (`seed.json`, `seed/`) and references to other artifacts (rows with `artifact`, kept in the state
 as `refs`) are left out: they are not part of the page, and work leaves them out too. The records file may list each collection's documents
 (`{id or doc_id, data or the fields inline, version}`, an id read after its last `/`) or map them by id. The Artifact tool returns `index.html`
-inside its own document skeleton; export strips it before hashing, so live compares with the folder.
+inside its own document skeleton; export saves it without, as [a page is read](../adp-parts/SKILL.md), so live compares with the folder.
 
 The page's copy is its `content` docs on live, and on work `DIR/content/<id>.html`, else the `html` of each entry in `DIR/content.js`.
 
@@ -261,10 +261,9 @@ The page's copy is its `content` docs on live, and on work `DIR/content/<id>.htm
 # section: delta
 # order: 440
 # needs: [delta.state, parts.manifest, protocol.manifest-doc]
-# sha: b30f8c893f85
+# sha: df729a9f74fc
 # ---
 LIST_ROW = re.compile(r'^- "(.+?)"\s+\S+\s+(\d+) bytes', re.M)
-SKELETON = re.compile(rb'^<!doctype html><html><head><meta charset=utf8>.*?</style></head><body>\n?(.*?)\n?</body></html>\s*$', re.S | re.I)
 
 
 def read_listing(path):
@@ -278,11 +277,6 @@ def read_listing(path):
     return [{'path': x['path'], 'sha256': x.get('sha256') or x.get('sha') or '', 'bytes': x.get('bytes') or x.get('size') or 0,
              'ref': {'artifact': x['artifact'], 'ver': x.get('ver', '')} if x.get('artifact') else None}
             for x in rows if x['path'] != 'seed.json' and not x['path'].startswith('seed/')]
-
-
-def bare_page(b):
-    m = SKELETON.match(b)
-    return m.group(1) if m else b
 
 
 def loop_docs(path):
@@ -314,9 +308,8 @@ def live_copy(ad):
 
 With both reads saved, export classifies work against base and live and prints `{report, merged, state, next}`; it exits 0.
 
-Work's parts come from the folder, live's from the record (`manifest/current`). A record may list fewer parts than the files hold (a catalog records
-the parts of the files its page loads, not those of every kit file it serves), or an older hash. So a part in a file that is byte for byte the live
-file counts as unchanged: it takes the hash live records, or is left out when live records none. `propose` applies the same rule.
+Work's parts are read from the folder and live's from `manifest/current`. A part in a file that is byte for byte the live file is unchanged: it takes
+the hash live records, and is left out when live records none. `propose` applies the same rule.
 
 - **The first export is the import.** Base and work start from live, and a `DIR` that is missing or holds only dotfiles is filled with the live files. A `theirs` file that was not saved under `incoming/files` is not copied.
 - **Nothing held:** git merges live into work over base. Clean: the merge is committed on `work`, every `theirs` file is copied into `DIR`, the

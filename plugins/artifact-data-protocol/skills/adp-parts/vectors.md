@@ -420,6 +420,16 @@ A folder file that is not UTF-8 is read with replacement characters, a manifest 
 {"fixture": "bare-manifests", "files": {"old.json": "{\"page_hash\": \"aaaaaaaaaaaa\", \"parts\": {\"a\": \"111111111111\"}}", "new.json": "{\"page_hash\": \"bbbbbbbbbbbb\", \"parts\": {\"a\": \"222222222222\"}}"}}
 ```
 
+```json fixture
+{
+ "fixture": "page-a-published",
+ "base": "page-a",
+ "files": {
+  "index.html": "<!doctype html><html><head><meta charset=utf8><meta name=viewport content=\"width=device-width\"><style>:root{color-scheme:light}</style></head><body>\n<header data-part=\"page.header\"><!-- part:page.header --><h1>Board</h1><!-- /part:page.header --></header>\n<!-- part:home --><section data-part=\"home\" data-comment-target><!-- part:home.lead --><p data-part=\"home.lead\" data-comment-target>Hi</p><!-- /part:home.lead --></section><!-- /part:home -->\n<script src=\"parts/app.js\"></script>\n\n</body></html>\n"
+ }
+}
+```
+
 ```json vector
 {
  "vector": "parts-lenient-inputs",
@@ -470,6 +480,28 @@ A folder file that is not UTF-8 is read with replacement characters, a manifest 
    "stderr_text": [
     "usage: adp.py check PAGE|DIR    the markers balance, and parts and data-part elements match"
    ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "diff-pages",
+    "{page-a}",
+    "{page-a-published}"
+   ],
+   "exit": 0,
+   "stdout": {
+    "page_hash": [
+     "7f4556515dd9",
+     "7f4556515dd9"
+    ],
+    "added": [],
+    "removed": [],
+    "changed": [],
+    "deepest": [],
+    "elements": {},
+    "files": {},
+    "detail": {}
+   }
   }
  ]
 }

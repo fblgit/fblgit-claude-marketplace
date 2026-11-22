@@ -2453,8 +2453,8 @@ A state that predates the status table still acks from the proposal's record und
 }
 ```
 
-The fixture `unrecorded` is a record that lists fewer parts than the page's files hold (none of `parts/app.js` or `styles/page.css`) and an old hash for
-`_rest:index.html`. The files are the live ones, so the first export has nothing to send; after an edit, only what the edit changed is `new` or `ours`.
+The fixture `unrecorded` is a record that lists no part of `parts/app.js` or `styles/page.css` and another hash for `_rest:index.html`. The files are
+the live ones, so the first export has nothing to send; after an edit, only what the edit changed is `new` or `ours`.
 
 ```json fixture
 {
