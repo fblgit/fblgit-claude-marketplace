@@ -136,6 +136,21 @@ class Content(unittest.TestCase):
         for n in skills():
             self.assertNotRegex(skill_text(n), r'```json (fixture|vector)\n', n)
 
+    def test_the_theme_contract_counts_55_names_and_the_fixture_theme_keeps_it(self):
+        """The themes skill lists the contract: 55 names in light, the 45 colour ones again in each dark block. The fixture theme sets only
+        contract names, the same ones in both dark blocks, and its JSON holds the values its stylesheet does."""
+        groups = [set(re.findall(r'`(--[\w-]+(?: --[\w-]+)*)`', b)) for b in re.findall(r'(?m)^- .*(?:\n  .*)*', skill_text('adp-themes').split('## The token contract')[1].split('\nComponent tokens')[0])]
+        groups = [{n for run in g for n in run.split()} for g in groups]
+        groups[1] |= {n + '-soft' for n in groups[1]}
+        names, colours = set().union(*groups), set().union(*groups[:-2])
+        self.assertEqual((len(names), len(colours)), (55, 45))
+        files = json.loads(re.search(r'```json fixture\n(\{\n "fixture": "catalog-a",.*?)\n```', vectors_text('adp-catalog'), re.S).group(1))['files']
+        css, twin = files['kit/themes/paper.css'].split('*/', 2)[2], json.loads(files['kit/themes/paper.json'])
+        light, media, attr = (dict(re.findall(r'(--[\w-]+):\s*([^;]+);', b)) for b in re.findall(r':root[^{]*\{([^}]*)\}', css))
+        self.assertLessEqual(set(light), names)
+        self.assertLessEqual(set(attr), colours)
+        self.assertEqual((media, twin['light'], twin['dark']), (attr, light, attr))
+
     def test_the_router_states_the_rule_and_names_every_skill(self):
         text = skill_text('adp')
         low = text.lower()
