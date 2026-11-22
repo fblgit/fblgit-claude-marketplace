@@ -419,7 +419,7 @@ catalog) is also compared with that runtime:
 # order: 400
 # needs: [catalog.build-index, catalog.samples, catalog.differences]
 # tests: [catalog-build-then-check, catalog-check-passes-a-built-tree, catalog-check-catches-a-file-edited-after-build, catalog-check-catches-a-stale-index, catalog-check-theme-shape]
-# sha: 070618d9c4df
+# sha: 52bfff621178
 # ---
 PAGE_FILES = {'index.html', 'welcome.html', 'catalog.json', 'content.js', 'adp.js', 'styles/catalog.css'}      # the catalog page's own files, never entries
 
@@ -454,7 +454,7 @@ def check_catalog(argv):
     errors += [f'orphan: {p} is not referenced by any entry or page file' for p in sorted(tree) if p not in referenced and p not in PAGE_FILES and not p.startswith('parts/')]
     for e, (css, twin) in ((e, [next((root / f['path'] for f in e.get('files', []) if f['path'].endswith(x) and (root / f['path']).is_file()), None) for x in ('.css', '.json')]) for e in ents if e.get('kind') == 'theme'):
         t, j = css.read_text(encoding='utf-8') if css else '', old_index(twin.parent, twin.name) if twin else {}
-        errors += [f"{e.get('id', '?')}: theme: no {w} block" for w, rx in THEME_BLOCKS if css and not re.search(rx, t)] + [f"{e.get('id', '?')}: theme: its JSON lacks light, dark or the entry's fonts url"] * bool(twin and not (isinstance(j.get('light'), dict) and isinstance(j.get('dark'), dict) and j.get('fonts') == e.get('fonts')))      # a file that is missing is reported above
+        errors += [f"{e.get('id', '?')}: theme: no {w} block" for w, rx in THEME_BLOCKS if css and not re.search(rx, t)] + [f"{e.get('id', '?')}: theme: its JSON lacks light, dark or the entry's fonts url"] * bool(twin and not (isinstance(j.get('light'), dict) and isinstance(j.get('dark'), dict) and j.get('fonts') == e.get('fonts')))
     if len(ents) > READ_MAX: errors.append(f'{len(ents)} entries: their main files do not fit one Artifact read ({READ_MAX} paths at most)')
     errors += [f"{e.get('id', '?')}: no script, style, template or doc file to carry its header" for e in ents if not main_file(e)]
     results, _ = check_headers(root) if ents else ([], {})
