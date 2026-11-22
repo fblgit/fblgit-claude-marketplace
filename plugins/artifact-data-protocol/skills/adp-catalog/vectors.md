@@ -726,6 +726,38 @@ The header of the runtime itself is a catalog header like any other (`runtime.ad
    "stderr_text": [
     "unknown option --bogus"
    ]
+  },
+  {
+   "run": [
+    "adp_catalog.py"
+   ],
+   "exit": 1,
+   "stdout_text": [],
+   "stderr_text": [
+    "usage: adp_catalog.py [CATALOG_DIR]   check a catalog folder (one with a kit/ in it) against its catalog.json",
+    "       adp_catalog.py build [CATALOG_DIR] | headers [--root CATALOG_DIR] [--report] [FILE ...] | inventory [--root DIR] | drift [--catalog-dir CATALOG_DIR]"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "{catalog-orphan-order}/none"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp_catalog.py [CATALOG_DIR]   check a catalog folder (one with a kit/ in it) against its catalog.json",
+    "       adp_catalog.py build [CATALOG_DIR] | headers [--root CATALOG_DIR] [--report] [FILE ...] | inventory [--root DIR] | drift [--catalog-dir CATALOG_DIR]"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "headers"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp_catalog.py headers [--root CATALOG_DIR] [--report] [FILE ...]   (a folder with a kit/ in it)"
+   ]
   }
  ]
 }

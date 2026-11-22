@@ -419,14 +419,19 @@ catalog) is also compared with that runtime:
 # order: 400
 # needs: [catalog.build-index, catalog.samples, catalog.differences]
 # tests: [catalog-build-then-check, catalog-check-passes-a-built-tree, catalog-check-catches-a-file-edited-after-build, catalog-check-catches-a-stale-index]
-# sha: 13749bc641a4
+# sha: b3e7123a89c6
 # ---
 PAGE_FILES = {'index.html', 'catalog.json', 'content.js', 'adp.js', 'styles/catalog.css'}      # the catalog page's own files, never entries
+
+
+USAGE = ('usage: adp_catalog.py [CATALOG_DIR]   check a catalog folder (one with a kit/ in it) against its catalog.json\n'
+         '       adp_catalog.py build [CATALOG_DIR] | headers [--root CATALOG_DIR] [--report] [FILE ...] | inventory [--root DIR] | drift [--catalog-dir CATALOG_DIR]')
 
 
 def check_catalog(argv):
     """The catalog folder (default: ../catalog) against its catalog.json: 0 and one OK line, or 1 and each failure."""
     root = Path(argv[0]) if argv else HERE / 'catalog'
+    if not (root / 'kit').is_dir(): sys.exit(USAGE)
     cat = old_index(root)
     ents, errors, referenced, nfiles = cat.get('entries', []), [], set(), 0
     for e in ents:
@@ -472,7 +477,7 @@ def check_catalog(argv):
 # order: 410
 # needs: [catalog.check]
 # tests: [catalog-build, catalog-build-then-check, catalog-refuses-an-orphan, catalog-headers-command]
-# sha: 2258cde6578a
+# sha: bacd9d172746
 # ---
 import collections
 
@@ -501,6 +506,7 @@ def headers(argv):
         elif x == '--report': report = True
         elif x.startswith('--'): sys.exit(f'unknown option {x}')
         else: files.append(x)
+    if not os.path.isdir(os.path.join(root, 'kit')): sys.exit('usage: adp_catalog.py headers [--root CATALOG_DIR] [--report] [FILE ...]   (a folder with a kit/ in it)')
     results, by_path = check_headers(root, files or None)
     if report:
         kinds, rules = collections.defaultdict(collections.Counter), collections.Counter()
