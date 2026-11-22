@@ -2633,7 +2633,7 @@ The fixture `catalog-quirks` is a local index whose `kit.a` file carries a pinne
 }
 ```
 
-A file under `kit/previews/` is an entry's own preview for the catalog page: `build` gives it the role `preview`, and `take` leaves it out of `files`.
+A file under `kit/previews/` is an entry's own preview for the catalog page: `build` gives it the role `preview`, and `take`, `kit describe` and the `takes` count of `suggest` leave it out (`kit show` lists every file of the entry).
 
 ```json fixture
 {
@@ -2732,6 +2732,53 @@ A file under `kit/previews/` is an entry's own preview for the catalog page: `bu
      "kit/p.js": "f69a1683bcf4dbc1c59543bf2ced6d08b5b9409638ee4f3f4852173abe75a02c"
     }
    }
+  },
+  {
+   "run": [
+    "adp.py",
+    "kit",
+    "describe",
+    "kit.p",
+    "{catalog-preview}/catalog.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "id": "kit.p",
+    "needs": [],
+    "optional": [],
+    "provides": [
+     "Kit.p"
+    ],
+    "requires": [],
+    "files": [
+     "kit/p.js"
+    ],
+    "sample": null,
+    "db": {
+     "reads": [],
+     "writes": [],
+     "note": ""
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "suggest",
+    "{catalog-preview}/catalog.json",
+    "--for",
+    "draws p"
+   ],
+   "exit": 0,
+   "stdout": [
+    {
+     "id": "kit.p",
+     "kind": "kit",
+     "requires": [],
+     "why": "tags: p; name/summary: draws, p; id: p; provides: p; about: draws, p",
+     "takes": 1
+    }
+   ]
   }
  ]
 }

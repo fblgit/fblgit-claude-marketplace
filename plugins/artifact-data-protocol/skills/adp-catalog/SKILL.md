@@ -1577,7 +1577,7 @@ fields, the ones in its header read from the main file:
 # order: 730
 # needs: [catalog.read-index]
 # tests: [suggest-by-words, suggest-options]
-# sha: 15c453848275
+# sha: e3deb3c76169
 # ---
 WORD = re.compile(r'[a-z0-9]+')
 STOP = {'a', 'an', 'and', 'or', 'the', 'of', 'to', 'in', 'on', 'for', 'with', 'between', 'by', 'is', 'it', 'as', 'at', 'my', 'that', 'this', 'from'}
@@ -1603,7 +1603,7 @@ def suggest(a):
         score = 3 * len(hit) + len(seen['name/summary']) + len(seen['id']) + 2 * len(seen['provides']) + len(seen['about'])
         if score: groups.setdefault(prefix, []).append((score, e['id'], {'id': e['id'], 'kind': prefix, 'requires': e.get('requires', []),
             'why': '; '.join(([f"tags: {', '.join(hit)}"] if hit else []) + [f"{f}: {', '.join(sorted(w))}" for f, w in seen.items() if w]),
-            'takes': len([f for f in e['files'] if f.get('role') != 'sample'])}))
+            'takes': len([f for f in e['files'] if f.get('role') not in ('sample', 'preview')])}))
     if warn: print('warning: ' + warn, file=sys.stderr)
     if missing:
         print(f'note: {len(missing)} main-file headers are not on disk, so their about text was not searched (tags, name, summary, id and provides were)'
@@ -1619,7 +1619,7 @@ def suggest(a):
 # order: 740
 # needs: [catalog.read-index]
 # tests: [kit-list, kit-list-by-kind, kit-show, kit-show-unknown, kit-describe, kit-reads-a-url-catalog]
-# sha: e580ec36af45
+# sha: c6e0dd1fbc77
 # ---
 @cmd('kit')
 def kit(a):
@@ -1651,6 +1651,6 @@ def kit(a):
     pv = h.get('preview')
     keys = [k for s in (pv.get('samples') if isinstance(pv, dict) else None) or [] if isinstance(s, str) and sample for p, k in [lib.split_ref(s)] if k is not None and p == sample[0]]
     emit({'id': e['id'], 'needs': e.get('globals', []), 'optional': e.get('optional') or h.get('optional', []), 'provides': e.get('provides', []),
-          'requires': e.get('requires', []), 'files': [f['path'] for f in e['files'] if f.get('role') != 'sample'], 'sample': sample[0] if sample else None,
+          'requires': e.get('requires', []), 'files': [f['path'] for f in e['files'] if f.get('role') not in ('sample', 'preview')], 'sample': sample[0] if sample else None,
           **({'sample_key': keys[0]} if keys else {}), **({'db': h['db']} if h.get('db') else {}), **note})
 ```
