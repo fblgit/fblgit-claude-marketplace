@@ -63,7 +63,7 @@ every change to a specific part.
 1. **Take it.** `adp.py take CATALOG viz.meter --url CATALOG_URL` resolves `@requires` first and prints JSON: `entries` in dependency order
    (`kit.badge`, then `viz.meter`), a `files` map of `{"artifact": <catalog url>, "path": <file>}` references, their `sha256`, and under `samples`
    the `path#key` references of the entries you named. The sample bundles of the named entries are in `files`; those of entries pulled in by
-   `@requires` are not. `take` writes nothing locally: pass `files` to the Artifact publish call and the host copies those files into the page's
+   `@requires` are not, and a `preview` file (under `kit/previews/`, the entry's own preview for the catalog page) never is. `take` writes nothing locally: pass `files` to the Artifact publish call and the host copies those files into the page's
    artifact server-side. A taken file is published with the page, but the page does not load it until step 2.
 2. **Link it** in `index.html` in `entries` order: each taken `.css` as `<link>`, each `.js` as `<script src>`, all scripts before `parts/app.js`.
    Stylesheets go in this order: the entries' own, then `styles/page.css`, then the theme last. A global such as `Kit.meter` is defined only
@@ -109,7 +109,7 @@ named entries own in `@samples`, read from each entry's `main`, else its templat
 # order: 620
 # needs: [core.options, core.io, protocol.switches]
 # tests: [take-with-its-requires, take-a-local-index-needs-a-url, take-unknown, take-fetches-missing-headers, take-url-from-config, take-index-quirks]
-# sha: 9f67db018640
+# sha: f59f1b749fab
 # ---
 CAT_URL = re.compile(r'https://claude\.ai/(?:code/)?artifact/[A-Za-z0-9-]+/?')
 
@@ -161,7 +161,7 @@ def taken(src, ids, url=None, config=None):
     own = {i: [r for r in h[1] if r.split('#')[-1] in h[0]] for i, h in heads.items() if h}
     idle = {i: {r.split('#')[0] for r in h[1]} - {r.split('#')[0] for r in own[i]} for i, h in heads.items() if h}   # a bundle borrowed for the preview only
     files = {f['path']: {'artifact': url, 'path': f['path'], **({'ver': f['ver']} if f.get('ver') else {})} for i in order for f in by[i]['files']
-             if f.get('role') != 'sample' or (i in ids and f['path'] not in idle.get(i, ()))}
+             if f.get('role') != 'preview' and (f.get('role') != 'sample' or (i in ids and f['path'] not in idle.get(i, ())))}
     out = {'catalog': {'url': url, 'index': str(idx.resolve()), 'live': live, 'ver': cat.get('ver') or None, 'built': cat.get('built')},
            'entries': order, 'files': files,
            'sha256': {f['path']: f['sha256'] for i in order for f in by[i]['files'] if f['path'] in files and f.get('sha256')}}

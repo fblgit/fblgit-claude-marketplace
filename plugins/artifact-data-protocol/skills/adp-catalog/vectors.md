@@ -2632,3 +2632,107 @@ The fixture `catalog-quirks` is a local index whose `kit.a` file carries a pinne
  ]
 }
 ```
+
+A file under `kit/previews/` is an entry's own preview for the catalog page: `build` gives it the role `preview`, and `take` leaves it out of `files`.
+
+```json fixture
+{
+ "fixture": "catalog-preview",
+ "files": {
+  "kit/p.js": "/**\n * P\n * Draws p.\n *\n * @id        kit.p\n * @kind      component\n * @group     Board kit\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-22\n * @summary   Draws p.\n * @tags      p\n * @requires  none\n * @files     kit/previews/p.js\n * @provides  Kit.p\n * @globals   none\n * @db        none\n */\n",
+  "kit/previews/p.js": "// the catalog page's preview of kit.p\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-preview-role-is-left-out-by-take",
+ "steps": [
+  {
+   "run": [
+    "adp_catalog.py",
+    "build",
+    "{catalog-preview}"
+   ],
+   "exit": 0,
+   "files_out": {
+    "{catalog-preview}/catalog.json": {
+     "schema": "kit-catalog/2",
+     "url": "",
+     "ver": "",
+     "built": "<time>",
+     "entries": [
+      {
+       "id": "kit.p",
+       "kind": "component",
+       "group": "Board kit",
+       "name": "P",
+       "summary": "Draws p.",
+       "tags": [
+        "p"
+       ],
+       "status": "new",
+       "version": "0.1.0",
+       "requires": [],
+       "globals": [],
+       "provides": [
+        "Kit.p"
+       ],
+       "main": "kit/p.js",
+       "files": [
+        {
+         "path": "kit/p.js",
+         "role": "script",
+         "sha256": "f69a1683bcf4dbc1c59543bf2ced6d08b5b9409638ee4f3f4852173abe75a02c",
+         "bytes": 307
+        },
+        {
+         "path": "kit/previews/p.js",
+         "role": "preview",
+         "sha256": "6f4f586155230ed2cf8ed2f65d4c89b8734092f1fe60518d33c4d81fdc42fe8c",
+         "bytes": 39
+        }
+       ],
+       "hash": "0e0da6c00b38"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "take",
+    "{catalog-preview}/catalog.json",
+    "kit.p",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002"
+   ],
+   "exit": 0,
+   "stdout": {
+    "catalog": {
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+     "index": "<tmp>/catalog-preview/catalog.json",
+     "live": false,
+     "ver": null,
+     "built": "<time>",
+     "warning": "a local index is a build, not the live catalog: a file it lists may be missing there. adp.py take <catalog url> ... reads the fetched live index"
+    },
+    "entries": [
+     "kit.p"
+    ],
+    "files": {
+     "kit/p.js": {
+      "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+      "path": "kit/p.js"
+     }
+    },
+    "sha256": {
+     "kit/p.js": "f69a1683bcf4dbc1c59543bf2ced6d08b5b9409638ee4f3f4852173abe75a02c"
+    }
+   }
+  }
+ ]
+}
+```

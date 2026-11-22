@@ -194,7 +194,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
   ],
   "bytes": 3246,
   "skipped_empty": [],
-  "next": "publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database"
+  "next": "publish DIR (seed.json and seed/ go up with the files): the page expands the packs into its database on its first open by an editor"
  }
 }
 ```
@@ -227,7 +227,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
   ],
   "bytes": 3030,
   "skipped_empty": [],
-  "next": "publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database"
+  "next": "publish DIR (seed.json and seed/ go up with the files): the page expands the packs into its database on its first open by an editor"
  },
  "files_out": {
   "{page-a}/seed.json": {
@@ -2029,7 +2029,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
     ],
     "bytes": 3138,
     "skipped_empty": [],
-    "next": "publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database"
+    "next": "publish DIR (seed.json and seed/ go up with the files): the page expands the packs into its database on its first open by an editor"
    },
    "files_out": {
     "{page-a}/seed.json": {
@@ -2281,7 +2281,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
     ],
     "bytes": 3138,
     "skipped_empty": [],
-    "next": "publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database"
+    "next": "publish DIR (seed.json and seed/ go up with the files): the page expands the packs into its database on its first open by an editor"
    },
    "files_out": {
     "{page-a}/seed.json": {
@@ -2609,7 +2609,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
     ],
     "bytes": 3072,
     "skipped_empty": [],
-    "next": "publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database"
+    "next": "publish DIR (seed.json and seed/ go up with the files): the page expands the packs into its database on its first open by an editor"
    },
    "files_out": {
     "{page-seed-v1}/seed.json": {
@@ -4223,7 +4223,7 @@ The fixtures and vectors of the contracts in [SKILL.md](SKILL.md). The runner in
     ],
     "bytes": 2998,
     "skipped_empty": [],
-    "next": "publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database"
+    "next": "publish DIR (seed.json and seed/ go up with the files): the page expands the packs into its database on its first open by an editor"
    }
   },
   {

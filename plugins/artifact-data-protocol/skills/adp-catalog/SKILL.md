@@ -36,7 +36,7 @@ Each entry in `catalog.json`; this is `kit.badge` as `build` writes it from the 
 
 `kind` is `component`, `theme`, `template` or `guide`. The **id prefix** (`kit`, `layout`, `pattern`, `viz`, `theme`, `runtime`, `template`, `guide`) is a
 separate classification. `kit list` and `suggest` report the id prefix in their `kind` output field, and their `--kind` filter matches it (`kit list --kind`
-also accepts a `kind` value). File roles: `script`, `style`, `sample`, `data`, `template`, `doc`. The entry `hash` is the first 12 hex of the SHA-256
+also accepts a `kind` value). File roles: `script`, `style`, `sample`, `preview` (a file under `kit/previews/`: the entry's own preview script for the catalog page, which `take` leaves out), `data`, `template`, `doc`. The entry `hash` is the first 12 hex of the SHA-256
 of the sorted `path=sha256` lines. A theme also carries `fonts`, and some entries `extends`.
 
 ## The header
@@ -206,8 +206,8 @@ sorted `path=sha256` lines. `old_index` is the `catalog.json` on disk, `{}` when
 # section: catalog
 # order: 300
 # needs: [authoring.check]
-# tests: [catalog-build, catalog-build-then-check]
-# sha: 7e01e1fb2c8b
+# tests: [catalog-build, catalog-build-then-check, catalog-preview-role-is-left-out-by-take]
+# sha: 81aa07a33118
 # ---
 import datetime
 
@@ -234,7 +234,9 @@ def read(root, path):
 
 
 def role(path):
-    return 'sample' if path.startswith('kit/samples/') else next((r for x, r in ROLES if path.lower().endswith(x)), 'data')
+    for folder, r in (('kit/samples/', 'sample'), ('kit/previews/', 'preview')):       # a preview is an entry's own preview on the catalog page: take leaves it out
+        if path.startswith(folder): return r
+    return next((r for x, r in ROLES if path.lower().endswith(x)), 'data')
 
 
 def entry_hash(files):

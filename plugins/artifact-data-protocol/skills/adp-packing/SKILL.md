@@ -547,7 +547,7 @@ def seed_file(d, by=None, version=None, data=None, role=None, summary=None, at=N
 # order: 580
 # needs: [packing.seed-file, payloads.batch]
 # tests: [seed-dry-run, seed-files, seed-keeps-what-it-was-given, seed-reads-an-adp-seed-1-and-prints-batches, seed-tolerates-a-missing-pack-and-refuses-bad-data]
-# sha: 5a1e75edfd44
+# sha: 0861c889f62f
 # ---
 FLAGS.add('--batches')
 
@@ -567,7 +567,7 @@ def seed_cmd(a):
         b = Batch(opt(a, '--out', d.rstrip('/') + '.adp'))
         for c, i, x in docs: b.put('set', c, i, x)
         return b.emit(**({'skipped_empty': empty} if empty else {}))
-    emit({**seed_file(*args), 'next': 'publish DIR (seed.json and seed/ go up with the files) and open the page once as an editor: it expands the packs into its database'})
+    emit({**seed_file(*args), 'next': 'publish DIR (seed.json and seed/ go up with the files): the page expands the packs into its database on its first open by an editor'})
 ```
 
 ## Catalog packs
