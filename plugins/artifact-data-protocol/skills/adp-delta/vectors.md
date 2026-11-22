@@ -2453,3 +2453,87 @@ A state that predates the status table still acks from the proposal's record und
 }
 ```
 
+The fixture `unrecorded` is a record that lists fewer parts than the page's files hold (none of `parts/app.js` or `styles/page.css`) and an old hash for
+`_rest:index.html`. The files are the live ones, so the first export has nothing to send; after an edit, only what the edit changed is `new` or `ours`.
+
+```json fixture
+{
+ "fixture": "unrecorded",
+ "files": {
+  "docs.json": "{\n \"manifest\": [\n  {\n   \"id\": \"current\",\n   \"data\": {\n    \"schema\": \"adp/2\",\n    \"page_hash\": \"7f4556515dd9\",\n    \"version\": \"7\",\n    \"parts\": {\n     \"_rest:index.html\": \"000000000000\",\n     \"home\": \"081b78b8f894\",\n     \"home.lead\": \"c6a82a517ff8\",\n     \"page.header\": \"0d957e9aee8d\"\n    },\n    \"parents\": {\n     \"_rest:index.html\": \"\",\n     \"home\": \"\",\n     \"home.lead\": \"home\",\n     \"page.header\": \"\"\n    }\n   },\n   \"version\": 7\n  }\n ]\n}\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "loop-a-part-in-an-unchanged-file-is-not-a-change",
+ "steps": [
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{loop}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{loop}/listing.json",
+    "--docs",
+    "{unrecorded}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/loop/work.adp/state.json",
+    "next": "clean: nothing to send"
+   }
+  },
+  {
+   "copy": [
+    "{loop}/mine",
+    "{loop}/work"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "export",
+    "{loop}/work",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000001",
+    "--files-listing",
+    "{loop}/listing.json",
+    "--docs",
+    "{unrecorded}/docs.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "report": {
+     "new": [],
+     "ours": [
+      "_rest:index.html",
+      "home",
+      "home.lead",
+      "index.html"
+     ],
+     "theirs": [],
+     "applied": [],
+     "held": [],
+     "retired": []
+    },
+    "merged": true,
+    "state": "<tmp>/loop/work.adp/state.json",
+    "next": "adp.py propose <tmp>/loop/work --by NAME --summary S"
+   }
+  }
+ ]
+}
+```

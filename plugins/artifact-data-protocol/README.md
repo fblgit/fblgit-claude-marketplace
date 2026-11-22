@@ -19,7 +19,7 @@ An Artifact is easy to make and hard to keep. Three things go wrong once a page 
 - **15 skills**, one per topic, so Claude loads only what a question needs.
 - **Three tools, as source in the skills**: `adp.py` (the command line), `adp_catalog.py` (the catalog checker) and `adp.js` (the script every
   page loads). Each skill holds the code for its topic next to the text that explains it.
-- **145 test vectors** with their fixtures. They run every command and check its exact output.
+- **147 test vectors** with their fixtures. They run every command and check its exact output.
 - **A minimal page template** to start from.
 
 The tools work offline. `adp.py` computes hashes and diffs, lays out a page and prints the exact `Artifact` and `ArtifactData` calls; Claude
@@ -84,7 +84,7 @@ the same page each hold their own parts; where both changed the same part, ADP s
     python3 build.py SKILLS_DIR BUILD_DIR
 
 It writes `adp.py`, `adp_catalog.py`, `adp.js` and the templates into `BUILD_DIR`, runs every vector against them and ends with a line such
-as `145 of 145 vectors pass, 0 skipped`. A changed fragment fails its checksum, and a vector that no fragment names fails the build.
+as `147 of 147 vectors pass, 0 skipped`. A changed fragment fails its checksum, and a vector that no fragment names fails the build.
 
 ## Related plugins
 

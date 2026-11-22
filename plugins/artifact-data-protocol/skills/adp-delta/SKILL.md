@@ -261,7 +261,7 @@ The page's copy is its `content` docs on live, and on work `DIR/content/<id>.htm
 # section: delta
 # order: 440
 # needs: [delta.state, parts.manifest, protocol.manifest-doc]
-# sha: 3bf494cab51a
+# sha: b30f8c893f85
 # ---
 LIST_ROW = re.compile(r'^- "(.+?)"\s+\S+\s+(\d+) bytes', re.M)
 SKELETON = re.compile(rb'^<!doctype html><html><head><meta charset=utf8>.*?</style></head><body>\n?(.*?)\n?</body></html>\s*$', re.S | re.I)
@@ -295,10 +295,13 @@ def loop_docs(path):
     return out
 
 
-def work_of(d, refs):
-    """DIR -> (its manifest without the references and content/, its copy {part id: html})"""
+def work_of(d, refs, live):
+    """DIR -> (its manifest without the references and content/, its copy {part id: html}). A part in a file that is the live file has not
+    changed, whatever the record says of it: it takes the hash live records, and is left out when live records none."""
     m, out = manifest(d), lambda f: f in refs or f.startswith('content/')
-    m = {'parts': {p: h for p, h in m['parts'].items() if not out(m['part_file'].get(p, ''))},
+    same = lambda p: (f := m['part_file'].get(p, '')) in live['files'] and live['files'][f] == m['files'].get(f)
+    parts = {p: live['parts'].get(p) if same(p) else h for p, h in m['parts'].items() if not out(m['part_file'].get(p, ''))}
+    m = {'parts': {p: h for p, h in parts.items() if h},
          'files': {f: h for f, h in m['files'].items() if not out(f)}, 'parents': m['parents']}
     copy = {p.stem: p.read_text(encoding='utf-8') for p in sorted(Path(d, 'content').glob('*.html'))}
     return m, copy or {k: v.get('html', '') for k, v in content_of(d).items()}
@@ -310,6 +313,10 @@ def live_copy(ad):
 ```
 
 With both reads saved, export classifies work against base and live and prints `{report, merged, state, next}`; it exits 0.
+
+Work's parts come from the folder, live's from the record (`manifest/current`). A record may list fewer parts than the files hold (a catalog records
+the parts of the files its page loads, not those of every kit file it serves), or an older hash. So a part in a file that is byte for byte the live
+file counts as unchanged: it takes the hash live records, or is left out when live records none. `propose` applies the same rule.
 
 - **The first export is the import.** Base and work start from live, and a `DIR` that is missing or holds only dotfiles is filled with the live files. A `theirs` file that was not saved under `incoming/files` is not copied.
 - **Nothing held:** git merges live into work over base. Clean: the merge is committed on `work`, every `theirs` file is copied into `DIR`, the
@@ -331,8 +338,8 @@ record but the copy as `db/<collection>/<id>.json`.
 # section: delta
 # order: 450
 # needs: [delta.repo, delta.listing, parts.manifest]
-# tests: [loop-export-asks-for-its-reads, loop-the-first-export-is-the-import, loop-theirs-lands-in-the-folder, loop-both-sides-changed-is-held, loop-export-reads-every-input-shape, loop-content-merges-over-base, loop-refusals, loop-import-and-unsaved-reads]
-# sha: 2ec086a54c1f
+# tests: [loop-export-asks-for-its-reads, loop-the-first-export-is-the-import, loop-theirs-lands-in-the-folder, loop-both-sides-changed-is-held, loop-export-reads-every-input-shape, loop-content-merges-over-base, loop-refusals, loop-import-and-unsaved-reads, loop-a-part-in-an-unchanged-file-is-not-a-change]
+# sha: 67ffdc299b4e
 # ---
 CONFLICT = re.compile(r'CONFLICT \([^)]*\): (?:Merge conflict in )?(\S+)')
 
@@ -374,7 +381,7 @@ def loop_export(a):
     if not prev:
         git(repo, 'branch', '-f', 'work', 'live'); git(repo, 'branch', '-f', 'base', 'live')
         if not load(d)[0]: shutil.copytree(inc, d, dirs_exist_ok=True)
-    work, wc = work_of(d, refs)
+    work, wc = work_of(d, refs, live)
     commit_tree(repo, 'work', loop_tree(d, work, {**lc, **wc}), 'work')
     rep = classify(base['manifest'], live, work)
     merged = not rep['held']
@@ -438,7 +445,7 @@ and merges it with live. Before any export it prints `{error: "no export yet", n
 # order: 460
 # needs: [delta.export, payloads.batch]
 # tests: [loop-ours-is-proposed-and-acknowledged, loop-propose-with-nothing-changed, loop-both-sides-changed-is-held, loop-propose-before-any-export, loop-retire-chunk-and-ack, loop-empty-applied-version-and-older-state]
-# sha: 0d00ca6dccf7
+# sha: 8772bc440eb8
 # ---
 CHUNK = 200 * 1024
 CTYPE = {'.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
@@ -453,8 +460,8 @@ def loop_propose(a):
     d = bare(a)[0]; ad, st, every = adp_dir(d), exported(d), lambda k: [a[i + 1] for i, x in enumerate(a) if x == k]
     if not st: return 2
     retire = dict(zip(every('--retire'), every('--reason') + [''] * len(every('--retire'))))
-    (work, wc), lc = work_of(d, st.get('refs', {})), live_copy(ad)
     live = st.get('live_manifest') or (read_json(p) if os.path.isfile(p := os.path.join(ad, 'incoming', 'live-manifest.json')) else st['base']['manifest'])
+    (work, wc), lc = work_of(d, st.get('refs', {}), live), live_copy(ad)
     work['retired'] = retired = {k: v for k, v in retire.items() if v}
     repo = loop_repo(d); wsha = commit_tree(repo, 'work', loop_tree(d, work, {**lc, **wc}), f'propose: {summary}')
     _, conflicts = merge3(repo)
