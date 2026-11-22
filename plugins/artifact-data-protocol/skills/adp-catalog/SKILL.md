@@ -419,9 +419,9 @@ catalog) is also compared with that runtime:
 # order: 400
 # needs: [catalog.build-index, catalog.samples, catalog.differences]
 # tests: [catalog-build-then-check, catalog-check-passes-a-built-tree, catalog-check-catches-a-file-edited-after-build, catalog-check-catches-a-stale-index]
-# sha: b3e7123a89c6
+# sha: 02723ae6c102
 # ---
-PAGE_FILES = {'index.html', 'catalog.json', 'content.js', 'adp.js', 'styles/catalog.css'}      # the catalog page's own files, never entries
+PAGE_FILES = {'index.html', 'welcome.html', 'catalog.json', 'content.js', 'adp.js', 'styles/catalog.css'}      # the catalog page's own files, never entries
 
 
 USAGE = ('usage: adp_catalog.py [CATALOG_DIR]   check a catalog folder (one with a kit/ in it) against its catalog.json\n'

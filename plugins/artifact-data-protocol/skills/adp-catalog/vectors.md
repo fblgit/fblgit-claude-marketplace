@@ -2672,7 +2672,8 @@ A file under `kit/previews/` is an entry's own preview for the catalog page: `bu
  "fixture": "catalog-preview",
  "files": {
   "kit/p.js": "/**\n * P\n * Draws p.\n *\n * @id        kit.p\n * @kind      component\n * @group     Board kit\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-22\n * @summary   Draws p.\n * @tags      p\n * @requires  none\n * @files     kit/previews/p.js\n * @provides  Kit.p\n * @globals   none\n * @db        none\n */\n",
-  "kit/previews/p.js": "// the catalog page's preview of kit.p\n"
+  "kit/previews/p.js": "// the catalog page's preview of kit.p\n",
+  "welcome.html": "<!doctype html><title>About</title>\n"
  }
 }
 ```
@@ -2731,6 +2732,16 @@ A file under `kit/previews/` is an entry's own preview for the catalog page: `bu
      ]
     }
    }
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "{catalog-preview}"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "OK: 1 entries, 2 entry files, 4 files in tree, 0 orphans, all sizes, sha256 and hashes match, 1 valid headers"
+   ]
   },
   {
    "run": [
