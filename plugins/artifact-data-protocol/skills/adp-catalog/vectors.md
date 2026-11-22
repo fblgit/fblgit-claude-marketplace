@@ -2827,14 +2827,14 @@ A file under `kit/previews/` is an entry's own preview for the catalog page: `bu
 }
 ```
 
-The fixture `catalog-bad-theme` is `catalog-a` with a theme whose stylesheet has no `:root[data-theme="dark"]` block and whose JSON has no `dark`. `build` indexes it; the check names both.
+The fixture `catalog-bad-theme` is `catalog-a` with a theme whose stylesheet has its `prefers-color-scheme` block inside a comment and no `:root[data-theme="dark"]` block, and whose JSON has no `dark`. `build` indexes it; the check names both.
 
 ```json fixture
 {
  "fixture": "catalog-bad-theme",
  "base": "catalog-a",
  "files": {
-  "kit/themes/paper.css": "/* part:page.style.kit.theme.paper */\n/**\n * Paper\n * Warm paper by day, ink-blue by night; one green accent.\n *\n * @id        theme.paper\n * @kind      theme\n * @group     Themes\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   Warm paper by day, ink-blue by night, one green accent.\n * @tags      palette, tokens, dark mode, paper\n * @requires  none\n * @files     kit/themes/paper.json\n * @provides  none\n * @tokens    none\n * @globals   none\n * @fonts     https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\n * @db        none\n */\n:root { --bg: #fbfaf7; --panel: #ffffff; --ink: #1d1b16; --accent: #2f5d50; --ok: #2e7d4f; --warn: #8a5200; --danger: #b3261e; --f-ui: \"Inter\", system-ui, sans-serif; }\n@media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) { --bg: #14130f; --panel: #1c1a15; --ink: #ece8dc; --accent: #7fb8a4; --ok: #7fc79a; --warn: #e0b060; --danger: #f08a80; } }\n/* /part:page.style.kit.theme.paper */\n",
+  "kit/themes/paper.css": "/* part:page.style.kit.theme.paper */\n/**\n * Paper\n * Warm paper by day, ink-blue by night; one green accent.\n *\n * @id        theme.paper\n * @kind      theme\n * @group     Themes\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   Warm paper by day, ink-blue by night, one green accent.\n * @tags      palette, tokens, dark mode, paper\n * @requires  none\n * @files     kit/themes/paper.json\n * @provides  none\n * @tokens    none\n * @globals   none\n * @fonts     https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\n * @db        none\n */\n:root { --bg: #fbfaf7; --panel: #ffffff; --ink: #1d1b16; --accent: #2f5d50; --ok: #2e7d4f; --warn: #8a5200; --danger: #b3261e; --f-ui: \"Inter\", system-ui, sans-serif; }\n/* @media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) { --bg: #14130f; --panel: #1c1a15; --ink: #ece8dc; --accent: #7fb8a4; --ok: #7fc79a; --warn: #e0b060; --danger: #f08a80; } } */\n/* /part:page.style.kit.theme.paper */\n",
   "kit/themes/paper.json": "{\n \"id\": \"paper\",\n \"name\": \"Paper\",\n \"about\": \"Warm paper by day, ink-blue by night; one green accent.\",\n \"source\": \"an example for this skill\",\n \"fonts\": \"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\",\n \"light\": {\n  \"--bg\": \"#fbfaf7\",\n  \"--panel\": \"#ffffff\",\n  \"--ink\": \"#1d1b16\",\n  \"--accent\": \"#2f5d50\",\n  \"--ok\": \"#2e7d4f\",\n  \"--warn\": \"#8a5200\",\n  \"--danger\": \"#b3261e\",\n  \"--f-ui\": \"\\\"Inter\\\", system-ui, sans-serif\"\n }\n}\n"
  }
 }
@@ -2859,7 +2859,8 @@ The fixture `catalog-bad-theme` is `catalog-a` with a theme whose stylesheet has
    ],
    "exit": 1,
    "stdout_text": [
-    "FAIL: 2 problem(s)",
+    "FAIL: 3 problem(s)",
+    "  theme.paper: theme: no @media (prefers-color-scheme: dark) block",
     "  theme.paper: theme: no :root[data-theme=\"dark\"] block",
     "  theme.paper: theme: its JSON lacks light, dark or the entry's fonts url"
    ]
