@@ -639,7 +639,8 @@ or Apply hit a publish conflict), `applied` (the inbox published it), `declined`
 
 The inbox is the page side of the loop: a component the page takes from its catalog. This section is what any inbox must do. It lists the open
 proposals and classifies each new one with `ADP.classify`. For each held item, a user with edit rights picks Keep live or Take the proposal; Apply
-stays disabled until every held item is picked. Apply publishes the proposal's files through `ADP.publish()` with an `ifMatch` per file, then
+stays disabled until every held item is picked. Apply publishes the proposal's files through `ADP.publish()` with an `ifMatch` per file, refusing a
+file whose delivered text does not match the `sha256` its proposal states, then
 writes `manifest/current`, `parts/<id>`, `content/<id>` and `changes/<seq>` with the resulting version, and sets the proposal `applied`. Decline
 asks for a reason and records it.
 
