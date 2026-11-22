@@ -111,8 +111,8 @@ What it fails on:
 - samples: a `#key` the bundle lacks, a bundle not in the entry's own `@files`, an entry listing a bundle but naming no key of it, a bundle key that no entry
   names or owns.
 
-`adp_catalog.py` does not check the theme rules ([themes](../adp-themes/SKILL.md): the same token names, JSON and CSS agreeing, fonts);
-check them by hand when a theme is added or changed. Run `adp_catalog.py headers` on every changed main file and the full check before any
+Of a theme ([themes](../adp-themes/SKILL.md)) the check verifies its shape: a `:root` block, a `prefers-color-scheme` dark block and a
+`:root[data-theme="dark"]` block in the stylesheet, and a JSON with `light`, `dark` and the entry's `fonts` url. Run `adp_catalog.py headers` on every changed main file and the full check before any
 catalog change is proposed.
 
 ## Using the catalog
@@ -207,7 +207,7 @@ sorted `path=sha256` lines. `old_index` is the `catalog.json` on disk, `{}` when
 # order: 300
 # needs: [authoring.check]
 # tests: [catalog-build, catalog-build-then-check, catalog-preview-role-is-left-out-by-take]
-# sha: 81aa07a33118
+# sha: 83ceeaa99137
 # ---
 import datetime
 
@@ -243,8 +243,8 @@ def entry_hash(files):
     return hashlib.sha256('\n'.join(sorted(f"{f['path']}={f['sha256']}" for f in files)).encode()).hexdigest()[:12]
 
 
-def old_index(root):
-    try: index = json.loads(Path(root, 'catalog.json').read_text(encoding='utf-8'))
+def old_index(root, name='catalog.json'):
+    try: index = json.loads(Path(root, name).read_text(encoding='utf-8'))
     except (OSError, ValueError): return {}
     return index if isinstance(index, dict) else {}
 
@@ -418,14 +418,17 @@ catalog) is also compared with that runtime:
 # section: catalog
 # order: 400
 # needs: [catalog.build-index, catalog.samples, catalog.differences]
-# tests: [catalog-build-then-check, catalog-check-passes-a-built-tree, catalog-check-catches-a-file-edited-after-build, catalog-check-catches-a-stale-index]
-# sha: 02723ae6c102
+# tests: [catalog-build-then-check, catalog-check-passes-a-built-tree, catalog-check-catches-a-file-edited-after-build, catalog-check-catches-a-stale-index, catalog-check-theme-shape]
+# sha: 070618d9c4df
 # ---
 PAGE_FILES = {'index.html', 'welcome.html', 'catalog.json', 'content.js', 'adp.js', 'styles/catalog.css'}      # the catalog page's own files, never entries
 
 
 USAGE = ('usage: adp_catalog.py [CATALOG_DIR]   check a catalog folder (one with a kit/ in it) against its catalog.json\n'
          '       adp_catalog.py build [CATALOG_DIR] | headers [--root CATALOG_DIR] [--report] [FILE ...] | inventory [--root DIR] | drift [--catalog-dir CATALOG_DIR]')
+
+
+THEME_BLOCKS = ((':root', r':root\s*\{'), ('prefers-color-scheme dark', r'@media[^{]*prefers-color-scheme\s*:\s*dark'), (':root[data-theme="dark"]', r':root\[data-theme=["\']?dark["\']?\]\s*\{'))      # a theme: a light and two dark blocks
 
 
 def check_catalog(argv):
@@ -449,6 +452,9 @@ def check_catalog(argv):
         elif e['hash'] != want: errors.append(f"{e.get('id', '?')}: hash {e['hash']} != computed {want}")
     tree = {p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()}
     errors += [f'orphan: {p} is not referenced by any entry or page file' for p in sorted(tree) if p not in referenced and p not in PAGE_FILES and not p.startswith('parts/')]
+    for e, (css, twin) in ((e, [next((root / f['path'] for f in e.get('files', []) if f['path'].endswith(x) and (root / f['path']).is_file()), None) for x in ('.css', '.json')]) for e in ents if e.get('kind') == 'theme'):
+        t, j = css.read_text(encoding='utf-8') if css else '', old_index(twin.parent, twin.name) if twin else {}
+        errors += [f"{e.get('id', '?')}: theme: no {w} block" for w, rx in THEME_BLOCKS if css and not re.search(rx, t)] + [f"{e.get('id', '?')}: theme: its JSON lacks light, dark or the entry's fonts url"] * bool(twin and not (isinstance(j.get('light'), dict) and isinstance(j.get('dark'), dict) and j.get('fonts') == e.get('fonts')))      # a file that is missing is reported above
     if len(ents) > READ_MAX: errors.append(f'{len(ents)} entries: their main files do not fit one Artifact read ({READ_MAX} paths at most)')
     errors += [f"{e.get('id', '?')}: no script, style, template or doc file to carry its header" for e in ents if not main_file(e)]
     results, _ = check_headers(root) if ents else ([], {})

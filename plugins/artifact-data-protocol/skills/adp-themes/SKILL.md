@@ -66,10 +66,10 @@ names of its own aliases them to the contract names in a second `:root` block (`
 it names the base theme in `@requires`, is linked after it, sets only the tokens it changes, and sets no font token.
 
 The catalog fixture of this plugin ships one theme, `theme.paper`. It sets only a few names: it exists to exercise the catalog tool,
-which does not check the contract ([catalog](../adp-catalog/SKILL.md#the-consistency-checks)).
+which checks a theme's shape ([catalog](../adp-catalog/SKILL.md#the-consistency-checks)).
 
 Each theme's stylesheet header lists the text/background pairs that reach 4.5:1 (WCAG AA) in light and dark, and any exception. These ratios are
-stated by the theme's author; no tool here checks them.
+stated by the theme's author.
 
 ## Applying a theme
 
@@ -139,4 +139,4 @@ should be able to change; a page that needs one more value defines its own token
 
 A theme is valid when it sets every name in the contract (light, and the color groups in dark), sets every name its catalog's default theme
 sets, its CSS and JSON agree on the font tokens, and its font URL loads the first family of every font token, with display, UI and mono
-families requested at weight 700 or more. `adp_catalog.py check` does not test these rules; check them when you add a theme.
+families requested at weight 700 or more. The catalog check verifies a theme's shape (its three blocks and its JSON); verify the rest when you add a theme.
