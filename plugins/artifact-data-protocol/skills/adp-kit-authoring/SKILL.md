@@ -77,7 +77,8 @@ $CAT CATALOG_DIR           # every check must pass: sizes, hashes, orphans, head
 
 5. **Publish by proposal**, not over the live catalog. Catalog changes go through the [loop and the inbox](../adp-delta/SKILL.md):
    `adp.py export CATALOG_DIR --url URL` reads the live catalog, then `adp.py propose CATALOG_DIR --by NAME --summary S` writes the change as one
-   proposal whose files are each guarded by an `ifMatch` on their live sha, and an editor previews and applies it from the catalog page. Try
+   proposal whose files are each guarded by an `ifMatch` on their live sha. The catalog page applies it by itself while an editor has it open, and
+   holds a proposal whose files moved since for a person to settle. Try
    changes on a scratch artifact first, and never change a catalog others use without the owner's approval.
 6. **Use it**: from the page, `adp.py take - <id>`, link, mount ([kit](../adp-kit/SKILL.md)).
 

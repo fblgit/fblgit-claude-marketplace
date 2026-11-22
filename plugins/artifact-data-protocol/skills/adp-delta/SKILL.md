@@ -651,8 +651,9 @@ After a publish conflict, a hold found on open, or a Decline, the inbox notifies
 `canSend()` returns `available`. A successful Apply sends nothing.
 
 A published catalog ships its own kit files the same way: they are seeded as one proposal per kit folder, and the catalog page runs its inbox in
-an auto-apply mode that applies every proposal that classifies as `merged`. Auto-apply skips the preview, so it is only for that case: the
-catalog's own seed is the only writer of its `incoming/`. Never enable it on a page where anyone else can write `incoming/`. See
+an auto-apply mode that applies every proposal that classifies as `merged`. A kit change proposed to the catalog later is applied the
+same way while an editor has the page open; a held, failed or declined proposal is left for a person. Auto-apply skips the preview, so it is only
+for a catalog, whose `incoming/` only its editors can write. Never enable it on a page where anyone else can write `incoming/`. See
 [catalog](../adp-catalog/SKILL.md).
 
 ## Reading the result
