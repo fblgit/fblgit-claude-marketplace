@@ -15,7 +15,7 @@ A marketplace of Claude Code plugins and mods.
 | mod-authoring | 0.2.0 | skill: build, test, secure and audit Claude Code mods |
 | artifacts-done-properly | 2.2.0 | skills, page templates and a component catalog for reusable claude.ai Artifacts ([repo](https://github.com/fblgit/artifacts-done-properly)) |
 | adp-setup | 2.2.0 | guided install of ADP: Markdown only, you run the commands that add the full plugin |
-| artifact-data-protocol | 2.2.0 | build reusable claude.ai Artifacts with ADP: 15 skills, one per topic, that also carry the source of its tools and 145 test vectors |
+| artifact-data-protocol | 2.2.0 | build reusable claude.ai Artifacts with ADP: 15 skills, one per topic, that also carry the source of its tools and 148 test vectors |
 | panopticon | 0.3.0 | Panopticon Harness for Anthropic Claude: behavioral oversight hooks + MCP (needs Node ≥ 24.21) |
 
 Install one: `/plugin install mod-authoring@fblgit-claude-marketplace`, or `/plugin install artifacts-done-properly@fblgit-claude-marketplace`

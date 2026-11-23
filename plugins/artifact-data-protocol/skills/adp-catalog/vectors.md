@@ -726,6 +726,38 @@ The header of the runtime itself is a catalog header like any other (`runtime.ad
    "stderr_text": [
     "unknown option --bogus"
    ]
+  },
+  {
+   "run": [
+    "adp_catalog.py"
+   ],
+   "exit": 1,
+   "stdout_text": [],
+   "stderr_text": [
+    "usage: adp_catalog.py [CATALOG_DIR]   check a catalog folder (one with a kit/ in it) against its catalog.json",
+    "       adp_catalog.py build [CATALOG_DIR] | headers [--root CATALOG_DIR] [--report] [FILE ...] | inventory [--root DIR] | drift [--catalog-dir CATALOG_DIR]"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "{catalog-orphan-order}/none"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp_catalog.py [CATALOG_DIR]   check a catalog folder (one with a kit/ in it) against its catalog.json",
+    "       adp_catalog.py build [CATALOG_DIR] | headers [--root CATALOG_DIR] [--report] [FILE ...] | inventory [--root DIR] | drift [--catalog-dir CATALOG_DIR]"
+   ]
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "headers"
+   ],
+   "exit": 1,
+   "stderr_text": [
+    "usage: adp_catalog.py headers [--root CATALOG_DIR] [--report] [FILE ...]   (a folder with a kit/ in it)"
+   ]
   }
  ]
 }
@@ -2629,6 +2661,212 @@ The fixture `catalog-quirks` is a local index whose `kit.a` file carries a pinne
   "2 problem(s); catalog.json is not written:",
   "  kit/b.js: no entry names it (add it to @files in the header of its entry)",
   "  kit/a/x.js: no entry names it (add it to @files in the header of its entry)"
+ ]
+}
+```
+
+A file under `kit/previews/` is an entry's own preview for the catalog page: `build` gives it the role `preview`, and `take`, `kit describe` and the `takes` count of `suggest` leave it out (`kit show` lists every file of the entry).
+
+```json fixture
+{
+ "fixture": "catalog-preview",
+ "files": {
+  "kit/p.js": "/**\n * P\n * Draws p.\n *\n * @id        kit.p\n * @kind      component\n * @group     Board kit\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-22\n * @summary   Draws p.\n * @tags      p\n * @requires  none\n * @files     kit/previews/p.js\n * @provides  Kit.p\n * @globals   none\n * @db        none\n */\n",
+  "kit/previews/p.js": "// the catalog page's preview of kit.p\n",
+  "welcome.html": "<!doctype html><title>About</title>\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-preview-role-is-left-out-by-take",
+ "steps": [
+  {
+   "run": [
+    "adp_catalog.py",
+    "build",
+    "{catalog-preview}"
+   ],
+   "exit": 0,
+   "files_out": {
+    "{catalog-preview}/catalog.json": {
+     "schema": "kit-catalog/2",
+     "url": "",
+     "ver": "",
+     "built": "<time>",
+     "entries": [
+      {
+       "id": "kit.p",
+       "kind": "component",
+       "group": "Board kit",
+       "name": "P",
+       "summary": "Draws p.",
+       "tags": [
+        "p"
+       ],
+       "status": "new",
+       "version": "0.1.0",
+       "requires": [],
+       "globals": [],
+       "provides": [
+        "Kit.p"
+       ],
+       "main": "kit/p.js",
+       "files": [
+        {
+         "path": "kit/p.js",
+         "role": "script",
+         "sha256": "f69a1683bcf4dbc1c59543bf2ced6d08b5b9409638ee4f3f4852173abe75a02c",
+         "bytes": 307
+        },
+        {
+         "path": "kit/previews/p.js",
+         "role": "preview",
+         "sha256": "6f4f586155230ed2cf8ed2f65d4c89b8734092f1fe60518d33c4d81fdc42fe8c",
+         "bytes": 39
+        }
+       ],
+       "hash": "0e0da6c00b38"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "{catalog-preview}"
+   ],
+   "exit": 0,
+   "stdout_text": [
+    "OK: 1 entries, 2 entry files, 4 files in tree, 0 orphans, all sizes, sha256 and hashes match, 1 valid headers"
+   ]
+  },
+  {
+   "run": [
+    "adp.py",
+    "take",
+    "{catalog-preview}/catalog.json",
+    "kit.p",
+    "--url",
+    "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002"
+   ],
+   "exit": 0,
+   "stdout": {
+    "catalog": {
+     "url": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+     "index": "<tmp>/catalog-preview/catalog.json",
+     "live": false,
+     "ver": null,
+     "built": "<time>",
+     "warning": "a local index is a build, not the live catalog: a file it lists may be missing there. adp.py take <catalog url> ... reads the fetched live index"
+    },
+    "entries": [
+     "kit.p"
+    ],
+    "files": {
+     "kit/p.js": {
+      "artifact": "https://claude.ai/artifact/00000000-0000-4000-8000-000000000002",
+      "path": "kit/p.js"
+     }
+    },
+    "sha256": {
+     "kit/p.js": "f69a1683bcf4dbc1c59543bf2ced6d08b5b9409638ee4f3f4852173abe75a02c"
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "kit",
+    "describe",
+    "kit.p",
+    "{catalog-preview}/catalog.json"
+   ],
+   "exit": 0,
+   "stdout": {
+    "id": "kit.p",
+    "needs": [],
+    "optional": [],
+    "provides": [
+     "Kit.p"
+    ],
+    "requires": [],
+    "files": [
+     "kit/p.js"
+    ],
+    "sample": null,
+    "db": {
+     "reads": [],
+     "writes": [],
+     "note": ""
+    }
+   }
+  },
+  {
+   "run": [
+    "adp.py",
+    "suggest",
+    "{catalog-preview}/catalog.json",
+    "--for",
+    "draws p"
+   ],
+   "exit": 0,
+   "stdout": [
+    {
+     "id": "kit.p",
+     "kind": "kit",
+     "requires": [],
+     "why": "tags: p; name/summary: draws, p; id: p; provides: p; about: draws, p",
+     "takes": 1
+    }
+   ]
+  }
+ ]
+}
+```
+
+The fixture `catalog-bad-theme` is `catalog-a` with a theme whose stylesheet has its `prefers-color-scheme` block inside a comment and no `:root[data-theme="dark"]` block, and whose JSON has no `dark`. `build` indexes it; the check names both.
+
+```json fixture
+{
+ "fixture": "catalog-bad-theme",
+ "base": "catalog-a",
+ "files": {
+  "kit/themes/bare.css": "/* part:page.style.kit.theme.bare */\n/**\n * Paper\n * Warm paper by day, ink-blue by night; one green accent.\n *\n * @id        theme.bare\n * @kind      theme\n * @group     Themes\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   Warm paper by day, ink-blue by night, one green accent.\n * @tags      palette, tokens, dark mode, paper\n * @requires  none\n * @files     kit/samples/kit.json\n * @provides  none\n * @tokens    none\n * @globals   none\n * @fonts     https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\n * @db        none\n * @preview   {\"render\": \"kit.badge\", \"samples\": [\"kit/samples/kit.json#badge\"]}\n */\n:root { --bg: #fbfaf7; --panel: #ffffff; --ink: #1d1b16; --accent: #2f5d50; --ok: #2e7d4f; --warn: #8a5200; --danger: #b3261e; --f-ui: \"Inter\", system-ui, sans-serif; }\n@media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) { --bg: #14130f; --panel: #1c1a15; --ink: #ece8dc; --accent: #7fb8a4; --ok: #7fc79a; --warn: #e0b060; --danger: #f08a80; } }\n:root[data-theme=\"dark\"] { --bg: #14130f; --panel: #1c1a15; --ink: #ece8dc; --accent: #7fb8a4; --ok: #7fc79a; --warn: #e0b060; --danger: #f08a80; }\n/* /part:page.style.kit.theme.bare */\n",
+  "kit/themes/paper.css": "/* part:page.style.kit.theme.paper */\n/**\n * Paper\n * Warm paper by day, ink-blue by night; one green accent.\n *\n * @id        theme.paper\n * @kind      theme\n * @group     Themes\n * @status    new\n * @version   0.1.0\n * @updated   2026-11-20\n * @summary   Warm paper by day, ink-blue by night, one green accent.\n * @tags      palette, tokens, dark mode, paper\n * @requires  none\n * @files     kit/themes/paper.json\n * @provides  none\n * @tokens    none\n * @globals   none\n * @fonts     https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\n * @db        none\n */\n:root { --bg: #fbfaf7; --panel: #ffffff; --ink: #1d1b16; --accent: #2f5d50; --ok: #2e7d4f; --warn: #8a5200; --danger: #b3261e; --f-ui: \"Inter\", system-ui, sans-serif; }\n/* @media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) { --bg: #14130f; --panel: #1c1a15; --ink: #ece8dc; --accent: #7fb8a4; --ok: #7fc79a; --warn: #e0b060; --danger: #f08a80; } } */\n/* /part:page.style.kit.theme.paper */\n",
+  "kit/themes/paper.json": "{\n \"id\": \"paper\",\n \"name\": \"Paper\",\n \"about\": \"Warm paper by day, ink-blue by night; one green accent.\",\n \"source\": \"an example for this skill\",\n \"fonts\": \"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap\",\n \"light\": {\n  \"--bg\": \"#fbfaf7\",\n  \"--panel\": \"#ffffff\",\n  \"--ink\": \"#1d1b16\",\n  \"--accent\": \"#2f5d50\",\n  \"--ok\": \"#2e7d4f\",\n  \"--warn\": \"#8a5200\",\n  \"--danger\": \"#b3261e\",\n  \"--f-ui\": \"\\\"Inter\\\", system-ui, sans-serif\"\n }\n}\n"
+ }
+}
+```
+
+```json vector
+{
+ "vector": "catalog-check-theme-shape",
+ "steps": [
+  {
+   "run": [
+    "adp_catalog.py",
+    "build",
+    "{catalog-bad-theme}"
+   ],
+   "exit": 0
+  },
+  {
+   "run": [
+    "adp_catalog.py",
+    "{catalog-bad-theme}"
+   ],
+   "exit": 1,
+   "stdout_text": [
+    "FAIL: 4 problem(s)",
+    "  theme.bare: theme: it lists no JSON file",
+    "  theme.paper: theme: no @media (prefers-color-scheme: dark) block",
+    "  theme.paper: theme: no :root[data-theme=\"dark\"] block",
+    "  theme.paper: theme: its JSON lacks light, dark or the entry's fonts url"
+   ]
+  }
  ]
 }
 ```

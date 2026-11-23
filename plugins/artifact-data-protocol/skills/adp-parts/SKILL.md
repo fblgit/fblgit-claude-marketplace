@@ -172,7 +172,9 @@ JavaScript also matches U+FEFF. Text containing those characters hashes differen
 ## Reading a page
 
 PAGE is one file. DIR is a page laid out at its published paths. In a DIR every file is hashed by its bytes except dotfiles, the root
-`seed.json` and `seed/`, and the text files that hold markers (read as UTF-8, bad bytes replaced) are parsed one by one:
+`seed.json` and `seed/`, and the text files that hold markers (read as UTF-8, bad bytes replaced) are parsed one by one. The Artifact tool publishes `index.html` inside its
+own document skeleton; `index.html` is hashed and parsed without it, so a folder that holds the page as published and one that holds it bare give the
+same manifest:
 
 ```python
 # ---
@@ -182,8 +184,17 @@ PAGE is one file. DIR is a page laid out at its published paths. In a DIR every 
 # order: 140
 # needs: [parts.markers, parts.hash]
 # tests: [parts-lenient-inputs]
-# sha: a28b012e7747
+# sha: 454efe65b99d
 # ---
+SKELETON = re.compile(rb'^<!doctype html><html><head><meta charset=utf8>.*?</style></head><body>\n?(.*?)\n?</body></html>\s*$', re.S | re.I)
+
+
+def bare_page(b):
+    """A published page without the document skeleton the Artifact tool wraps it in; any other bytes as they are."""
+    m = SKELETON.match(b)
+    return m.group(1) if m else b
+
+
 def load(path):
     """PAGE or DIR -> (files {path: hash}, marked {path: text}). A PAGE has no files, and its text is under the path ''."""
     if os.path.isfile(path): return {}, {'': Path(path).read_text(encoding='utf-8')}
@@ -191,7 +202,7 @@ def load(path):
     for p in sorted(Path(path).rglob('*')):
         rel = p.relative_to(path).as_posix()
         if p.is_dir() or rel == 'seed.json' or rel.startswith(('seed/', '.')) or '/.' in rel: continue
-        files[rel] = H(raw := p.read_bytes())
+        files[rel] = H(raw := bare_page(p.read_bytes()) if rel == 'index.html' else p.read_bytes())
         if rel.endswith(TEXT) and MARK.search(text := raw.decode('utf-8', 'replace')): marked[rel] = text
     return files, marked
 ```

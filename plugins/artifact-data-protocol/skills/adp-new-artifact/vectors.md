@@ -99,7 +99,7 @@ The template `new` builds from, installed as `templates/minimal/` beside the too
      "adp.py check <tmp>/out/kiln",
      "Design it: read `design` above, take a theme and the layouts the content needs from the catalog, then write page.css and the views for this content (a script that emits them beats typing)",
      "Artifact publish with the `publish` arguments (first publish: add icon; label \"adp/2 start\")",
-     "Open the page as an editor (you, or the owner): it expands seed.json and seed/ into its database on that first open and shows what ADP is while it does. Only when nobody can open it: adp.py seed <tmp>/out/kiln --batches prints the ArtifactData batches"
+     "Nothing to seed by hand: the page expands seed.json and seed/ into its database on its first open by an editor (a client set to open pages on publish does that at once) and shows what ADP is while it does. Only when nobody can open it: adp.py seed <tmp>/out/kiln --batches prints the ArtifactData batches"
     ]
    }
   },
@@ -338,7 +338,7 @@ The fixture `template-catalog` is a second template: it starts from `minimal`, a
    "adp.py check <tmp>/out/p",
    "Design it: read `design` above, take a theme and the layouts the content needs from the catalog, then write page.css and the views for this content (a script that emits them beats typing)",
    "Artifact publish with the `publish` arguments (first publish: add icon; label \"adp/2 start\"); its files already carry the kit entries",
-   "Open the page as an editor (you, or the owner): it expands seed.json and seed/ into its database on that first open and shows what ADP is while it does. Only when nobody can open it: adp.py seed <tmp>/out/p --batches prints the ArtifactData batches"
+   "Nothing to seed by hand: the page expands seed.json and seed/ into its database on its first open by an editor (a client set to open pages on publish does that at once) and shows what ADP is while it does. Only when nobody can open it: adp.py seed <tmp>/out/p --batches prints the ArtifactData batches"
   ]
  },
  "files_out": {

@@ -142,7 +142,7 @@ Besides `{{title}}`, `{{slug}}` and `{{catalog}}`, every template file may carry
 # order: 660
 # needs: [new.templates, themes.link, kit.take, packing.seed]
 # tests: [new-minimal, new-from-a-catalog, new-refuses-a-non-empty-folder, new-full-tier-is-not-available, new-refuses-a-bad-slug, new-refuses-an-unknown-theme]
-# sha: 72d3bf97384e
+# sha: 245f47190624
 # ---
 import hashlib, html
 @cmd('new')
@@ -214,7 +214,7 @@ def new(a):
                    'Artifact publish with the `publish` arguments (first publish: add icon; label "adp/2 start")'
                    + ('; its files already carry the kit entries' if got else ''),
                    *([f'adp.py take {src or "<catalog url>"} ' + ' '.join(tk) + ', then publish those files to the same url'] if tk and not got else []),
-                   'Open the page as an editor (you, or the owner): it expands seed.json and seed/ into its database on that first open and shows what ADP is while it does. '
+                   'Nothing to seed by hand: the page expands seed.json and seed/ into its database on its first open by an editor (a client set to open pages on publish does that at once) and shows what ADP is while it does. '
                    f'Only when nobody can open it: adp.py seed {d} --batches prints the ArtifactData batches']
     emit(out)
 ```
@@ -249,10 +249,10 @@ $ADP check DIR                 # markers balance, ids valid and unique, every pa
 
 - Give each page its own `styles/page.css` and views; keep the structure.
 - `adp.py files DIR` emits `batches` instead of `files` above 250 files: publish the page with the first batch, then send the rest to the same URL.
-- **Seeding.** The first editor to open the published page writes the record into its database from `seed.json` and `seed/`, so no manual batch
-  writes are needed. Until then there are no `parts/<id>` documents to [hold](../adp-protocol/SKILL.md) and no `manifest/current` to
-  record against, so the [edit road](../adp-roads/SKILL.md) cannot start. Check with an ArtifactData `get` of `manifest/current` first: if
-  it exists, write nothing. Only when nobody can open the page as an editor, `adp.py seed DIR --by NAME --batches` prints the same documents as
+- **Seeding.** You run nothing: the page writes the record into its database from `seed.json` and `seed/` on its first open by an editor, and a
+  client set to open pages on publish does that at once. Until then there are no `parts/<id>` documents to [hold](../adp-protocol/SKILL.md) and no `manifest/current` to
+  record against, so the [edit road](../adp-roads/SKILL.md) cannot start. If you need to know, read `manifest/current` with an ArtifactData `get`: if
+  it exists, the page is seeded. Only when nobody can open the page as an editor, `adp.py seed DIR --by NAME --batches` prints the same documents as
   batches. Details: [shell and runtime](../adp-runtime/SKILL.md).
 - After publishing, give the user the URL and the next steps.
 

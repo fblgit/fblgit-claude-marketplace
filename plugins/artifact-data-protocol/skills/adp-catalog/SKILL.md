@@ -36,7 +36,7 @@ Each entry in `catalog.json`; this is `kit.badge` as `build` writes it from the 
 
 `kind` is `component`, `theme`, `template` or `guide`. The **id prefix** (`kit`, `layout`, `pattern`, `viz`, `theme`, `runtime`, `template`, `guide`) is a
 separate classification. `kit list` and `suggest` report the id prefix in their `kind` output field, and their `--kind` filter matches it (`kit list --kind`
-also accepts a `kind` value). File roles: `script`, `style`, `sample`, `data`, `template`, `doc`. The entry `hash` is the first 12 hex of the SHA-256
+also accepts a `kind` value). File roles: `script`, `style`, `sample`, `preview` (a file under `kit/previews/`: the entry's own preview script for the catalog page, which `take` leaves out), `data`, `template`, `doc`. The entry `hash` is the first 12 hex of the SHA-256
 of the sorted `path=sha256` lines. A theme also carries `fonts`, and some entries `extends`.
 
 ## The header
@@ -111,8 +111,8 @@ What it fails on:
 - samples: a `#key` the bundle lacks, a bundle not in the entry's own `@files`, an entry listing a bundle but naming no key of it, a bundle key that no entry
   names or owns.
 
-`adp_catalog.py` does not check the theme rules ([themes](../adp-themes/SKILL.md): the same token names, JSON and CSS agreeing, fonts);
-check them by hand when a theme is added or changed. Run `adp_catalog.py headers` on every changed main file and the full check before any
+Of a theme ([themes](../adp-themes/SKILL.md)) the check verifies its shape: a `:root` block, a `prefers-color-scheme` dark block and a
+`:root[data-theme="dark"]` block in the stylesheet, and a JSON, listed in `@files`, with `light`, `dark` and the entry's `fonts` url. Run `adp_catalog.py headers` on every changed main file and the full check before any
 catalog change is proposed.
 
 ## Using the catalog
@@ -206,8 +206,8 @@ sorted `path=sha256` lines. `old_index` is the `catalog.json` on disk, `{}` when
 # section: catalog
 # order: 300
 # needs: [authoring.check]
-# tests: [catalog-build, catalog-build-then-check]
-# sha: 7e01e1fb2c8b
+# tests: [catalog-build, catalog-build-then-check, catalog-preview-role-is-left-out-by-take]
+# sha: 83ceeaa99137
 # ---
 import datetime
 
@@ -234,15 +234,17 @@ def read(root, path):
 
 
 def role(path):
-    return 'sample' if path.startswith('kit/samples/') else next((r for x, r in ROLES if path.lower().endswith(x)), 'data')
+    for folder, r in (('kit/samples/', 'sample'), ('kit/previews/', 'preview')):       # a preview is an entry's own preview on the catalog page: take leaves it out
+        if path.startswith(folder): return r
+    return next((r for x, r in ROLES if path.lower().endswith(x)), 'data')
 
 
 def entry_hash(files):
     return hashlib.sha256('\n'.join(sorted(f"{f['path']}={f['sha256']}" for f in files)).encode()).hexdigest()[:12]
 
 
-def old_index(root):
-    try: index = json.loads(Path(root, 'catalog.json').read_text(encoding='utf-8'))
+def old_index(root, name='catalog.json'):
+    try: index = json.loads(Path(root, name).read_text(encoding='utf-8'))
     except (OSError, ValueError): return {}
     return index if isinstance(index, dict) else {}
 
@@ -416,15 +418,23 @@ catalog) is also compared with that runtime:
 # section: catalog
 # order: 400
 # needs: [catalog.build-index, catalog.samples, catalog.differences]
-# tests: [catalog-build-then-check, catalog-check-passes-a-built-tree, catalog-check-catches-a-file-edited-after-build, catalog-check-catches-a-stale-index]
-# sha: 13749bc641a4
+# tests: [catalog-build-then-check, catalog-check-passes-a-built-tree, catalog-check-catches-a-file-edited-after-build, catalog-check-catches-a-stale-index, catalog-check-theme-shape]
+# sha: 964efc5064bf
 # ---
-PAGE_FILES = {'index.html', 'catalog.json', 'content.js', 'adp.js', 'styles/catalog.css'}      # the catalog page's own files, never entries
+PAGE_FILES = {'index.html', 'welcome.html', 'catalog.json', 'content.js', 'adp.js', 'styles/catalog.css'}      # the catalog page's own files, never entries
+
+
+USAGE = ('usage: adp_catalog.py [CATALOG_DIR]   check a catalog folder (one with a kit/ in it) against its catalog.json\n'
+         '       adp_catalog.py build [CATALOG_DIR] | headers [--root CATALOG_DIR] [--report] [FILE ...] | inventory [--root DIR] | drift [--catalog-dir CATALOG_DIR]')
+
+
+THEME_BLOCKS = ((':root', r':root\s*\{'), ('@media (prefers-color-scheme: dark)', r'@media[^{]*prefers-color-scheme\s*:\s*dark'), (':root[data-theme="dark"]', r':root\[data-theme=["\']?dark["\']?\]\s*\{'))      # a theme: a light and two dark blocks
 
 
 def check_catalog(argv):
     """The catalog folder (default: ../catalog) against its catalog.json: 0 and one OK line, or 1 and each failure."""
     root = Path(argv[0]) if argv else HERE / 'catalog'
+    if not (root / 'kit').is_dir(): sys.exit(USAGE)
     cat = old_index(root)
     ents, errors, referenced, nfiles = cat.get('entries', []), [], set(), 0
     for e in ents:
@@ -442,6 +452,9 @@ def check_catalog(argv):
         elif e['hash'] != want: errors.append(f"{e.get('id', '?')}: hash {e['hash']} != computed {want}")
     tree = {p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()}
     errors += [f'orphan: {p} is not referenced by any entry or page file' for p in sorted(tree) if p not in referenced and p not in PAGE_FILES and not p.startswith('parts/')]
+    for e, (css, twin) in ((e, [next((root / f['path'] for f in e.get('files', []) if f.get('role') == x and (root / f['path']).is_file()), None) for x in ('style', 'data')]) for e in ents if e.get('kind') == 'theme'):
+        t, j = css_clean(css.read_text(encoding='utf-8')) if css else '', old_index(twin.parent, twin.name) if twin else {}
+        errors += [f"{e.get('id', '?')}: theme: no {w} block" for w, rx in THEME_BLOCKS if css and not re.search(rx, t)] + [f"{e.get('id', '?')}: theme: its JSON lacks light, dark or the entry's fonts url"] * bool(twin and not (isinstance(j.get('light'), dict) and isinstance(j.get('dark'), dict) and j.get('fonts') == e.get('fonts'))) + [f"{e.get('id', '?')}: theme: it lists no JSON file"] * (not any(f.get('role') == 'data' for f in e.get('files', [])))
     if len(ents) > READ_MAX: errors.append(f'{len(ents)} entries: their main files do not fit one Artifact read ({READ_MAX} paths at most)')
     errors += [f"{e.get('id', '?')}: no script, style, template or doc file to carry its header" for e in ents if not main_file(e)]
     results, _ = check_headers(root) if ents else ([], {})
@@ -470,7 +483,7 @@ def check_catalog(argv):
 # order: 410
 # needs: [catalog.check]
 # tests: [catalog-build, catalog-build-then-check, catalog-refuses-an-orphan, catalog-headers-command]
-# sha: 2258cde6578a
+# sha: bacd9d172746
 # ---
 import collections
 
@@ -499,6 +512,7 @@ def headers(argv):
         elif x == '--report': report = True
         elif x.startswith('--'): sys.exit(f'unknown option {x}')
         else: files.append(x)
+    if not os.path.isdir(os.path.join(root, 'kit')): sys.exit('usage: adp_catalog.py headers [--root CATALOG_DIR] [--report] [FILE ...]   (a folder with a kit/ in it)')
     results, by_path = check_headers(root, files or None)
     if report:
         kinds, rules = collections.defaultdict(collections.Counter), collections.Counter()
@@ -1575,7 +1589,7 @@ fields, the ones in its header read from the main file:
 # order: 730
 # needs: [catalog.read-index]
 # tests: [suggest-by-words, suggest-options]
-# sha: 15c453848275
+# sha: e3deb3c76169
 # ---
 WORD = re.compile(r'[a-z0-9]+')
 STOP = {'a', 'an', 'and', 'or', 'the', 'of', 'to', 'in', 'on', 'for', 'with', 'between', 'by', 'is', 'it', 'as', 'at', 'my', 'that', 'this', 'from'}
@@ -1601,7 +1615,7 @@ def suggest(a):
         score = 3 * len(hit) + len(seen['name/summary']) + len(seen['id']) + 2 * len(seen['provides']) + len(seen['about'])
         if score: groups.setdefault(prefix, []).append((score, e['id'], {'id': e['id'], 'kind': prefix, 'requires': e.get('requires', []),
             'why': '; '.join(([f"tags: {', '.join(hit)}"] if hit else []) + [f"{f}: {', '.join(sorted(w))}" for f, w in seen.items() if w]),
-            'takes': len([f for f in e['files'] if f.get('role') != 'sample'])}))
+            'takes': len([f for f in e['files'] if f.get('role') not in ('sample', 'preview')])}))
     if warn: print('warning: ' + warn, file=sys.stderr)
     if missing:
         print(f'note: {len(missing)} main-file headers are not on disk, so their about text was not searched (tags, name, summary, id and provides were)'
@@ -1617,7 +1631,7 @@ def suggest(a):
 # order: 740
 # needs: [catalog.read-index]
 # tests: [kit-list, kit-list-by-kind, kit-show, kit-show-unknown, kit-describe, kit-reads-a-url-catalog]
-# sha: e580ec36af45
+# sha: c6e0dd1fbc77
 # ---
 @cmd('kit')
 def kit(a):
@@ -1649,6 +1663,6 @@ def kit(a):
     pv = h.get('preview')
     keys = [k for s in (pv.get('samples') if isinstance(pv, dict) else None) or [] if isinstance(s, str) and sample for p, k in [lib.split_ref(s)] if k is not None and p == sample[0]]
     emit({'id': e['id'], 'needs': e.get('globals', []), 'optional': e.get('optional') or h.get('optional', []), 'provides': e.get('provides', []),
-          'requires': e.get('requires', []), 'files': [f['path'] for f in e['files'] if f.get('role') != 'sample'], 'sample': sample[0] if sample else None,
+          'requires': e.get('requires', []), 'files': [f['path'] for f in e['files'] if f.get('role') not in ('sample', 'preview')], 'sample': sample[0] if sample else None,
           **({'sample_key': keys[0]} if keys else {}), **({'db': h['db']} if h.get('db') else {}), **note})
 ```

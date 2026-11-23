@@ -1,6 +1,6 @@
 ---
 name: adp-themes
-description: "Theme system for ADP (Artifacts Done Properly) pages: a theme as tokens only (a CSS file with light, dark and data-theme blocks, a JSON twin and a Google Fonts URL), the 55-name token contract, layer themes, adp.py new --theme, link order after page.css, runtime switching with look.theme, and changing a page's theme later. Use when the user asks about tokens, dark mode, fonts, choosing or switching a theme, or building a custom palette."
+description: "Theme system for ADP (Artifacts Done Properly) pages: a theme as tokens only (a CSS file with light, dark and data-theme blocks, a JSON twin and a Google Fonts URL), the 55-name token contract, adp.py new --theme, link order after page.css, runtime switching with look.theme, and changing a page's theme later. Use when the user asks about tokens, dark mode, fonts, choosing or switching a theme, or building a custom palette."
 license: Apache-2.0
 metadata:
   version: "2.2.0"
@@ -62,14 +62,13 @@ bar's direction). It declares each one in its header's `@tokens`, with `?` when 
 The list above is the contract. A catalog's default theme also sets every token that one of its kit entries declares as required (`@tokens`
 without `?`), and every other theme in that catalog sets every name the default sets: in light, and in dark wherever the default's dark map
 has it. A theme may set more. A theme with internal
-names of its own aliases them to the contract names in a second `:root` block (`--f-ui: var(--f-body)`). A **layer theme** builds on another:
-it names the base theme in `@requires`, is linked after it, sets only the tokens it changes, and sets no font token.
+names of its own aliases them to the contract names in a second `:root` block (`--f-ui: var(--f-body)`).
 
 The catalog fixture of this plugin ships one theme, `theme.paper`. It sets only a few names: it exists to exercise the catalog tool,
-which does not check the contract ([catalog](../adp-catalog/SKILL.md#the-consistency-checks)).
+which checks a theme's shape ([catalog](../adp-catalog/SKILL.md#the-consistency-checks)).
 
 Each theme's stylesheet header lists the text/background pairs that reach 4.5:1 (WCAG AA) in light and dark, and any exception. These ratios are
-stated by the theme's author; no tool here checks them.
+stated by the theme's author.
 
 ## Applying a theme
 
@@ -139,4 +138,4 @@ should be able to change; a page that needs one more value defines its own token
 
 A theme is valid when it sets every name in the contract (light, and the color groups in dark), sets every name its catalog's default theme
 sets, its CSS and JSON agree on the font tokens, and its font URL loads the first family of every font token, with display, UI and mono
-families requested at weight 700 or more. `adp_catalog.py check` does not test these rules; check them when you add a theme.
+families requested at weight 700 or more. The catalog check verifies a theme's shape (its three blocks and its JSON); verify the rest when you add a theme.

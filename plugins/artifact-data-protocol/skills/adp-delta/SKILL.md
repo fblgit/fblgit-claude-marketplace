@@ -250,7 +250,7 @@ The listing is read as JSON (`{files: [...]}` or a list, with `sha256` or `sha`)
 rows; a text with no row exits 1). The seed (`seed.json`, `seed/`) and references to other artifacts (rows with `artifact`, kept in the state
 as `refs`) are left out: they are not part of the page, and work leaves them out too. The records file may list each collection's documents
 (`{id or doc_id, data or the fields inline, version}`, an id read after its last `/`) or map them by id. The Artifact tool returns `index.html`
-inside its own document skeleton; export strips it before hashing, so live compares with the folder.
+inside its own document skeleton; export saves it without, as [a page is read](../adp-parts/SKILL.md), so live compares with the folder.
 
 The page's copy is its `content` docs on live, and on work `DIR/content/<id>.html`, else the `html` of each entry in `DIR/content.js`.
 
@@ -261,10 +261,9 @@ The page's copy is its `content` docs on live, and on work `DIR/content/<id>.htm
 # section: delta
 # order: 440
 # needs: [delta.state, parts.manifest, protocol.manifest-doc]
-# sha: 3bf494cab51a
+# sha: df729a9f74fc
 # ---
 LIST_ROW = re.compile(r'^- "(.+?)"\s+\S+\s+(\d+) bytes', re.M)
-SKELETON = re.compile(rb'^<!doctype html><html><head><meta charset=utf8>.*?</style></head><body>\n?(.*?)\n?</body></html>\s*$', re.S | re.I)
 
 
 def read_listing(path):
@@ -280,11 +279,6 @@ def read_listing(path):
             for x in rows if x['path'] != 'seed.json' and not x['path'].startswith('seed/')]
 
 
-def bare_page(b):
-    m = SKELETON.match(b)
-    return m.group(1) if m else b
-
-
 def loop_docs(path):
     """{coll: [{id or doc_id, data or its fields inline, version}]} or {coll: {id: doc}} -> {coll: {id: {data, version}}}"""
     out = {}
@@ -295,10 +289,13 @@ def loop_docs(path):
     return out
 
 
-def work_of(d, refs):
-    """DIR -> (its manifest without the references and content/, its copy {part id: html})"""
+def work_of(d, refs, live):
+    """DIR -> (its manifest without the references and content/, its copy {part id: html}). A part in a file that is the live file has not
+    changed, whatever the record says of it: it takes the hash live records, and is left out when live records none."""
     m, out = manifest(d), lambda f: f in refs or f.startswith('content/')
-    m = {'parts': {p: h for p, h in m['parts'].items() if not out(m['part_file'].get(p, ''))},
+    same = lambda p: (f := m['part_file'].get(p, '')) in live['files'] and live['files'][f] == m['files'].get(f)
+    parts = {p: live['parts'].get(p) if same(p) else h for p, h in m['parts'].items() if not out(m['part_file'].get(p, ''))}
+    m = {'parts': {p: h for p, h in parts.items() if h},
          'files': {f: h for f, h in m['files'].items() if not out(f)}, 'parents': m['parents']}
     copy = {p.stem: p.read_text(encoding='utf-8') for p in sorted(Path(d, 'content').glob('*.html'))}
     return m, copy or {k: v.get('html', '') for k, v in content_of(d).items()}
@@ -310,6 +307,9 @@ def live_copy(ad):
 ```
 
 With both reads saved, export classifies work against base and live and prints `{report, merged, state, next}`; it exits 0.
+
+Work's parts are read from the folder and live's from `manifest/current`. A part in a file that is byte for byte the live file is unchanged: it takes
+the hash live records, and is left out when live records none. `propose` applies the same rule.
 
 - **The first export is the import.** Base and work start from live, and a `DIR` that is missing or holds only dotfiles is filled with the live files. A `theirs` file that was not saved under `incoming/files` is not copied.
 - **Nothing held:** git merges live into work over base. Clean: the merge is committed on `work`, every `theirs` file is copied into `DIR`, the
@@ -331,8 +331,8 @@ record but the copy as `db/<collection>/<id>.json`.
 # section: delta
 # order: 450
 # needs: [delta.repo, delta.listing, parts.manifest]
-# tests: [loop-export-asks-for-its-reads, loop-the-first-export-is-the-import, loop-theirs-lands-in-the-folder, loop-both-sides-changed-is-held, loop-export-reads-every-input-shape, loop-content-merges-over-base, loop-refusals, loop-import-and-unsaved-reads]
-# sha: 2ec086a54c1f
+# tests: [loop-export-asks-for-its-reads, loop-the-first-export-is-the-import, loop-theirs-lands-in-the-folder, loop-both-sides-changed-is-held, loop-export-reads-every-input-shape, loop-content-merges-over-base, loop-refusals, loop-import-and-unsaved-reads, loop-a-part-in-an-unchanged-file-is-not-a-change]
+# sha: 67ffdc299b4e
 # ---
 CONFLICT = re.compile(r'CONFLICT \([^)]*\): (?:Merge conflict in )?(\S+)')
 
@@ -374,7 +374,7 @@ def loop_export(a):
     if not prev:
         git(repo, 'branch', '-f', 'work', 'live'); git(repo, 'branch', '-f', 'base', 'live')
         if not load(d)[0]: shutil.copytree(inc, d, dirs_exist_ok=True)
-    work, wc = work_of(d, refs)
+    work, wc = work_of(d, refs, live)
     commit_tree(repo, 'work', loop_tree(d, work, {**lc, **wc}), 'work')
     rep = classify(base['manifest'], live, work)
     merged = not rep['held']
@@ -438,7 +438,7 @@ and merges it with live. Before any export it prints `{error: "no export yet", n
 # order: 460
 # needs: [delta.export, payloads.batch]
 # tests: [loop-ours-is-proposed-and-acknowledged, loop-propose-with-nothing-changed, loop-both-sides-changed-is-held, loop-propose-before-any-export, loop-retire-chunk-and-ack, loop-empty-applied-version-and-older-state]
-# sha: 0d00ca6dccf7
+# sha: 8772bc440eb8
 # ---
 CHUNK = 200 * 1024
 CTYPE = {'.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
@@ -453,8 +453,8 @@ def loop_propose(a):
     d = bare(a)[0]; ad, st, every = adp_dir(d), exported(d), lambda k: [a[i + 1] for i, x in enumerate(a) if x == k]
     if not st: return 2
     retire = dict(zip(every('--retire'), every('--reason') + [''] * len(every('--retire'))))
-    (work, wc), lc = work_of(d, st.get('refs', {})), live_copy(ad)
     live = st.get('live_manifest') or (read_json(p) if os.path.isfile(p := os.path.join(ad, 'incoming', 'live-manifest.json')) else st['base']['manifest'])
+    (work, wc), lc = work_of(d, st.get('refs', {}), live), live_copy(ad)
     work['retired'] = retired = {k: v for k, v in retire.items() if v}
     repo = loop_repo(d); wsha = commit_tree(repo, 'work', loop_tree(d, work, {**lc, **wc}), f'propose: {summary}')
     _, conflicts = merge3(repo)
@@ -641,7 +641,8 @@ The inbox is the page side of the loop: a component the page takes from its cata
 proposals and classifies each new one with `ADP.classify`. For each held item, a user with edit rights picks Keep live or Take the proposal; Apply
 stays disabled until every held item is picked. Apply publishes the proposal's files through `ADP.publish()` with an `ifMatch` per file, then
 writes `manifest/current`, `parts/<id>`, `content/<id>` and `changes/<seq>` with the resulting version, and sets the proposal `applied`. Decline
-asks for a reason and records it.
+asks for a reason and records it. When a proposal states a `sha256` for a file (a catalog's kit pack does; `adp.py propose` states none), Apply
+refuses a file whose delivered text does not match it.
 
 A proposal carries code: its files are published as they are. Treat a proposal as untrusted until an editor has read it: grant no viewer
 write access to `incoming/` in the page's access rules, and have an editor preview every file of a proposal, held or not, before Apply. An agent
@@ -651,8 +652,9 @@ After a publish conflict, a hold found on open, or a Decline, the inbox notifies
 `canSend()` returns `available`. A successful Apply sends nothing.
 
 A published catalog ships its own kit files the same way: they are seeded as one proposal per kit folder, and the catalog page runs its inbox in
-an auto-apply mode that applies every proposal that classifies as `merged`. Auto-apply skips the preview, so it is only for that case: the
-catalog's own seed is the only writer of its `incoming/`. Never enable it on a page where anyone else can write `incoming/`. See
+an auto-apply mode that applies every proposal that classifies as `merged`. A kit change proposed to the catalog later is applied the
+same way while an editor has the page open; a held, failed or declined proposal is left for a person. Auto-apply skips the preview, so it is only
+for a catalog, whose `incoming/` only its editors can write. Never enable it on a page where anyone else can write `incoming/`. See
 [catalog](../adp-catalog/SKILL.md).
 
 ## Reading the result
