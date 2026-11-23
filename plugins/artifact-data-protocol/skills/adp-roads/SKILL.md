@@ -52,7 +52,7 @@ once its script has run. Adding a *new* entry is covered in [kit authoring](../a
 
 ## Edit
 
-Several agents change the page across many versions, and the only lock is the `if_version` pin on each database write. The full steps are in the
+A change is recorded against the version it was read at: the only lock is the `if_version` pin on each database write. The full steps are in the
 [protocol](../adp-protocol/SKILL.md):
 
 ```sh
